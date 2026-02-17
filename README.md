@@ -4,11 +4,11 @@ Web-App zur Kostenverfolgung von Renovierungsprojekten. Lokale SvelteKit-Anwendu
 
 ## Features
 
-- **Dashboard** – KPI-Karten (Budget, Ausgaben, Verbleibend), Charts, Budget-Warnungen
+- **Dashboard** – KPI-Karten (Budget, Ausgaben, Verbleibend, Burn Rate), 4 klickbare Charts, Budget-Warnungen, Gewerke-Übersicht
 - **Buchungen** – Kostenbuchungen erfassen, bearbeiten, löschen; Volltext-Suche + kombinierbare Filter; **Rückbuchungen** (negative Beträge für Retouren/Gutschriften)
 - **Flexible Ortzuordnung** – Buchungen auf einzelne Räume oder ganze Stockwerke buchen
 - **Belege** – Dokumente (PDF/JPG/PNG) pro Buchung hochladen und verwalten
-- **Monatsverlauf** – Ausgaben-Trend mit Kategorie-Aufschlüsselung (Material / Arbeitslohn / Sonstiges)
+- **Monatsverlauf** – Ausgaben-Trend + kumulierter Verlauf; Kategorie-Aufschlüsselung (Material / Arbeitslohn / Sonstiges)
 - **Budget** – Gewerk-Budgets mit Ampel-Status und Inline-Bearbeitung
 - **Bauplaner** – Zeitplan pro Gewerk (Gantt-Chart), Abhängigkeiten, Status-Tracking
 - **Gewerke & Räume** – Stammdaten verwalten (CRUD), Räume nach Geschoss gruppiert

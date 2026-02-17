@@ -336,14 +336,18 @@ Alle Filter funktionieren über URL-Parameter – kombinierbar, browser-back-fä
 
 ---
 
-## Features (Stand 16.02.2026)
+## Features (Stand 17.02.2026)
 
 ### Dashboard (`/`)
-- 5 KPI-Karten: Budget, Ausgaben, Verbleibend, Verbraucht%, Top-Raum (klickbar)
+- 6 KPI-Karten: Budget, Ausgaben, Verbleibend, Verbraucht%, Top-Raum (klickbar), **Burn Rate** (Ø/Monat + Hochrechnung Restbudget)
 - Budget-Warnungen: gelbe/rote Badges für Gewerke ≥80% (nur sichtbar wenn relevant)
-- Charts: Doughnut (Kostenanteile) + Bar (Budget vs. Ist)
-- Letzte Buchungen (5 Einträge)
-- Gewerke-Übersicht mit Fortschrittsbalken
+- Charts (alle klickbar → navigieren zu gefilterten Buchungen):
+  - Doughnut: Kostenanteile nach Gewerk
+  - Bar: Budget vs. Ausgaben nach Gewerk
+  - Doughnut: Kostenverteilung nach Kategorie (Material / Arbeitslohn / Sonstiges)
+  - Gestapelter Balken: Kategorien nach Gewerk
+- Letzte Buchungen (10 Einträge)
+- Gewerke-Übersicht mit Fortschrittsbalken (klickbar → /buchungen?gewerk=X)
 
 ### Buchungen (`/buchungen`)
 - Volltext-Suche in Beschreibung + Rechnungsreferenz
@@ -356,6 +360,7 @@ Alle Filter funktionieren über URL-Parameter – kombinierbar, browser-back-fä
 
 ### Monatsverlauf (`/verlauf`)
 - Bar-Chart (Chart.js) – Ausgaben pro Monat chronologisch
+- Linienchart – kumulierte Gesamtausgaben über Zeit
 - Tabelle: Monat (klickbar → /buchungen gefiltert) | Buchungen | Ausgaben | Kumuliert
 - Kategorie-Aufschlüsselung pro Monat (Material · Arbeitslohn · Sonstiges)
 
