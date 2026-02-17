@@ -98,7 +98,7 @@
 				scales: {
 					y: {
 						ticks: {
-							callback: (v) => `${(v as number).toLocaleString('de-DE')} €`
+							callback: (v) => `${(v as number).toLocaleString('de-DE')} \u20ac`
 						}
 					}
 				}
@@ -183,7 +183,7 @@
 					y: {
 						stacked: true,
 						ticks: {
-							callback: (v) => `${(v as number).toLocaleString('de-DE')} €`
+							callback: (v) => `${(v as number).toLocaleString('de-DE')} \u20ac`
 						}
 					}
 				}
@@ -201,22 +201,22 @@
 
 <div class="space-y-6">
 	<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-		<div class="bg-white p-4 rounded-lg shadow-sm border">
-			<h3 class="text-sm font-medium text-gray-700 mb-3">Kosten nach Gewerk</h3>
+		<div class="card p-4">
+			<h3 class="text-sm font-semibold text-gray-700 mb-3">Kosten nach Gewerk</h3>
 			<canvas bind:this={doughnutCanvas}></canvas>
 		</div>
-		<div class="bg-white p-4 rounded-lg shadow-sm border">
-			<h3 class="text-sm font-medium text-gray-700 mb-3">Budget vs. Ausgaben</h3>
+		<div class="card p-4">
+			<h3 class="text-sm font-semibold text-gray-700 mb-3">Budget vs. Ausgaben</h3>
 			<canvas bind:this={barCanvas}></canvas>
 		</div>
 	</div>
 	<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-		<div class="bg-white p-4 rounded-lg shadow-sm border">
-			<h3 class="text-sm font-medium text-gray-700 mb-3">Kostenverteilung nach Kategorie</h3>
+		<div class="card p-4">
+			<h3 class="text-sm font-semibold text-gray-700 mb-3">Kostenverteilung nach Kategorie</h3>
 			<canvas bind:this={kategorieDonutCanvas}></canvas>
 		</div>
-		<div class="bg-white p-4 rounded-lg shadow-sm border">
-			<h3 class="text-sm font-medium text-gray-700 mb-3">Kategorien nach Gewerk</h3>
+		<div class="card p-4">
+			<h3 class="text-sm font-semibold text-gray-700 mb-3">Kategorien nach Gewerk</h3>
 			<canvas bind:this={gestapelteBalkenCanvas}></canvas>
 		</div>
 	</div>

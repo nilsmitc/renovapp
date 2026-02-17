@@ -65,19 +65,24 @@
 </svelte:head>
 
 <div class="min-h-screen bg-gray-50">
-	<nav class="bg-white border-b border-gray-200">
-		<div class="max-w-7xl mx-auto px-4">
+	<nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6">
 			<div class="flex items-center justify-between h-14">
-				<a href="/" class="font-bold text-lg text-gray-900">Altbau Kosten</a>
+				<a href="/" class="flex items-center gap-2 font-bold text-lg text-gray-900 hover:text-blue-700 transition-colors">
+					<svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+					</svg>
+					Altbau Kosten
+				</a>
 
 				<!-- Desktop nav -->
-				<div class="hidden md:flex gap-1">
+				<div class="hidden md:flex gap-0.5">
 					{#each nav as item}
 						<a href={item.href}
-							class="flex items-center gap-1.5 px-3 py-2 rounded text-sm font-medium transition-colors duration-150
+							class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150
 								{isActive(item.href)
-									? 'bg-blue-50 text-blue-700'
-									: 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}">
+									? 'bg-blue-600 text-white shadow-sm'
+									: 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}">
 							<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">{@html item.icon}</svg>
 							{item.label}
 						</a>
@@ -85,7 +90,7 @@
 				</div>
 
 				<!-- Mobile hamburger -->
-				<button class="md:hidden p-2 text-gray-600 transition-colors hover:bg-gray-100 rounded" onclick={() => menuOpen = !menuOpen}>
+				<button class="md:hidden p-2 text-gray-500 transition-colors hover:bg-gray-100 rounded-md" onclick={() => menuOpen = !menuOpen}>
 					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						{#if menuOpen}
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -98,12 +103,12 @@
 
 			<!-- Mobile menu -->
 			{#if menuOpen}
-				<div class="md:hidden pb-3 border-t">
+				<div class="md:hidden pb-3 pt-2 border-t space-y-0.5">
 					{#each nav as item}
 						<a href={item.href} onclick={() => menuOpen = false}
-							class="flex items-center gap-2 px-3 py-2 rounded text-sm font-medium transition-colors duration-150
+							class="flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-150
 								{isActive(item.href)
-									? 'bg-blue-50 text-blue-700'
+									? 'bg-blue-600 text-white'
 									: 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}">
 							<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">{@html item.icon}</svg>
 							{item.label}
@@ -114,7 +119,7 @@
 		</div>
 	</nav>
 
-	<main class="max-w-7xl mx-auto px-4 py-6">
+	<main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 		{@render children()}
 	</main>
 </div>

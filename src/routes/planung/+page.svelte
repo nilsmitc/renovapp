@@ -17,7 +17,7 @@
 		}))
 	);
 
-	// Gewerke bereit zu starten: status=geplant, alle Vorgänger fertig
+	// Gewerke bereit zu starten: status=geplant, alle Vorgaenger fertig
 	const alsNaechstes = $derived(
 		rows.filter(({ plan }) => {
 			if (!plan || plan.status !== 'geplant') return false;
@@ -42,7 +42,6 @@
 		ganttMin && ganttMax ? ganttMax.getTime() - ganttMin.getTime() || 1 : 1
 	);
 
-	// Fix 1: $derived.by() statt $derived(() => ...) für komplexe Berechnung
 	const ganttMonate = $derived.by(() => {
 		if (!ganttMin || !ganttMax) return [];
 		const monate: { label: string; pct: number }[] = [];
@@ -103,19 +102,25 @@
 </script>
 
 <div class="space-y-6">
-	<h1 class="text-2xl font-bold text-gray-900">Bauplaner</h1>
+	<h1 class="flex items-center gap-2 text-2xl font-bold text-gray-900">
+		<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" /></svg>
+		Bauplaner
+	</h1>
 
 	{#if form?.error}
-		<div class="bg-red-50 text-red-700 px-4 py-3 rounded">{form.error}</div>
+		<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-md border border-red-200">
+			<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+			{form.error}
+		</div>
 	{/if}
 
-	<!-- Als nächstes -->
+	<!-- Als naechstes -->
 	{#if alsNaechstes.length > 0}
 		<div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
-			<div class="text-sm font-medium text-blue-800 mb-2">Als nächstes bereit</div>
+			<div class="text-sm font-semibold text-blue-800 mb-2">Als nächstes bereit</div>
 			<div class="flex flex-wrap gap-2">
 				{#each alsNaechstes as { gewerk }}
-					<span class="flex items-center gap-1.5 px-2 py-1 rounded text-sm font-medium text-white"
+					<span class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium text-white shadow-sm"
 						style="background-color: {gewerk.farbe}">
 						{gewerk.name}
 					</span>
@@ -126,12 +131,11 @@
 
 	<!-- Gantt -->
 	{#if ganttRows.length > 0}
-		<div class="bg-white rounded-lg shadow-sm border p-4 overflow-x-auto">
-			<div class="text-sm font-medium text-gray-700 mb-3">Zeitplan</div>
+		<div class="card p-4 overflow-x-auto">
+			<div class="text-sm font-semibold text-gray-700 mb-3">Zeitplan</div>
 			<div class="min-w-[600px]">
 				<!-- Monats-Header -->
 				<div class="relative h-6 mb-1 border-b">
-					<!-- Fix 1: ganttMonate ohne Klammern (ist jetzt ein Wert, keine Funktion) -->
 					{#each ganttMonate as m}
 						<span class="absolute text-xs text-gray-400 -translate-x-1/2"
 							style="left: {m.pct}%">{m.label}</span>
@@ -141,11 +145,11 @@
 				<div class="space-y-1.5 pt-1">
 					{#each ganttRows as { gewerk, plan }}
 						<div class="flex items-center gap-2">
-							<div class="w-32 shrink-0 text-xs text-gray-600 text-right truncate"
+							<div class="w-32 shrink-0 text-xs text-gray-600 text-right truncate font-medium"
 								title={gewerk.name}>{gewerk.name}</div>
 							<div class="relative flex-1 h-6">
 								<div
-									class="absolute h-full rounded text-xs flex items-center px-1.5 text-white overflow-hidden whitespace-nowrap"
+									class="absolute h-full rounded-md text-xs flex items-center px-1.5 text-white overflow-hidden whitespace-nowrap shadow-sm"
 									style="left: {dateToPct(plan!.start)}%; width: {durationPct(plan!.start, plan!.ende)}%;
 										background-color: {gewerk.farbe};
 										opacity: {plan!.status === 'geplant' ? '0.55' : '1'}"
@@ -161,10 +165,10 @@
 	{/if}
 
 	<!-- Tabelle -->
-	<div class="bg-white rounded-lg shadow-sm border overflow-x-auto">
+	<div class="card overflow-x-auto">
 		<table class="w-full">
 			<thead>
-				<tr class="border-b text-left text-sm text-gray-500">
+				<tr class="thead-row">
 					<th class="px-4 py-3">Gewerk</th>
 					<th class="px-4 py-3">Start</th>
 					<th class="px-4 py-3">Ende</th>
@@ -175,15 +179,15 @@
 			</thead>
 			<tbody>
 				{#each rows as { gewerk, plan }}
-					<tr class="border-b last:border-b-0 hover:bg-gray-50">
+					<tr class="border-b last:border-b-0 hover:bg-gray-50/50 transition-colors">
 						<td class="px-4 py-3 text-sm">
 							<div class="flex items-center gap-1.5">
 								<div class="w-2.5 h-2.5 rounded-full shrink-0"
 									style="background-color: {gewerk.farbe}"></div>
-								{gewerk.name}
+								<span class="font-medium">{gewerk.name}</span>
 								{#if plan && hasWarnung(plan)}
 									<span title="Startdatum liegt vor Ende eines Vorgänger-Gewerks"
-										class="text-amber-500 text-base leading-none">⚠</span>
+										class="text-amber-500 text-base leading-none">&#9888;</span>
 								{/if}
 							</div>
 						</td>
@@ -195,7 +199,14 @@
 						</td>
 						<td class="px-4 py-3 text-sm">
 							{#if plan}
-								<span class="px-2 py-0.5 rounded text-xs font-medium {statusClass(plan.status)}">
+								<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium {statusClass(plan.status)}">
+									{#if plan.status === 'geplant'}
+										<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+									{:else if plan.status === 'aktiv'}
+										<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" /></svg>
+									{:else}
+										<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+									{/if}
 									{statusLabel(plan.status)}
 								</span>
 							{:else}
@@ -205,7 +216,7 @@
 						<td class="px-4 py-3 text-sm">
 							<div class="flex flex-wrap gap-1">
 								{#each plan?.nachGewerk ?? [] as ngId}
-									<span class="text-xs px-1.5 py-0.5 rounded"
+									<span class="text-xs px-1.5 py-0.5 rounded-md font-medium"
 										style="background-color: {gewerkFarbe(ngId)}22; color: {gewerkFarbe(ngId)}">
 										{gewerkName(ngId)}
 									</span>
@@ -214,9 +225,15 @@
 						</td>
 						<td class="px-4 py-3 text-sm text-right">
 							<button
-								class="text-blue-600 hover:underline text-sm"
+								class="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm font-medium"
 								onclick={() => editGewerk = editGewerk === gewerk.id ? null : gewerk.id}>
-								{editGewerk === gewerk.id ? 'Schließen' : 'Bearbeiten'}
+								{#if editGewerk === gewerk.id}
+									<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+									Schließen
+								{:else}
+									<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
+									Bearbeiten
+								{/if}
 							</button>
 						</td>
 					</tr>
@@ -226,7 +243,6 @@
 						{@const def = editDefaults(gewerk.id)}
 						<tr class="bg-gray-50 border-b">
 							<td colspan="6" class="px-4 py-4">
-								<!-- Fix 2: enhance-Callback statt onsubmit, kein verschachteltes <form> -->
 								<form method="POST" action="?/update"
 									use:enhance={() => async ({ update }) => { editGewerk = null; update(); }}
 									class="space-y-3">
@@ -269,19 +285,25 @@
 									</div>
 
 									<div class="flex gap-2 items-center">
-										<button type="submit" class="btn-primary text-sm">Speichern</button>
-										<button type="button" class="btn-secondary text-sm"
-											onclick={() => editGewerk = null}>Abbrechen</button>
+										<button type="submit" class="btn-primary text-sm inline-flex items-center gap-1.5">
+											<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 12.75l6 6 9-13.5" /></svg>
+											Speichern
+										</button>
+										<button type="button" class="btn-secondary text-sm inline-flex items-center gap-1.5"
+											onclick={() => editGewerk = null}>
+											<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+											Abbrechen
+										</button>
 									</div>
 								</form>
 
-								<!-- Fix 3: Remove-Form AUSSERHALB der Update-Form -->
 								{#if plan}
 									<form method="POST" action="?/remove" class="mt-2"
 										use:enhance={() => async ({ update }) => { editGewerk = null; update(); }}>
 										<input type="hidden" name="gewerk" value={gewerk.id} />
-										<button type="submit" class="text-red-600 text-sm hover:underline"
+										<button type="submit" class="inline-flex items-center gap-1 text-red-600 text-sm hover:underline font-medium"
 											onclick={(e) => { if (!confirm('Planung für dieses Gewerk wirklich entfernen?')) e.preventDefault(); }}>
+											<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
 											Planung entfernen
 										</button>
 									</form>

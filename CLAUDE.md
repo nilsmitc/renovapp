@@ -305,6 +305,29 @@ Alle Filter funktionieren über URL-Parameter – kombinierbar, browser-back-fä
 
 ---
 
+## UI-Verbesserungen (17.02.2026)
+
+### Visuelles Aufhübschen
+**Durchgeführt von:** software-team-lead → frontend-ui-craftsman
+
+**Styling (app.css + alle Routes):**
+- Sticky Navigation mit Shadow, aktiver Zustand: `bg-blue-600 text-white`
+- Neue Utility-Klassen: `.card`, `.thead-row` für konsistentes Tabellen-/Card-Styling
+- KPI-Labels: `uppercase tracking-wide text-xs`
+- Zahlen mit `tabular-nums`, Fortschrittsbalken mit `transition-all duration-500`
+
+**Icons (Heroicons 24 Outline, Inline-SVG, keine neue Dependency):**
+- Seitenheader auf jeder Seite, KPI-Karten, Buttons (Plus/Check/X/Trash/Pencil/Download/Upload)
+- Alerts (Warn-Dreieck/X-Kreis/Check-Kreis), Statusbadges Planung (Clock/Play/Check)
+- Suchfeld (Lupe), Empty States
+
+**Unicode-Fix:**
+- Agent hatte `\u00fc` statt `ü` etc. in Svelte-HTML-Templates geschrieben
+- In HTML-Template-Kontext werden `\uXXXX`-Escapes nicht interpretiert → sichtbar als Rohtext
+- Fix: Python `re.sub(r'\\u([0-9a-fA-F]{4})', ...)` über 9 betroffene `.svelte`-Dateien
+
+---
+
 ## Code-Qualität & bekannte Einschränkungen
 
 ### Behobene Sicherheitsprobleme (15.02.2026)

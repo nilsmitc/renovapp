@@ -15,7 +15,7 @@
 	let kumulativCanvas: HTMLCanvasElement;
 
 	onMount(() => {
-		// Älteste zuerst für das Chart (chronologisch)
+		// Aelteste zuerst fuer das Chart (chronologisch)
 		const chronologisch = [...data.monate].reverse();
 
 		const chart = new Chart(chartCanvas, {
@@ -90,30 +90,34 @@
 </script>
 
 <div class="space-y-6">
-	<h1 class="text-2xl font-bold text-gray-900">Monatsverlauf</h1>
+	<h1 class="flex items-center gap-2 text-2xl font-bold text-gray-900">
+		<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
+		Monatsverlauf
+	</h1>
 
 	{#if data.monate.length === 0}
-		<div class="bg-white rounded-lg shadow-sm border px-4 py-8 text-center text-gray-400">
+		<div class="card px-4 py-12 text-center text-gray-400 text-sm">
+			<svg class="w-8 h-8 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
 			Noch keine Buchungen vorhanden.
 		</div>
 	{:else}
 		<!-- Chart -->
-		<div class="bg-white p-4 rounded-lg shadow-sm border">
-			<h3 class="text-sm font-medium text-gray-700 mb-3">Ausgaben pro Monat</h3>
+		<div class="card p-4">
+			<h3 class="text-sm font-semibold text-gray-700 mb-3">Ausgaben pro Monat</h3>
 			<canvas bind:this={chartCanvas}></canvas>
 		</div>
 
 		<!-- Kumulativer Verlauf -->
-		<div class="bg-white p-4 rounded-lg shadow-sm border">
-			<h3 class="text-sm font-medium text-gray-700 mb-3">Kumulierte Gesamtausgaben</h3>
+		<div class="card p-4">
+			<h3 class="text-sm font-semibold text-gray-700 mb-3">Kumulierte Gesamtausgaben</h3>
 			<canvas bind:this={kumulativCanvas}></canvas>
 		</div>
 
 		<!-- Tabelle -->
-		<div class="bg-white rounded-lg shadow-sm border overflow-x-auto">
+		<div class="card overflow-x-auto">
 			<table class="w-full">
 				<thead>
-					<tr class="border-b text-left text-sm text-gray-500">
+					<tr class="thead-row">
 						<th class="px-4 py-3">Monat</th>
 						<th class="px-4 py-3 text-right">Buchungen</th>
 						<th class="px-4 py-3 text-right">Ausgaben</th>
@@ -122,7 +126,7 @@
 				</thead>
 				<tbody>
 					{#each data.monate as m (m.monat)}
-						<tr class="border-b last:border-b-0 hover:bg-gray-50">
+						<tr class="border-b last:border-b-0 hover:bg-gray-50/50 transition-colors">
 							<td class="px-4 py-3 text-sm">
 								<a href="/buchungen?monat={m.monat}" class="font-medium text-blue-600 hover:underline">
 									{m.label}
@@ -136,8 +140,8 @@
 								</div>
 							</td>
 							<td class="px-4 py-3 text-sm text-right text-gray-500">{m.anzahl}</td>
-							<td class="px-4 py-3 text-sm text-right font-mono">{formatCents(m.ausgaben)}</td>
-							<td class="px-4 py-3 text-sm text-right font-mono text-gray-500">{formatCents(m.kumuliert)}</td>
+							<td class="px-4 py-3 text-sm text-right font-mono tabular-nums">{formatCents(m.ausgaben)}</td>
+							<td class="px-4 py-3 text-sm text-right font-mono tabular-nums text-gray-500">{formatCents(m.kumuliert)}</td>
 						</tr>
 					{/each}
 				</tbody>
@@ -145,7 +149,7 @@
 					<tr class="border-t bg-gray-50 font-medium">
 						<td class="px-4 py-3 text-sm">Gesamt</td>
 						<td class="px-4 py-3 text-sm text-right text-gray-500">{gesamtAnzahl}</td>
-						<td class="px-4 py-3 text-sm text-right font-mono">{formatCents(gesamt)}</td>
+						<td class="px-4 py-3 text-sm text-right font-mono tabular-nums">{formatCents(gesamt)}</td>
 						<td class="px-4 py-3"></td>
 					</tr>
 				</tfoot>

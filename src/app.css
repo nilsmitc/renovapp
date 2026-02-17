@@ -3,28 +3,38 @@
 @layer components {
   /* Buttons */
   .btn-primary {
-    @apply bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 transition-colors duration-150;
+    @apply bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 active:bg-blue-800 transition-all duration-150 shadow-sm;
   }
   .btn-secondary {
-    @apply px-4 py-2 rounded text-sm text-gray-600 hover:bg-gray-100 transition-colors duration-150;
+    @apply px-4 py-2 rounded-md text-sm text-gray-600 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all duration-150;
   }
   .btn-sm-primary {
-    @apply bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors duration-150;
+    @apply bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700 active:bg-blue-800 transition-all duration-150 shadow-sm;
   }
   .btn-sm-secondary {
-    @apply text-gray-500 px-3 py-2 rounded text-sm hover:bg-gray-100 transition-colors duration-150;
+    @apply text-gray-500 px-3 py-2 rounded-md text-sm border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all duration-150;
   }
 
   /* Inputs */
   .input-base {
-    @apply w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+    @apply w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-150;
   }
   .input-sm {
-    @apply border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+    @apply border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-150;
   }
 
   /* KPI card base */
   .kpi-card {
-    @apply bg-white p-4 rounded-lg shadow-sm border;
+    @apply bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow transition-shadow duration-200;
+  }
+
+  /* Card base */
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200;
+  }
+
+  /* Table header */
+  .thead-row {
+    @apply border-b bg-gray-50/80 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider;
   }
 }

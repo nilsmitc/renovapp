@@ -20,12 +20,14 @@
 </script>
 
 <div class="space-y-6">
-	<h1 class="text-2xl font-bold text-gray-900">Belege</h1>
+	<h1 class="flex items-center gap-2 text-2xl font-bold text-gray-900">
+		<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
+		Belege
+	</h1>
 
 	<!-- Filter -->
-	<div class="flex gap-3 bg-white p-3 rounded-lg shadow-sm border">
-		<select onchange={(e) => applyFilter('gewerk', e.currentTarget.value)}
-			class="border border-gray-300 rounded px-3 py-1.5 text-sm">
+	<div class="flex gap-3 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+		<select onchange={(e) => applyFilter('gewerk', e.currentTarget.value)} class="input-sm">
 			<option value="">Alle Gewerke</option>
 			{#each data.gewerke as g}
 				<option value={g.id} selected={data.filter.gewerk === g.id}>{g.name}</option>
@@ -35,22 +37,23 @@
 
 	<!-- Karten -->
 	{#if data.eintraege.length === 0}
-		<div class="bg-white rounded-lg shadow-sm border px-4 py-12 text-center text-gray-400">
+		<div class="card px-4 py-12 text-center text-gray-400 text-sm">
+			<svg class="w-8 h-8 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
 			Keine Belege vorhanden
 		</div>
 	{:else}
 		<div class="space-y-4">
 			{#each data.eintraege as eintrag (eintrag.buchungId)}
-				<div class="bg-white rounded-lg shadow-sm border p-4">
+				<div class="card p-4">
 					<!-- Buchungs-Info -->
 					<div class="flex items-start justify-between mb-3">
 						<div>
 							<div class="font-medium text-gray-900">{eintrag.beschreibung}</div>
 							<div class="text-sm text-gray-500 mt-0.5">
-								{formatDatum(eintrag.datum)} &middot; {eintrag.gewerkName} &middot; {formatCents(eintrag.betrag)}
+								{formatDatum(eintrag.datum)} &middot; {eintrag.gewerkName} &middot; <span class="font-mono tabular-nums">{formatCents(eintrag.betrag)}</span>
 							</div>
 						</div>
-						<a href="/buchungen/{eintrag.buchungId}" class="text-blue-600 hover:underline text-sm shrink-0 ml-4">
+						<a href="/buchungen/{eintrag.buchungId}" class="text-blue-600 hover:underline text-sm font-medium shrink-0 ml-4">
 							Bearbeiten
 						</a>
 					</div>
@@ -59,7 +62,7 @@
 					<div class="flex flex-wrap gap-2">
 						{#each eintrag.belege as beleg}
 							<a href="/belege/{eintrag.buchungId}/{beleg}" target="_blank"
-								class="flex items-center gap-1.5 bg-gray-50 border rounded px-3 py-1.5 text-sm hover:bg-gray-100 transition-colors">
+								class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-sm hover:bg-gray-100 hover:border-gray-300 transition-all">
 								{#if isPdf(beleg)}
 									<svg class="w-4 h-4 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
 										<path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
