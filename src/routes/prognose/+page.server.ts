@@ -8,16 +8,28 @@ export const load: PageServerLoad = () => {
 
 	const gesamtBudget = projekt.budgets.reduce((s, b) => s + b.geplant, 0);
 
-	// Gebundene Mittel: offene Abschläge aus Rechnungen
+	// Gebundene Mittel: offene Abschläge + nicht verplante Vertragssummen
 	const rechnungen = leseRechnungen();
 	let gebundeneMittelGesamt = 0;
 	const gebundenNachGewerk: Record<string, number> = {};
 	for (const r of rechnungen) {
+		// Offene / überfällige Abschläge
 		for (const a of r.abschlaege) {
 			const s = abschlagEffektivStatus(a);
 			if (s === 'offen' || s === 'ueberfaellig') {
 				gebundeneMittelGesamt += a.rechnungsbetrag;
 				gebundenNachGewerk[r.gewerk] = (gebundenNachGewerk[r.gewerk] ?? 0) + a.rechnungsbetrag;
+			}
+		}
+		// Noch nicht als Abschlag verplanter Teil der Auftragssumme
+		if (r.auftragssumme !== undefined) {
+			const nachtraege = r.nachtraege.reduce((s, n) => s + n.betrag, 0);
+			const gesamtAuftrag = r.auftragssumme + nachtraege;
+			const alleAbschlaege = r.abschlaege.reduce((s, a) => s + a.rechnungsbetrag, 0);
+			const nichtVerplant = gesamtAuftrag - alleAbschlaege;
+			if (nichtVerplant > 0) {
+				gebundeneMittelGesamt += nichtVerplant;
+				gebundenNachGewerk[r.gewerk] = (gebundenNachGewerk[r.gewerk] ?? 0) + nichtVerplant;
 			}
 		}
 	}
