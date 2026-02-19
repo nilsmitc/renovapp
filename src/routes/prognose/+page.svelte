@@ -254,8 +254,11 @@
 							<td class="px-4 py-3 text-sm text-right font-mono tabular-nums">
 								{#if p.hochgerechnet !== null}
 									{formatCents(p.hochgerechnet)}
+									{#if p.quelle === 'auftrag'}
+										<div class="text-xs text-blue-500 font-sans font-normal not-italic">Laut Auftrag</div>
+									{/if}
 								{:else}
-									<span class="text-gray-300 italic text-xs">Noch nicht begonnen</span>
+									<span class="text-gray-300 italic text-xs">Keine Daten</span>
 								{/if}
 							</td>
 							<td class="px-4 py-3 text-sm text-right font-mono tabular-nums">

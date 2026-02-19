@@ -118,7 +118,7 @@ export const load: PageServerLoad = () => {
 		if (progKumuliert >= gesamtBudget) break;
 	}
 
-	// Gewerk-Prognosen (proportionale Hochrechnung)
+	// Gewerk-Prognosen
 	const gewerkPrognosen: GewerkPrognose[] = projekt.gewerke
 		.sort((a, b) => a.sortierung - b.sortierung)
 		.map((gewerk) => {
@@ -126,27 +126,43 @@ export const load: PageServerLoad = () => {
 			const ist = gb.reduce((s, b) => s + b.betrag, 0);
 			const budget = projekt.budgets.find((b) => b.gewerk === gewerk.id)?.geplant ?? 0;
 
+			// Auftragssummen aus Rechnungen (Festpreisverträge)
+			const gewerkRechnungen = rechnungen.filter((r) => r.gewerk === gewerk.id);
+			const rechnungsHochrechnung = gewerkRechnungen.reduce((s, r) => {
+				if (r.auftragssumme === undefined) return s;
+				const nachtraege = r.nachtraege.reduce((sn, n) => sn + n.betrag, 0);
+				return s + r.auftragssumme + nachtraege;
+			}, 0);
+			// Direkte Buchungen ohne Rechnungsbezug
+			const direkteIst = gb.filter((b) => !b.rechnungId).reduce((s, b) => s + b.betrag, 0);
+
 			let hochgerechnet: number | null = null;
 			let differenz: number | null = null;
 			let status: 'ok' | 'warnung' | 'kritisch' = 'ok';
+			let quelle: 'auftrag' | 'proportional' | null = null;
 
-			if (ist > 0 && gesamtIst > 0) {
-				// Anteil dieses Gewerks an Gesamtkosten bleibt konstant → proportionale Hochrechnung
+			const berechneStatus = (hoch: number) => {
+				if (budget === 0) return hoch > 0 ? 'warnung' as const : 'ok' as const;
+				if (hoch > budget) return 'kritisch' as const;
+				if (hoch > budget * 0.8) return 'warnung' as const;
+				return 'ok' as const;
+			};
+
+			if (rechnungsHochrechnung > 0) {
+				// Festpreisvertrag bekannt → Auftragssumme als Hochrechnung
+				hochgerechnet = rechnungsHochrechnung + direkteIst;
+				differenz = budget - hochgerechnet;
+				quelle = 'auftrag';
+				status = berechneStatus(hochgerechnet);
+			} else if (ist > 0 && gesamtIst > 0) {
+				// Kein bekannter Festpreis → proportionale Hochrechnung
 				hochgerechnet = Math.round((ist / gesamtIst) * gesamtBudget);
 				differenz = budget - hochgerechnet;
-
-				if (budget === 0) {
-					status = hochgerechnet > 0 ? 'warnung' : 'ok';
-				} else if (hochgerechnet > budget) {
-					status = 'kritisch';
-				} else if (hochgerechnet > budget * 0.8) {
-					status = 'warnung';
-				} else {
-					status = 'ok';
-				}
+				quelle = 'proportional';
+				status = berechneStatus(hochgerechnet);
 			}
 
-			return { gewerk, budget, ist, hochgerechnet, differenz, status, gebunden: gebundenNachGewerk[gewerk.id] ?? 0 };
+			return { gewerk, budget, ist, hochgerechnet, differenz, status, quelle, gebunden: gebundenNachGewerk[gewerk.id] ?? 0 };
 		});
 
 	return {
@@ -171,11 +187,12 @@ export const load: PageServerLoad = () => {
 };
 
 interface GewerkPrognose {
-	gewerk: { id: string; name: string; farbe: string; sortierung: number };
+	gewerk: { id: string; name: string; farbe: string; sortierung: number; pauschal?: boolean };
 	budget: number;
 	ist: number;
 	hochgerechnet: number | null;
 	differenz: number | null;
 	status: 'ok' | 'warnung' | 'kritisch';
 	gebunden: number;
+	quelle: 'auftrag' | 'proportional' | null;
 }
