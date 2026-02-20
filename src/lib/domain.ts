@@ -252,7 +252,7 @@ export function createLieferung(
 export function abschlagEffektivStatus(abschlag: Abschlag): AbschlagStatus {
 	if (abschlag.status === 'offen' && abschlag.faelligkeitsdatum) {
 		const heute = new Date().toISOString().slice(0, 10);
-		if (abschlag.faelligkeitsdatum < heute) return 'ueberfaellig';
+		if (abschlag.faelligkeitsdatum <= heute) return 'ueberfaellig';
 	}
 	return abschlag.status;
 }

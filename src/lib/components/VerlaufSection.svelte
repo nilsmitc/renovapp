@@ -61,6 +61,7 @@
 			},
 			options: {
 				responsive: true,
+				maintainAspectRatio: false,
 				plugins: {
 					legend: { display: false },
 					tooltip: {
@@ -97,6 +98,7 @@
 			},
 			options: {
 				responsive: true,
+				maintainAspectRatio: false,
 				plugins: {
 					legend: { display: false },
 					tooltip: {
@@ -132,11 +134,15 @@
 	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 		<div class="card p-4">
 			<h3 class="text-sm font-semibold text-gray-700 mb-3">Ausgaben pro Monat</h3>
-			<canvas bind:this={chartCanvas}></canvas>
+			<div class="h-56 relative">
+				<canvas bind:this={chartCanvas}></canvas>
+			</div>
 		</div>
 		<div class="card p-4">
 			<h3 class="text-sm font-semibold text-gray-700 mb-3">Kumulierte Gesamtausgaben</h3>
-			<canvas bind:this={kumulativCanvas}></canvas>
+			<div class="h-56 relative">
+				<canvas bind:this={kumulativCanvas}></canvas>
+			</div>
 		</div>
 	</div>
 

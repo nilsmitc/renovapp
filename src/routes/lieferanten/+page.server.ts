@@ -43,7 +43,7 @@ export const actions: Actions = {
 		lieferanten.push(lieferant);
 		schreibeLieferanten({ lieferanten, lieferungen });
 
-		redirect(303, `/lieferanten/${lieferant.id}`);
+		throw redirect(303, `/lieferanten/${lieferant.id}`);
 	},
 
 	loeschen: async ({ request }) => {

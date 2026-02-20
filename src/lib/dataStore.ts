@@ -87,6 +87,7 @@ export function schreibeRechnungen(rechnungen: Rechnung[]): void {
 
 export function schreibeLieferanten(data: LieferantenData): void {
 	writeFileSync(lieferantenPath(), JSON.stringify(data, null, 2) + '\n', 'utf-8');
+	aktualisiereSummary();
 }
 
 // === Belege ===

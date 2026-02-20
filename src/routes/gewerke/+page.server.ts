@@ -15,6 +15,9 @@ export const actions: Actions = {
 		const farbe = (form.get('farbe') as string) || '#6B7280';
 
 		if (!name) return fail(400, { error: 'Name ist erforderlich' });
+		if (farbe && !/^#[0-9A-Fa-f]{6}$/.test(farbe)) {
+			return fail(400, { error: 'Ungültige Farbe (Hex-Format erwartet, z.B. #3B82F6)' });
+		}
 
 		const projekt = leseProjekt();
 		const id = slugify(name);
@@ -38,6 +41,9 @@ export const actions: Actions = {
 		const pauschal = form.get('pauschal') === 'on';
 
 		if (!name) return fail(400, { error: 'Name ist erforderlich' });
+		if (farbe && !/^#[0-9A-Fa-f]{6}$/.test(farbe)) {
+			return fail(400, { error: 'Ungültige Farbe (Hex-Format erwartet, z.B. #3B82F6)' });
+		}
 
 		const projekt = leseProjekt();
 		const gewerk = projekt.gewerke.find((g) => g.id === id);

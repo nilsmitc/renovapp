@@ -10,7 +10,7 @@
 	let formError = $state('');
 
 	// Rechnungen nach Gewerk gruppieren
-	const rechnungenNachGewerk = $derived(() => {
+	const rechnungenNachGewerk = $derived.by(() => {
 		const map = new Map<string, typeof data.rechnungen>();
 		for (const g of data.gewerke) {
 			const r = data.rechnungen.filter((r) => r.gewerk === g.id);

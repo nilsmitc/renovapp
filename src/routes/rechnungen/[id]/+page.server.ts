@@ -239,7 +239,14 @@ export const actions: Actions = {
 		}
 
 		rechnung.auftragnehmer = auftragnehmer;
-		rechnung.auftragssumme = auftragssumme;
+		// Auftragssumme nur überschreiben wenn Feld ausgefüllt – leer lassen = bestehenden Wert behalten
+		if (auftragssummeRaw) {
+			if (auftragssumme !== undefined) {
+				rechnung.auftragssumme = auftragssumme;
+			} else {
+				return fail(400, { editError: 'Ungültige Auftragssumme' });
+			}
+		}
 		rechnung.auftragsdatum = auftragsdatum;
 		rechnung.notiz = notiz;
 		rechnung.geaendert = new Date().toISOString();

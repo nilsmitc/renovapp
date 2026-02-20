@@ -70,6 +70,8 @@ export const actions: Actions = {
 		buchungen[idx] = {
 			...buchungen[idx],
 			...data,
+			rechnungId: buchungen[idx].rechnungId,   // auto-Link erhalten – nicht über Formular editierbar
+			lieferungId: buchungen[idx].lieferungId, // auto-Link erhalten – nicht über Formular editierbar
 			belege: neueBelege,
 			geaendert: new Date().toISOString()
 		};
@@ -90,6 +92,7 @@ export const actions: Actions = {
 		buchungen[idx].belege = buchungen[idx].belege.filter((b) => b !== dateiname);
 		buchungen[idx].geaendert = new Date().toISOString();
 		schreibeBuchungen(buchungen);
+		return { success: true };
 	},
 
 	delete: async ({ params }) => {

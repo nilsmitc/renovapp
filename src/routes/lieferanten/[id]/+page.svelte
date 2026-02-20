@@ -29,6 +29,7 @@
 	let extraktionLaeuft = $state(false);
 	let extraktionStatus = $state<'ok' | 'scan' | 'fehler' | null>(null);
 	let zeigePdfPositionen = $state(false);
+	let laufenderPdfRequest = $state<AbortController | null>(null);
 
 	function resetLieferungForm() {
 		formDatum = new Date().toISOString().slice(0, 10);
@@ -47,6 +48,11 @@
 		const pdfDatei = Array.from(files).find((f) => f.type === 'application/pdf');
 		if (!pdfDatei) return;
 
+		// Vorherigen laufenden Request abbrechen (verhindert Race Condition bei schnellem Datei-Wechsel)
+		if (laufenderPdfRequest) laufenderPdfRequest.abort();
+		const controller = new AbortController();
+		laufenderPdfRequest = controller;
+
 		extraktionLaeuft = true;
 		extraktionStatus = null;
 		autoFilled = new Set();
@@ -55,7 +61,7 @@
 		fd.append('datei', pdfDatei);
 
 		try {
-			const res = await fetch('/api/pdf-analyse', { method: 'POST', body: fd });
+			const res = await fetch('/api/pdf-analyse', { method: 'POST', body: fd, signal: controller.signal });
 			if (res.ok) {
 				const d = await res.json();
 				const filled = new Set<string>();
@@ -71,11 +77,13 @@
 			} else {
 				extraktionStatus = 'fehler';
 			}
-		} catch {
+		} catch (err) {
+			if (err instanceof Error && err.name === 'AbortError') return; // Abgebrochen – kein Fehler anzeigen
 			extraktionStatus = 'fehler';
+		} finally {
+			if (laufenderPdfRequest === controller) laufenderPdfRequest = null;
+			extraktionLaeuft = false;
 		}
-
-		extraktionLaeuft = false;
 	}
 </script>
 

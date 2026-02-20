@@ -69,6 +69,7 @@ export const actions: Actions = {
 			if (!pfad.startsWith('belege/') && !pfad.startsWith('rechnungen/') && !pfad.startsWith('lieferungen/')) continue;
 			// Pfad-Traversal-Schutz: nur erlaubte Zeichen
 			if (/\.\./.test(pfad)) continue;
+			if (pfad.startsWith('/')) continue;
 			const ziel = join(DATA_DIR, pfad);
 			mkdirSync(dirname(ziel), { recursive: true });
 			writeFileSync(ziel, inhalt);

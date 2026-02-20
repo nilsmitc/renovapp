@@ -47,7 +47,7 @@ export const actions: Actions = {
 		rechnungen.push(rechnung);
 		schreibeRechnungen(rechnungen);
 
-		redirect(303, `/rechnungen/${rechnung.id}`);
+		throw redirect(303, `/rechnungen/${rechnung.id}`);
 	},
 
 	loeschen: async ({ request }) => {

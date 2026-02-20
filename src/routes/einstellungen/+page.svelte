@@ -6,6 +6,7 @@
 	let { form }: { form: ActionData } = $props();
 
 	const erfolg = $derived($page.url.searchParams.get('success') === '1');
+	let laeuft = $state(false);
 </script>
 
 <div class="space-y-6">
@@ -54,7 +55,14 @@
 			</div>
 		{/if}
 
-		<form method="POST" action="?/import" enctype="multipart/form-data" use:enhance
+		<form method="POST" action="?/import" enctype="multipart/form-data"
+			use:enhance={() => {
+				laeuft = true;
+				return async ({ update }) => {
+					await update();
+					laeuft = false;
+				};
+			}}
 			class="space-y-3"
 			onsubmit={(e) => {
 				if (!confirm('Wirklich importieren? Alle vorhandenen Daten werden überschrieben.')) {
@@ -69,9 +77,14 @@
 				class="input-base file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
 			/>
 			<div>
-				<button type="submit" class="btn-primary inline-flex items-center gap-1.5">
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
-					Importieren
+				<button type="submit" class="btn-primary inline-flex items-center gap-1.5" disabled={laeuft}>
+					{#if laeuft}
+						<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+						Importieren...
+					{:else}
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+						Importieren
+					{/if}
 				</button>
 			</div>
 		</form>

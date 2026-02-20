@@ -18,6 +18,7 @@ export function centsToInputValue(cents: number): string {
 }
 
 export function formatDatum(iso: string): string {
+	if (!iso) return '—';
 	const [year, month, day] = iso.slice(0, 10).split('-');
 	return `${day}.${month}.${year}`;
 }

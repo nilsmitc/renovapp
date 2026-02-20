@@ -10,7 +10,7 @@
 	}
 
 	function applyFilter(key: string, value: string) {
-		const params = new URLSearchParams(window.location.search);
+		const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
 		if (value) params.set(key, value);
 		else params.delete(key);
 		goto(`/belege?${params.toString()}`);
