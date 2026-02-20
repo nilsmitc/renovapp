@@ -68,14 +68,14 @@
 				<div class="text-xs text-gray-400 mt-1">{topRaum.raum.name} ({topRaum.raum.geschoss})</div>
 			</a>
 		{/if}
-		{#if data.offeneAbschlaegeAnzahl > 0}
-			<a href="/rechnungen" class="kpi-card border-l-4 {data.hatUeberfaellige ? 'border-l-red-500' : 'border-l-yellow-400'} hover:bg-gray-50 transition-colors">
-				<div class="flex items-center gap-1.5 text-xs font-medium {data.hatUeberfaellige ? 'text-red-600' : 'text-yellow-600'} uppercase tracking-wide">
+		{#if data.ausstehendBetrag > 0}
+			<a href="/rechnungen" class="kpi-card border-l-4 {data.hatUeberfaellige ? 'border-l-red-500' : 'border-l-orange-400'} hover:bg-gray-50 transition-colors">
+				<div class="flex items-center gap-1.5 text-xs font-medium {data.hatUeberfaellige ? 'text-red-600' : 'text-orange-600'} uppercase tracking-wide">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-					{data.hatUeberfaellige ? 'Überfällig' : 'Offen'}
+					{data.hatUeberfaellige ? 'Überfällig' : 'Ausstehend'}
 				</div>
-				<div class="text-xl font-bold font-mono mt-1 {data.hatUeberfaellige ? 'text-red-600' : 'text-yellow-700'}">{formatCents(data.offeneAbschlaegeBetrag)}</div>
-				<div class="text-xs text-gray-400 mt-1">{data.offeneAbschlaegeAnzahl} {data.offeneAbschlaegeAnzahl === 1 ? 'Abschlag' : 'Abschläge'}</div>
+				<div class="text-xl font-bold font-mono mt-1 {data.hatUeberfaellige ? 'text-red-600' : 'text-orange-700'}">{formatCents(data.ausstehendBetrag)}</div>
+				<div class="text-xs text-gray-400 mt-1">{data.ausstehendRechnungen} {data.ausstehendRechnungen === 1 ? 'Rechnung' : 'Rechnungen'}</div>
 			</a>
 		{/if}
 		{#if data.anzahlMonate > 0}
