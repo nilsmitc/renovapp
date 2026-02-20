@@ -1,4 +1,4 @@
-# Altbau Kostenverfolgung
+# RenovApp – Kostenverfolgung für Renovierungsprojekte
 
 ## Was ist das?
 
@@ -6,7 +6,7 @@ SvelteKit-Webapp zur Kostenverfolgung eines Altbau-Umbaus. **Zwei Interfaces** a
 1. **Webapp** (SvelteKit) — Dateneingabe im Browser unter `http://localhost:5173`
 2. **Claude Code** (CLI) — Analyse, Beratung, Bulk-Operationen via Read/Write auf JSON-Dateien
 
-Starten: `cd ~/Altbau && ./start.sh` oder Doppelklick "Altbau Kosten" im App-Menü.
+Starten: `cd ~/Altbau && ./start.sh` oder Doppelklick "RenovApp" im App-Menü.
 
 ---
 

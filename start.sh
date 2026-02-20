@@ -2,7 +2,7 @@
 cd "$(dirname "$0")"
 
 echo "=============================="
-echo "  Altbau Kosten - Starte..."
+echo "  RenovApp - Starte..."
 echo "=============================="
 echo ""
 

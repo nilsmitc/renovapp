@@ -1,12 +1,12 @@
 @echo off
 setlocal enabledelayedexpansion
 chcp 65001 >nul
-title Altbau Kosten
+title RenovApp
 
 cd /d "%~dp0"
 
 echo ==============================
-echo   Altbau Kosten - Starte...
+echo   RenovApp - Starte...
 echo ==============================
 echo.
 

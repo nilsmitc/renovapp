@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=Altbau Kosten
+Name=RenovApp
 Exec=/home/nils/Altbau/start.sh
 Icon=accessories-calculator
 Terminal=false

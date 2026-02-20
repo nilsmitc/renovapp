@@ -1,4 +1,4 @@
-# Altbau Kostenverfolgung
+# RenovApp – Kostenverfolgung für Renovierungsprojekte
 
 Web-App zur Kostenverfolgung von Renovierungsprojekten. Lokale SvelteKit-Anwendung mit dateibasierter JSON-Speicherung – kein Server, keine Datenbank nötig.
 
@@ -38,7 +38,7 @@ Web-App zur Kostenverfolgung von Renovierungsprojekten. Lokale SvelteKit-Anwendu
 **Schritt 1:** Repository herunterladen:
 
 ```bash
-git clone https://github.com/nilsmitc/altbau-kosten.git
+git clone https://github.com/nilsmitc/renovapp.git
 ```
 
 **Schritt 2:** Starten — je nach Betriebssystem:
