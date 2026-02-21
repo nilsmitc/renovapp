@@ -15,6 +15,7 @@ Web-App zur Kostenverfolgung von Renovierungsprojekten. Lokale SvelteKit-Anwendu
 - **Budget** – Gewerk-Budgets mit Ampel-Status und Inline-Bearbeitung; **Sammelgewerke** mit Tätigkeit-Aufschlüsselung
 - **Sammelgewerk** – Gewerke (z.B. Generalunternehmer) als "Sammelgewerk" markieren: kein Budget-Alarm, stattdessen Tätigkeit-Aufschlüsselung
 - **Gewerke & Räume** – Stammdaten verwalten (CRUD), Räume nach Geschoss gruppiert
+- **Bauleiter-Bericht** – Professioneller PDF-Bericht mit Deckblatt, Budget-Übersicht, Kategorien-Analyse, Kosten nach Raum, Auftragsstatus, Monatsverlauf, Prognose und Lieferanten; 7 eingebettete Charts; optionale **KI-Analyse durch Claude** (Zusammenfassung, Risikobewertung, Cashflow, Empfehlungen)
 - **Export / Import** – Vollständiges ZIP-Backup aller Daten inkl. Belege und Rechnungen; Restore per Import
 - **Icons & visuelles Design** – Heroicons (Inline-SVG) auf allen Seiten; sticky Navigation; konsistente Card- und Tabellen-Styles
 
@@ -24,6 +25,8 @@ Web-App zur Kostenverfolgung von Renovierungsprojekten. Lokale SvelteKit-Anwendu
 - [Tailwind CSS v4](https://tailwindcss.com/)
 - [Chart.js](https://www.chartjs.org/) – Doughnut- und Balkendiagramme
 - [fflate](https://github.com/101arrowz/fflate) – ZIP-Kompression für Export/Import
+- [pdfmake](https://pdfmake.github.io/docs/) – PDF-Erzeugung (Bauleiter-Bericht)
+- [chartjs-node-canvas](https://github.com/SeanSobey/ChartjsNodeCanvas) – Server-side Chart-Rendering für PDF
 - JSON-Dateien als Datenspeicher (kein externes DB)
 
 ## Voraussetzungen
@@ -196,6 +199,9 @@ src/
 │   ├── domain.ts       # Typen, Validierung, Aggregation
 │   ├── dataStore.ts    # JSON Datei-I/O
 │   ├── format.ts       # Währungs- und Datumsformatierung
+│   ├── pdfReport.ts    # PDF-Berichtserstellung (pdfmake)
+│   ├── pdfCharts.ts    # Server-side Chart-Rendering für PDF
+│   ├── aiAnalyse.ts    # Claude CLI Integration (KI-Analyse)
 │   └── components/
 │       ├── BuchungForm.svelte
 │       └── Charts.svelte
@@ -211,8 +217,9 @@ src/
     ├── budget/               # Budget-Übersicht + Sammelgewerk-Aufschlüsselung
     ├── gewerke/              # Gewerke-Verwaltung (inkl. Sammelgewerk-Flag)
     ├── raeume/               # Räume-Verwaltung
+    ├── bericht/              # Bauleiter-Bericht (PDF mit KI-Analyse)
     ├── einstellungen/        # Export / Import
-    └── api/                  # PDF-Analyse-Endpoint, ZIP-Download-Endpoint
+    └── api/                  # PDF-Bericht, PDF-Analyse, ZIP-Download
 ```
 
 ## NPM Scripts

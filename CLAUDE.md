@@ -303,6 +303,9 @@ Altbau/
 │   │   ├── dataStore.ts            # JSON Datei-I/O (server-only, synchron)
 │   │   ├── format.ts               # formatCents(), parseCentsFromInput(), formatDatum()
 │   │   ├── pdfExtract.ts           # PDF-Textextraktion via pdf-parse v2 (für Lieferungen)
+│   │   ├── pdfReport.ts            # PDF-Berichtserstellung (pdfmake, A4, 9 Abschnitte)
+│   │   ├── pdfCharts.ts            # Server-side Chart-Rendering (chartjs-node-canvas → base64 PNG)
+│   │   ├── aiAnalyse.ts            # Claude CLI Integration (claude -p Subprozess)
 │   │   └── components/
 │   │       ├── BuchungForm.svelte   # Wiederverwendbares Buchungs-Formular
 │   │       ├── Charts.svelte        # Doughnut + Bar Chart (Chart.js)
@@ -330,8 +333,12 @@ Altbau/
 │       ├── gewerke/+page.svelte     # Gewerke CRUD
 │       ├── raeume/+page.svelte      # Räume CRUD (nach Geschoss gruppiert)
 │       ├── budget/+page.svelte      # Budget-Tabelle mit Ampel + Inline-Edit + Notizen
+│       ├── bericht/
+│       │   ├── +page.svelte         # Bericht-Seite (PDF-Download mit KI-Option)
+│       │   └── +page.server.ts      # Claude-Verfügbarkeit prüfen, Summary-Daten laden
 │       ├── einstellungen/+page.svelte  # Export / Import (ZIP-Backup)
 │       └── api/
+│           ├── bericht/+server.ts   # GET-Endpoint: PDF-Bericht (optional ?ai=true)
 │           ├── export/+server.ts    # GET-Endpoint: ZIP-Download aller Daten
 │           └── pdf-analyse/+server.ts  # POST-Endpoint: PDF → Datum/Betrag/Rg-Nr./Positionen
 ├── start.sh                         # Dev-Server starten + Browser öffnen
@@ -348,6 +355,8 @@ Altbau/
 - **Mutations:** SvelteKit Form Actions (kein separater API-Layer)
 - **Styling:** Tailwind CSS v4
 - **Charts:** Chart.js (Doughnut für Kostenanteile, Bar für Budget vs. Ist, Bar für Monatsverlauf)
+- **PDF-Bericht:** pdfmake 0.3.x (deklaratives JSON → PDF) + chartjs-node-canvas (server-side Chart-Rendering)
+- **KI-Analyse:** Claude CLI (`claude -p`) als Subprozess — kein API-Key nötig, nutzt bestehende Auth
 - **Node:** v22 via nvm (`source ~/.nvm/nvm.sh`)
 
 ### URL-Filter
@@ -356,6 +365,44 @@ Alle Filter funktionieren über URL-Parameter – kombinierbar, browser-back-fä
 - `/buchungen?monat=2026-02` (vom Monatsverlauf-Link)
 - `/buchungen?raum=@EG` — nur Stockwerk-Buchungen EG
 - `/buchungen?geschoss=EG` — alle EG-Buchungen (Einzelräume + `@EG` kombiniert)
+
+---
+
+## Erweiterungen (21.02.2026) — Bauleiter-Bericht
+
+### PDF-Bericht mit KI-Analyse (`/bericht`)
+Professioneller PDF-Bericht für den Bauleiter mit allen Finanzdaten, Charts und optionaler KI-Einschätzung.
+
+**Technische Umsetzung:**
+- `pdfmake` 0.3.x: deklaratives JSON → PDF (A4 Portrait, Roboto-Schrift aus vfs_fonts als base64-Buffer)
+- `chartjs-node-canvas`: Chart.js server-side → base64 PNG (800×400px, `animation: false`)
+- `claude -p`: Claude CLI als Child-Process (`execFile`) für KI-Analyse (60s Timeout, Fallback auf `null`)
+- API: `GET /api/bericht` (ohne KI) / `GET /api/bericht?ai=true` (mit KI, ~15s länger)
+
+**PDF-Inhalt (7–9 Seiten):**
+1. **Deckblatt** — Kernzahlen (Budget, Ausgaben, Verbleibend, %), Fortschrittsbalken
+2. **KI-Einschätzung** (nur mit `?ai=true`) — Zusammenfassung, Risikobewertung, Cashflow, Empfehlungen
+3. **Budget-Übersicht** — Doughnut + Bar Chart, Gewerk-Tabelle mit Ampel-Farben
+4. **Kategorien-Analyse** — Doughnut (Material/Arbeitslohn/Sonstiges) + Stacked Bar nach Gewerk
+5. **Kosten nach Raum** — Tabelle gruppiert nach Geschoss
+6. **Auftragsstatus** — Tabelle mit offenen/überfälligen Rechnungen
+7. **Monatsverlauf** — Bar + Linienchart, Monatstabelle
+8. **Prognose** — Burn Rate, Erschöpfungsdatum, Prognose-Linienchart, Gewerk-Hochrechnung
+9. **Lieferanten-Übersicht** — Tabelle mit Anzahl Lieferungen und Gesamtbeträgen
+
+**Neue Dateien:**
+- `src/lib/pdfReport.ts` — PDF-Dokumentaufbau (pdfmake docDefinition, 9 Abschnitte)
+- `src/lib/pdfCharts.ts` — 7 Chart-Render-Funktionen (portiert aus Charts.svelte/VerlaufSection.svelte)
+- `src/lib/aiAnalyse.ts` — `analysiereBaudaten()`, `isClaudeVerfuegbar()`, `BauAnalyse`-Interface
+- `src/routes/api/bericht/+server.ts` — GET-Endpoint, baut Datentext für Claude, liefert PDF
+- `src/routes/bericht/+page.svelte` — UI mit Projektinfo, KI-Checkbox, Download-Button
+- `src/routes/bericht/+page.server.ts` — Prüft Claude CLI, lädt Summary-Daten
+
+**Hinweise zu pdfmake 0.3.x:**
+- Import: `import PdfPrinter from 'pdfmake/js/Printer'` (nicht aus Haupt-Entry)
+- Konstruktor: `new PdfPrinter.default(fonts)` (nicht `new PdfPrinter(fonts)`)
+- Fonts: `Buffer.from(vfsFonts['Roboto-Regular.ttf'], 'base64')` (nicht Dateipfade)
+- `createPdfKitDocument()` ist async (returns Promise) — `await` nötig
 
 ---
 
@@ -482,7 +529,7 @@ Neues optionales Feld `taetigkeit?: string` auf jeder Buchung. Im Buchungsformul
 
 ---
 
-## Features (Stand 20.02.2026, aktualisiert)
+## Features (Stand 21.02.2026, aktualisiert)
 
 ### Dashboard (`/`)
 - KPI-Karten (je nach Datenlage 4–8): Budget · Ausgaben · Verbleibend · Verbraucht% · Top-Raum (klickbar) · **Ausstehend** (gestellte unbezahlte Abschläge, orange/rot) · **Gebunden** (Vertragssummen noch nicht fakturiert, blau) · **Burn Rate** (Ø/Monat + Hochrechnung Restbudget)
@@ -553,6 +600,14 @@ Neues optionales Feld `taetigkeit?: string` auf jeder Buchung. Im Buchungsformul
 - Auto-Buchung: sobald `betrag` + `gewerk` vorhanden → Buchung in Ausgaben + Dashboard; bei Gutschriften negative Buchung
 - Badge "In Ausgaben" (grün) / "Kein Gewerk" (gelb) zeigt Buchungs-Status je Lieferung
 - Inline-Bearbeitung bestehender Lieferungen
+
+### Bauleiter-Bericht (`/bericht`)
+- Professioneller PDF-Bericht mit allen Finanzdaten und Charts
+- **KI-Analyse** (optional): Claude CLI analysiert Baudaten → Zusammenfassung, Risikobewertung, Cashflow-Einschätzung, Empfehlungen
+- PDF enthält: Deckblatt, Budget-Übersicht, Kategorien, Kosten nach Raum, Auftragsstatus, Monatsverlauf, Prognose, Lieferanten
+- 7 server-side gerenderte Charts (portiert aus Dashboard-Charts)
+- Checkbox "Mit KI-Analyse" (nur wenn `claude` CLI verfügbar, geprüft via `which claude`)
+- Download als `bauleiter-bericht-YYYY-MM-DD.pdf`
 
 ### Einstellungen (`/einstellungen`)
 - **Export**: ZIP-Download mit projekt.json + buchungen.json + rechnungen.json + lieferanten.json + alle Belege
