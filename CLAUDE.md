@@ -370,6 +370,31 @@ Alle Filter funktionieren über URL-Parameter – kombinierbar, browser-back-fä
 
 ---
 
+## Erweiterungen (23.02.2026) — Dashboard & Aufträge
+
+### Dashboard: Verplante Kosten in Gewerke-Übersicht
+- Gewerke-Übersicht zeigt jetzt neben `ist` und `budget` auch die **verplanten Kosten** aus Aufträgen
+- Verplant = ausstehende Abschläge (offen/überfällig) + gebundene Mittel (Vertragssumme nicht fakturiert) — pro Gewerk aufgeschlüsselt
+- Gestapelter Fortschrittsbalken: blau (bezahlt) + violett (`violet-500`, Dark-Reader-tauglich) für verplant
+- Legende im Header; `+ X,XX € verplant`-Anzeige in amber/violett (nur wenn > 0)
+- Berechnung: `verplantPerGewerk: Record<string, number>` in `+page.server.ts`
+
+### Aufträge: Zahlungsfrist-Tracking & Frühwarnung
+- Neue Felder auf `Abschlag`: `eingangsdatum?: string` + `zahlungsziel?: number`
+- Formular berechnet `faelligkeitsdatum` automatisch aus `eingangsdatum + zahlungsziel` (JS, überschreibbar)
+- Neuer computed Status `bald_faellig`: Fälligkeit innerhalb 7 Tage → amber-Badge + Countdown
+- Dashboard-KPI „Ausstehend" hat 3 Zustände: orange (offen) → amber (bald fällig) → rot (überfällig)
+- `abschlagEffektivStatus()` in `domain.ts` entsprechend erweitert
+
+### Aufträge: Inline-Bearbeitung von Abschlägen
+- Bleistift-Button in jeder Abschlag-Zeile (auch bei bezahlten Abschlägen)
+- Klappt inline als blaue Zeile auf (analog zu Bezahlen-Formular)
+- Editierbare Felder: Rechnungsnummer, Rechnungseingang, Zahlungsziel, Fälligkeit, Notiz
+- Nicht editierbar: Typ, Betrag, Status, Bezahlt-Datum (Zahlungshistorie bleibt unverändert)
+- Neue Server-Action: `abschlagBearbeiten` in `rechnungen/[id]/+page.server.ts`
+
+---
+
 ## Erweiterungen (21.02.2026) — Bauleiter-Bericht
 
 ### PDF-Bericht mit KI-Analyse (`/bericht`)
@@ -492,7 +517,9 @@ Neues Feature: Materialeinkäufe bei Händlern (Hornbach, Bauhaus etc.) erfassen
 Neues Feature: Auftragnehmer-Rechnungen mit mehreren Abschlagszahlungen. Datenmodell:
 - `Rechnung` → mehrere `Abschlag[]` → Bezahlen auto-erstellt `Buchung` mit `rechnungId`-Link
 - `Abschlag.typ`: `'abschlag' | 'schlussrechnung' | 'nachtragsrechnung'`
-- `Abschlag.status`: `'ausstehend' | 'offen' | 'bezahlt'`; `'ueberfaellig'` = computed (offen + Fälligkeit überschritten)
+- `Abschlag.status` (gespeichert): `'ausstehend' | 'offen' | 'bezahlt'`; computed via `abschlagEffektivStatus()`: `'bald_faellig'` (offen + ≤7 Tage) / `'ueberfaellig'` (offen + Fälligkeit überschritten)
+- `Abschlag.eingangsdatum?: string` — Rechnungseingang (YYYY-MM-DD)
+- `Abschlag.zahlungsziel?: number` — Zahlungsfrist in Tagen; zusammen mit `eingangsdatum` auto-berechnet `faelligkeitsdatum`
 - Beleg-Upload pro Abschlag; secure Dateiserver unter `/rechnungen/[id]/[abschlagId]/[datei]`
 - Neue Datei: `data/rechnungen.json`
 
@@ -588,10 +615,10 @@ Neues optionales Feld `taetigkeit?: string` auf jeder Buchung. Im Buchungsformul
 
 ---
 
-## Features (Stand 21.02.2026, aktualisiert)
+## Features (Stand 23.02.2026, aktualisiert)
 
 ### Dashboard (`/`)
-- KPI-Karten (je nach Datenlage 4–8): Budget · Ausgaben · Verbleibend · Verbraucht% · Top-Raum (klickbar) · **Ausstehend** (gestellte unbezahlte Abschläge, orange/rot) · **Gebunden** (Vertragssummen noch nicht fakturiert, blau) · **Burn Rate** (Ø/Monat + Hochrechnung Restbudget)
+- KPI-Karten (je nach Datenlage 4–8): Budget · Ausgaben · Verbleibend · Verbraucht% · Top-Raum (klickbar) · **Ausstehend/Bald fällig/Überfällig** (3 Zustände: gelb/amber/rot) · **Gebunden** (Vertragssummen noch nicht fakturiert, blau) · **Burn Rate** (Ø/Monat + Hochrechnung Restbudget)
 - Budget-Warnungen: gelbe/rote Badges für Gewerke ≥80% (nur sichtbar wenn relevant)
 - Charts (alle klickbar → navigieren zu gefilterten Buchungen):
   - Doughnut: Kostenanteile nach Gewerk
@@ -599,7 +626,7 @@ Neues optionales Feld `taetigkeit?: string` auf jeder Buchung. Im Buchungsformul
   - Doughnut: Kostenverteilung nach Kategorie (Material / Arbeitslohn / Sonstiges)
   - Gestapelter Balken: Kategorien nach Gewerk
 - Letzte Buchungen (10 Einträge)
-- Gewerke-Übersicht mit Fortschrittsbalken (klickbar → /buchungen?gewerk=X)
+- **Gewerke-Übersicht** mit gestapeltem Fortschrittsbalken (blau = bezahlt, violett = verplant aus Aufträgen) + Legende; `+ X verplant`-Anzeige pro Gewerk
 - **Monatsverlauf** direkt integriert (via `VerlaufSection.svelte`): Balken-Chart + Linien-Chart + Tabelle
 
 ### Ausgaben (`/buchungen`)
@@ -641,7 +668,10 @@ Neues optionales Feld `taetigkeit?: string` auf jeder Buchung. Im Buchungsformul
 - **Nachträge**: genehmigte Mehraufwände (Change Orders) separat von Zahlungsvorgängen
 - Bezahlen eines Abschlags → auto-erstellt Buchung mit Link (`rechnungId`)
 - Beleg-Upload pro Abschlag (PDF/JPG/PNG, max 10 MB)
-- Abschlag-Status: `ausstehend` / `offen` / `bezahlt` / `ueberfaellig` (berechnet)
+- Abschlag-Status: `ausstehend` / `offen` / `bezahlt`; computed: `bald_faellig` (≤7 Tage, amber) / `ueberfaellig` (rot)
+- **Zahlungsfrist-Tracking**: `eingangsdatum` + `zahlungsziel` (Tage) → `faelligkeitsdatum` wird automatisch berechnet, manuell überschreibbar
+- **Countdown** in der Abschlag-Tabelle: „in X Tagen" bei offenen/bald fälligen Abschlägen
+- **Inline-Bearbeitung** bestehender Abschläge (Rg.-Nr., Eingang, Zahlungsziel, Fälligkeit, Notiz) über Bleistift-Button
 - Fortschrittsbalken: Basis = Auftragssumme + Σ Nachträge
 - Nav-Label: **"Aufträge"** (URL bleibt `/rechnungen`)
 

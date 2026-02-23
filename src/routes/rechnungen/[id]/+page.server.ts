@@ -43,6 +43,9 @@ export const actions: Actions = {
 		const typ = (form.get('typ') as string) as AbschlagTyp;
 		const betragRaw = (form.get('betrag') as string)?.trim();
 		const rechnungsnummer = (form.get('rechnungsnummer') as string)?.trim() || undefined;
+		const eingangsdatum = (form.get('eingangsdatum') as string)?.trim() || undefined;
+		const zahlungszielRaw = (form.get('zahlungsziel') as string)?.trim();
+		const zahlungsziel = zahlungszielRaw ? parseInt(zahlungszielRaw, 10) : undefined;
 		const faelligkeitsdatum = (form.get('faelligkeitsdatum') as string)?.trim() || undefined;
 		const notiz = (form.get('notiz') as string)?.trim() || undefined;
 		const belegFile = form.get('beleg') as File | null;
@@ -63,6 +66,8 @@ export const actions: Actions = {
 		const nummer = rechnung.abschlaege.length + 1;
 		const abschlag = createAbschlag(typ, betrag, nummer);
 		if (rechnungsnummer) abschlag.rechnungsnummer = rechnungsnummer;
+		if (eingangsdatum) abschlag.eingangsdatum = eingangsdatum;
+		if (zahlungsziel && !isNaN(zahlungsziel) && zahlungsziel > 0) abschlag.zahlungsziel = zahlungsziel;
 		if (faelligkeitsdatum) abschlag.faelligkeitsdatum = faelligkeitsdatum;
 		if (notiz) abschlag.notiz = notiz;
 
@@ -143,6 +148,36 @@ export const actions: Actions = {
 		rechnung.geaendert = new Date().toISOString();
 		schreibeRechnungen(rechnungen);
 
+		return { success: true };
+	},
+
+	abschlagBearbeiten: async ({ params, request }) => {
+		const form = await request.formData();
+		const abschlagId = (form.get('abschlagId') as string)?.trim();
+		const rechnungsnummer = (form.get('rechnungsnummer') as string)?.trim() || undefined;
+		const eingangsdatum = (form.get('eingangsdatum') as string)?.trim() || undefined;
+		const zahlungszielRaw = (form.get('zahlungsziel') as string)?.trim();
+		const zahlungsziel = zahlungszielRaw ? parseInt(zahlungszielRaw, 10) : undefined;
+		const faelligkeitsdatum = (form.get('faelligkeitsdatum') as string)?.trim() || undefined;
+		const notiz = (form.get('notiz') as string)?.trim() || undefined;
+
+		if (!abschlagId) return fail(400, { abschlagEditError: 'Abschlag-ID fehlt' });
+
+		const rechnungen = leseRechnungen();
+		const rechnung = rechnungen.find((r) => r.id === params.id);
+		if (!rechnung) return fail(404, { abschlagEditError: 'Rechnung nicht gefunden' });
+
+		const abschlag = rechnung.abschlaege.find((a) => a.id === abschlagId);
+		if (!abschlag) return fail(404, { abschlagEditError: 'Abschlag nicht gefunden' });
+
+		abschlag.rechnungsnummer = rechnungsnummer;
+		abschlag.eingangsdatum = eingangsdatum;
+		abschlag.zahlungsziel = zahlungsziel && !isNaN(zahlungsziel) && zahlungsziel > 0 ? zahlungsziel : undefined;
+		abschlag.faelligkeitsdatum = faelligkeitsdatum;
+		abschlag.notiz = notiz;
+		abschlag.geaendert = new Date().toISOString();
+		rechnung.geaendert = new Date().toISOString();
+		schreibeRechnungen(rechnungen);
 		return { success: true };
 	},
 

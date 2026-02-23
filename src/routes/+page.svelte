@@ -77,12 +77,13 @@
 			</a>
 		{/if}
 		{#if data.ausstehendBetrag > 0}
-			<a href="/rechnungen" class="kpi-card border-l-4 {data.hatUeberfaellige ? 'border-l-red-500' : 'border-l-orange-400'} hover:bg-gray-50 transition-colors">
-				<div class="flex items-center gap-1.5 text-xs font-medium {data.hatUeberfaellige ? 'text-red-600' : 'text-orange-600'} uppercase tracking-wide">
+			{@const kpiColor = data.hatUeberfaellige ? 'red' : data.hatBaldFaellige ? 'amber' : 'orange'}
+			<a href="/rechnungen" class="kpi-card border-l-4 {kpiColor === 'red' ? 'border-l-red-500' : kpiColor === 'amber' ? 'border-l-amber-400' : 'border-l-orange-400'} hover:bg-gray-50 transition-colors">
+				<div class="flex items-center gap-1.5 text-xs font-medium {kpiColor === 'red' ? 'text-red-600' : kpiColor === 'amber' ? 'text-amber-600' : 'text-orange-600'} uppercase tracking-wide">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-					{data.hatUeberfaellige ? 'Überfällig' : 'Ausstehend'}
+					{kpiColor === 'red' ? 'Überfällig' : kpiColor === 'amber' ? 'Bald fällig' : 'Ausstehend'}
 				</div>
-				<div class="text-xl font-bold font-mono mt-1 {data.hatUeberfaellige ? 'text-red-600' : 'text-orange-700'}">{formatCents(data.ausstehendBetrag)}</div>
+				<div class="text-xl font-bold font-mono mt-1 {kpiColor === 'red' ? 'text-red-600' : kpiColor === 'amber' ? 'text-amber-600' : 'text-orange-700'}">{formatCents(data.ausstehendBetrag)}</div>
 				<div class="text-xs text-gray-400 mt-1">{data.ausstehendRechnungen} {data.ausstehendRechnungen === 1 ? 'Rechnung' : 'Rechnungen'}</div>
 			</a>
 		{/if}
@@ -183,26 +184,54 @@
 	</div>
 
 	<!-- Gewerk-Uebersicht -->
-	{#if data.gewerkSummaries.some((s) => s.ist > 0 || s.budget > 0)}
+	{#if data.gewerkSummaries.some((s) => s.ist > 0 || s.budget > 0 || (data.verplantPerGewerk[s.gewerk.id] ?? 0) > 0)}
 		<div class="card">
-			<h2 class="text-sm font-semibold text-gray-700 px-4 py-3 border-b bg-gray-50/80 rounded-t-lg">Gewerke-Übersicht</h2>
+			<div class="flex items-center justify-between px-4 py-3 border-b bg-gray-50/80 rounded-t-lg">
+				<h2 class="text-sm font-semibold text-gray-700">Gewerke-Übersicht</h2>
+				<div class="flex items-center gap-3 text-xs text-gray-500">
+					<span class="flex items-center gap-1">
+						<span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-500"></span>
+						Bezahlt
+					</span>
+					<span class="flex items-center gap-1">
+						<span class="inline-block w-2.5 h-2.5 rounded-sm bg-violet-500"></span>
+						Verplant
+					</span>
+				</div>
+			</div>
 			<div class="divide-y">
-				{#each data.gewerkSummaries.filter((s) => s.ist > 0 || s.budget > 0) as s (s.gewerk.id)}
-					{@const pct = s.budget > 0 ? Math.round((s.ist / s.budget) * 100) : 0}
+				{#each data.gewerkSummaries.filter((s) => s.ist > 0 || s.budget > 0 || (data.verplantPerGewerk[s.gewerk.id] ?? 0) > 0) as s (s.gewerk.id)}
+					{@const verplant = data.verplantPerGewerk[s.gewerk.id] ?? 0}
+					{@const pctIst = s.budget > 0 ? Math.min(Math.round((s.ist / s.budget) * 100), 100) : 0}
+					{@const pctVerplant = s.budget > 0 ? Math.min(Math.round((verplant / s.budget) * 100), 100 - pctIst) : 0}
+					{@const pctGesamt = s.budget > 0 ? Math.round(((s.ist + verplant) / s.budget) * 100) : 0}
 					<a href="/buchungen?gewerk={s.gewerk.id}" class="block px-4 py-3 hover:bg-gray-50/50 transition-colors">
 						<div class="flex items-center justify-between mb-1.5">
 							<div class="flex items-center gap-2 text-sm font-medium">
 								<div class="w-3 h-3 rounded-full" style="background-color: {s.gewerk.farbe}"></div>
 								{s.gewerk.name}
 							</div>
-							<div class="text-sm font-mono tabular-nums text-gray-600">{formatCents(s.ist)} <span class="text-gray-400">/</span> {formatCents(s.budget)}</div>
+							<div class="flex items-center gap-2 text-sm font-mono tabular-nums">
+								<span class="text-gray-600">{formatCents(s.ist)} <span class="text-gray-400">/</span> {formatCents(s.budget)}</span>
+								{#if verplant > 0}
+									<span class="text-violet-500 text-xs">+ {formatCents(verplant)} verplant</span>
+								{/if}
+							</div>
 						</div>
 						{#if s.budget > 0}
-							<div class="w-full bg-gray-200 rounded-full h-1.5">
-								<div
-									class="h-1.5 rounded-full transition-all duration-500 {pct > 100 ? 'bg-red-500' : pct >= 80 ? 'bg-yellow-500' : 'bg-blue-500'}"
-									style="width: {Math.min(pct, 100)}%"
-								></div>
+							<div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+								<div class="h-1.5 flex">
+									<div
+										class="h-1.5 transition-all duration-500 {pctGesamt > 100 ? 'bg-red-500' : pctGesamt >= 80 ? 'bg-yellow-500' : 'bg-blue-500'}"
+										style="width: {pctIst}%"
+									></div>
+									{#if pctVerplant > 0}
+										<div
+											class="h-1.5 transition-all duration-500 bg-violet-500"
+											style="width: {pctVerplant}%"
+										></div>
+									{/if}
+								</div>
 							</div>
 						{/if}
 					</a>

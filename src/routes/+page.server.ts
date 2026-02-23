@@ -15,16 +15,20 @@ export const load: PageServerLoad = () => {
 	let ausstehendBetrag = 0;
 	let ausstehendRechnungen = 0;
 	let hatUeberfaellige = false;
+	let hatBaldFaellige = false;
 	let gebundenBetrag = 0;
 	let gebundenRechnungen = 0;
+	const verplantPerGewerk: Record<string, number> = {};
 	for (const r of rechnungen) {
 		let rHatAusstehend = false;
 		for (const a of r.abschlaege) {
 			const s = abschlagEffektivStatus(a);
-			if (s === 'offen' || s === 'ueberfaellig') {
+			if (s === 'offen' || s === 'ueberfaellig' || s === 'bald_faellig') {
 				ausstehendBetrag += a.rechnungsbetrag;
+				verplantPerGewerk[r.gewerk] = (verplantPerGewerk[r.gewerk] ?? 0) + a.rechnungsbetrag;
 				rHatAusstehend = true;
 				if (s === 'ueberfaellig') hatUeberfaellige = true;
+				if (s === 'bald_faellig') hatBaldFaellige = true;
 			}
 		}
 		if (rHatAusstehend) ausstehendRechnungen++;
@@ -36,6 +40,7 @@ export const load: PageServerLoad = () => {
 			const nichtVerplant = gesamtAuftrag - alleAbschlaege;
 			if (nichtVerplant > 0) {
 				gebundenBetrag += nichtVerplant;
+				verplantPerGewerk[r.gewerk] = (verplantPerGewerk[r.gewerk] ?? 0) + nichtVerplant;
 				gebundenRechnungen++;
 			}
 		}
@@ -94,8 +99,10 @@ export const load: PageServerLoad = () => {
 		ausstehendBetrag,
 		ausstehendRechnungen,
 		hatUeberfaellige,
+		hatBaldFaellige,
 		gebundenBetrag,
 		gebundenRechnungen,
+		verplantPerGewerk,
 		lieferanten,
 		lieferungen,
 		monate

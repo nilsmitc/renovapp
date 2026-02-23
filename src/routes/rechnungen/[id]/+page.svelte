@@ -10,6 +10,41 @@
 	let zeigeAbschlagFormular = $state(false);
 	let abschlagError = $state('');
 	let bezahlenAbschlagId = $state<string | null>(null);
+	let abschlagEingangsdatum = $state('');
+	let abschlagZahlungsziel = $state('');
+	let abschlagFaelligkeitsdatum = $state('');
+
+	function berechneFaelligkeitsdatum() {
+		const tage = parseInt(abschlagZahlungsziel, 10);
+		if (abschlagEingangsdatum && tage > 0) {
+			const d = new Date(abschlagEingangsdatum);
+			d.setDate(d.getDate() + tage);
+			abschlagFaelligkeitsdatum = d.toISOString().slice(0, 10);
+		}
+	}
+
+	let edierenderAbschlagId = $state<string | null>(null);
+	let editAbschlagError = $state('');
+	let editEingangsdatum = $state('');
+	let editZahlungsziel = $state('');
+	let editFaelligkeitsdatum = $state('');
+
+	function oeffneAbschlagBearbeiten(a: Abschlag) {
+		edierenderAbschlagId = a.id;
+		editAbschlagError = '';
+		editEingangsdatum = a.eingangsdatum ?? '';
+		editZahlungsziel = a.zahlungsziel ? String(a.zahlungsziel) : '';
+		editFaelligkeitsdatum = a.faelligkeitsdatum ?? '';
+	}
+
+	function berechneEditFaelligkeitsdatum() {
+		const tage = parseInt(editZahlungsziel, 10);
+		if (editEingangsdatum && tage > 0) {
+			const d = new Date(editEingangsdatum);
+			d.setDate(d.getDate() + tage);
+			editFaelligkeitsdatum = d.toISOString().slice(0, 10);
+		}
+	}
 	let bezahlenError = $state('');
 	let bearbeiten = $state(false);
 	let editError = $state('');
@@ -28,7 +63,7 @@
 		rechnung.abschlaege
 			.filter((a) => {
 				const s = abschlagEffektivStatus(a);
-				return s === 'offen' || s === 'ueberfaellig';
+				return s === 'offen' || s === 'ueberfaellig' || s === 'bald_faellig';
 			})
 			.reduce((s, a) => s + a.rechnungsbetrag, 0)
 	);
@@ -58,6 +93,7 @@
 		const s = abschlagEffektivStatus(a);
 		if (s === 'bezahlt') return { label: 'Bezahlt', cls: 'bg-green-100 text-green-700' };
 		if (s === 'ueberfaellig') return { label: 'Überfällig', cls: 'bg-red-100 text-red-700' };
+		if (s === 'bald_faellig') return { label: 'Bald fällig', cls: 'bg-amber-100 text-amber-700' };
 		if (s === 'offen') return { label: 'Offen', cls: 'bg-yellow-100 text-yellow-700' };
 		return { label: 'Ausstehend', cls: 'bg-gray-100 text-gray-600' };
 	}
@@ -343,6 +379,9 @@
 								abschlagError = (result.data?.abschlagError as string) ?? 'Fehler';
 							} else {
 								formElement.reset();
+								abschlagEingangsdatum = '';
+								abschlagZahlungsziel = '';
+								abschlagFaelligkeitsdatum = '';
 								zeigeAbschlagFormular = false;
 							}
 							await update();
@@ -367,8 +406,21 @@
 						<input type="text" name="rechnungsnummer" placeholder="Optional" class="input-base" />
 					</div>
 					<div>
-						<label class="mb-1 block text-sm font-medium text-gray-700">Fällig am</label>
-						<input type="date" name="faelligkeitsdatum" class="input-base" />
+						<label class="mb-1 block text-sm font-medium text-gray-700">Rechnungseingang</label>
+						<input type="date" name="eingangsdatum" bind:value={abschlagEingangsdatum} oninput={berechneFaelligkeitsdatum} class="input-base" />
+					</div>
+					<div>
+						<label class="mb-1 block text-sm font-medium text-gray-700">Zahlungsziel (Tage)</label>
+						<input type="number" name="zahlungsziel" min="1" max="365" placeholder="z.B. 14" bind:value={abschlagZahlungsziel} oninput={berechneFaelligkeitsdatum} class="input-base" />
+					</div>
+					<div>
+						<label class="mb-1 block text-sm font-medium text-gray-700">
+							Fällig am
+							{#if abschlagEingangsdatum && abschlagZahlungsziel}
+								<span class="ml-1 text-xs font-normal text-blue-500">(automatisch berechnet)</span>
+							{/if}
+						</label>
+						<input type="date" name="faelligkeitsdatum" bind:value={abschlagFaelligkeitsdatum} class="input-base" />
 					</div>
 					<div>
 						<label class="mb-1 block text-sm font-medium text-gray-700">Notiz</label>
@@ -412,8 +464,14 @@
 								<td class="px-3 py-3 text-sm font-medium text-gray-800">{typLabel(abschlag.typ)}</td>
 								<td class="px-3 py-3 text-right text-sm font-semibold tabular-nums text-gray-900">{formatCents(abschlag.rechnungsbetrag)}</td>
 								<td class="px-3 py-3 text-sm text-gray-500">{abschlag.rechnungsnummer ?? '—'}</td>
-								<td class="px-3 py-3 text-sm {effStatus === 'ueberfaellig' ? 'font-medium text-red-600' : 'text-gray-500'}">
+								<td class="px-3 py-3 text-sm {effStatus === 'ueberfaellig' ? 'font-medium text-red-600' : effStatus === 'bald_faellig' ? 'font-medium text-amber-600' : 'text-gray-500'}">
 									{abschlag.faelligkeitsdatum ? formatDatum(abschlag.faelligkeitsdatum) : '—'}
+									{#if abschlag.faelligkeitsdatum && (effStatus === 'offen' || effStatus === 'bald_faellig')}
+										{@const tage = Math.ceil((new Date(abschlag.faelligkeitsdatum).getTime() - Date.now()) / 86400000)}
+										<span class="block text-xs {effStatus === 'bald_faellig' ? 'text-amber-500 font-medium' : 'text-gray-400'}">
+											in {tage} {tage === 1 ? 'Tag' : 'Tagen'}
+										</span>
+									{/if}
 								</td>
 								<td class="px-3 py-3">
 									<span class="rounded-full px-2 py-0.5 text-xs font-medium {badge.cls}">{badge.label}</span>
@@ -439,6 +497,15 @@
 												</svg>
 											</a>
 										{/if}
+										<button
+											onclick={() => oeffneAbschlagBearbeiten(abschlag)}
+											class="rounded p-1 text-gray-400 hover:bg-blue-50 hover:text-blue-600"
+											title="Bearbeiten"
+										>
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+												<path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+											</svg>
+										</button>
 										{#if effStatus !== 'bezahlt'}
 											<button
 												onclick={() => {
@@ -511,6 +578,64 @@
 												<button type="button" onclick={() => (bezahlenAbschlagId = null)} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
 													Abbrechen
 												</button>
+											</div>
+										</form>
+									</td>
+								</tr>
+							{/if}
+
+							<!-- Bearbeiten-Inline-Formular -->
+							{#if edierenderAbschlagId === abschlag.id}
+								<tr class="bg-blue-50">
+									<td colspan="8" class="px-3 py-3">
+										{#if editAbschlagError}
+											<div class="mb-2 rounded bg-red-50 p-2 text-sm text-red-700">{editAbschlagError}</div>
+										{/if}
+										<form
+											method="POST"
+											action="?/abschlagBearbeiten"
+											use:enhance={() => {
+												editAbschlagError = '';
+												return async ({ result, update }) => {
+													if (result.type === 'failure') {
+														editAbschlagError = (result.data?.abschlagEditError as string) ?? 'Fehler';
+													} else {
+														edierenderAbschlagId = null;
+													}
+													await update();
+												};
+											}}
+											class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6"
+										>
+											<input type="hidden" name="abschlagId" value={abschlag.id} />
+											<div>
+												<label class="mb-1 block text-xs font-medium text-gray-700">Rechnungsnummer</label>
+												<input type="text" name="rechnungsnummer" value={abschlag.rechnungsnummer ?? ''} placeholder="Optional" class="input-base" />
+											</div>
+											<div>
+												<label class="mb-1 block text-xs font-medium text-gray-700">Rechnungseingang</label>
+												<input type="date" name="eingangsdatum" bind:value={editEingangsdatum} oninput={berechneEditFaelligkeitsdatum} class="input-base" />
+											</div>
+											<div>
+												<label class="mb-1 block text-xs font-medium text-gray-700">Zahlungsziel (Tage)</label>
+												<input type="number" name="zahlungsziel" min="1" max="365" bind:value={editZahlungsziel} oninput={berechneEditFaelligkeitsdatum} class="input-base" />
+											</div>
+											<div>
+												<label class="mb-1 block text-xs font-medium text-gray-700">
+													Fällig am
+													{#if editEingangsdatum && editZahlungsziel}
+														<span class="ml-1 text-xs font-normal text-blue-500">(auto)</span>
+													{/if}
+												</label>
+												<input type="date" name="faelligkeitsdatum" bind:value={editFaelligkeitsdatum} class="input-base" />
+											</div>
+											<div>
+												<label class="mb-1 block text-xs font-medium text-gray-700">Notiz</label>
+												<input type="text" name="notiz" value={abschlag.notiz ?? ''} placeholder="Optional" class="input-base" />
+											</div>
+											<div class="flex items-end gap-2">
+												<button type="submit" class="btn-primary">Speichern</button>
+												<button type="button" onclick={() => (edierenderAbschlagId = null)} class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">Abbrechen</button>
 											</div>
 										</form>
 									</td>

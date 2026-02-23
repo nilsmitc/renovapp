@@ -98,7 +98,7 @@ export interface Nachtrag {
 }
 
 export type AbschlagTyp = 'abschlag' | 'schlussrechnung' | 'nachtragsrechnung';
-export type AbschlagStatus = 'ausstehend' | 'offen' | 'bezahlt' | 'ueberfaellig';
+export type AbschlagStatus = 'ausstehend' | 'offen' | 'bezahlt' | 'ueberfaellig' | 'bald_faellig';
 
 export interface Abschlag {
 	id: string;
@@ -106,6 +106,8 @@ export interface Abschlag {
 	nummer: number;             // auto-increment pro Rechnung (1, 2, 3 …)
 	rechnungsnummer?: string;   // Rechnungsnummer vom Auftragnehmer
 	rechnungsbetrag: number;    // Cents
+	eingangsdatum?: string;     // YYYY-MM-DD – wann die Rechnung eingegangen ist
+	zahlungsziel?: number;      // Tage bis Fälligkeit (z.B. 14, 30)
 	faelligkeitsdatum?: string; // YYYY-MM-DD
 	bezahltam?: string;         // YYYY-MM-DD
 	status: AbschlagStatus;     // 'ausstehend' = noch nicht gestellt
@@ -248,11 +250,15 @@ export function createLieferung(
 	};
 }
 
-/** Berechnet den effektiven Status eines Abschlags (ueberfaellig wenn offen + Fälligkeit überschritten) */
+/** Berechnet den effektiven Status eines Abschlags (ueberfaellig / bald_faellig wenn offen + Fälligkeit naht) */
 export function abschlagEffektivStatus(abschlag: Abschlag): AbschlagStatus {
 	if (abschlag.status === 'offen' && abschlag.faelligkeitsdatum) {
 		const heute = new Date().toISOString().slice(0, 10);
 		if (abschlag.faelligkeitsdatum <= heute) return 'ueberfaellig';
+		const inSiebenTagen = new Date();
+		inSiebenTagen.setDate(inSiebenTagen.getDate() + 7);
+		const schwelle = inSiebenTagen.toISOString().slice(0, 10);
+		if (abschlag.faelligkeitsdatum <= schwelle) return 'bald_faellig';
 	}
 	return abschlag.status;
 }
