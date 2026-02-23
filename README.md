@@ -4,9 +4,9 @@ Web-App zur Kostenverfolgung von Renovierungsprojekten. Lokale SvelteKit-Anwendu
 
 ## Features
 
-- **Dashboard** – KPI-Karten (Budget, Ausgaben, Verbleibend, Burn Rate, **Ausstehend** = gestellte unbezahlte Abschläge, **Gebunden** = nicht fakturierte Vertragssummen), 4 klickbare Charts, Budget-Warnungen, vollständige Gewerke-Übersicht; **Monatsverlauf** (Balken-Chart, Linien-Chart, Tabelle) direkt integriert
+- **Dashboard** – KPI-Karten (Budget, Ausgaben, Verbleibend, Burn Rate, **Ausstehend** mit 3 Zuständen: gelb/amber/rot je nach Fälligkeit, **Gebunden** = nicht fakturierte Vertragssummen), 4 klickbare Charts, Budget-Warnungen; **Gewerke-Übersicht** mit gestapeltem Fortschrittsbalken (blau = bezahlt, violett = verplant aus Aufträgen); **Monatsverlauf** (Balken-Chart, Linien-Chart, Tabelle) direkt integriert
 - **Ausgaben** – Kostenbuchungen erfassen, bearbeiten, löschen; Volltext-Suche + kombinierbare Filter inkl. Herkunft (direkt / aus Rechnung / aus Lieferung); **Rückbuchungen**; optionales **Tätigkeit**-Feld
-- **Aufträge** – Auftragnehmer-Rechnungen mit mehreren Abschlagszahlungen (Abschlag / Schlussrechnung / Nachtrag); Beleg-Upload je Abschlag; Bezahlen erstellt automatisch eine Buchung
+- **Aufträge** – Auftragnehmer-Rechnungen mit mehreren Abschlagszahlungen (Abschlag / Schlussrechnung / Nachtrag); Beleg-Upload je Abschlag; Bezahlen erstellt automatisch eine Buchung; **Zahlungsfrist-Tracking** (Rechnungseingang + Zahlungsziel in Tagen → Fälligkeitsdatum wird automatisch berechnet); **Frühwarnung** "Bald fällig" (amber, ≤7 Tage) mit Countdown; **Inline-Bearbeitung** bestehender Abschläge
 - **Nachträge** – Genehmigte Mehraufwände (Change Orders) auf Aufträgen erfassen; Gesamtauftrag = Auftragssumme + Σ Nachträge; Fortschrittsbalken berücksichtigt Nachträge
 - **Lieferanten** – Materialeinkäufe bei Händlern (Hornbach, Bauhaus etc.) erfassen; Lieferungen mit Belegen und Positionen; **Gutschriften** (negativer Betrag, rot markiert); **automatische PDF-Extraktion** (Datum, Betrag, Rg.-Nr., Positionen); Lieferungen fließen automatisch als Buchung in Ausgaben/Dashboard ein
 - **Flexible Ortzuordnung** – Buchungen auf einzelne Räume oder ganze Stockwerke buchen
@@ -125,7 +125,10 @@ Rückbuchungen werden als **negativer Betrag** gespeichert (`-5000` = −50,00 �
 | `typ` | `string` | `"abschlag"` \| `"schlussrechnung"` \| `"nachtragsrechnung"` |
 | `rechnungsbetrag` | `number` | Cents |
 | `status` | `string` | `"ausstehend"` \| `"offen"` \| `"bezahlt"` |
-| `faelligkeitsdatum` | `string?` | `YYYY-MM-DD`, löst `ueberfaellig` aus wenn überschritten |
+| `eingangsdatum` | `string?` | `YYYY-MM-DD`, Datum des Rechnungseingangs |
+| `zahlungsziel` | `number?` | Zahlungsfrist in Tagen (z.B. `14`, `30`); zusammen mit `eingangsdatum` wird `faelligkeitsdatum` automatisch berechnet |
+| `faelligkeitsdatum` | `string?` | `YYYY-MM-DD`; computed Status: `ueberfaellig` wenn überschritten, `bald_faellig` wenn ≤7 Tage |
+| `rechnungsnummer` | `string?` | Externe Rechnungsnummer des Auftragnehmers |
 | `buchungId` | `string?` | Link zur auto-erstellten Buchung |
 | `beleg` | `string?` | Dateiname in `data/rechnungen/{rechnungId}/{abschlagId}/` |
 
