@@ -31,6 +31,8 @@ export interface Buchung {
 	taetigkeit?: string;
 	rechnungId?: string;   // gesetzt wenn auto-erstellt aus bezahltem Abschlag
 	lieferungId?: string;  // optionaler Link zu einer Lieferung
+	steuerrelevant?: boolean;       // §35a EStG Handwerkerleistung bestätigt
+	arbeitsanteilCents?: number;    // falls nur Teiltbetrag §35a-fähig (Mischrechnung)
 	belege: string[];
 	erstellt: string;
 	geaendert: string;
