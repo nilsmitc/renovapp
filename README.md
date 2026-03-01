@@ -16,6 +16,7 @@ Web-App zur Kostenverfolgung von Renovierungsprojekten. Lokale SvelteKit-Anwendu
 - **Sammelgewerk** – Gewerke (z.B. Generalunternehmer) als "Sammelgewerk" markieren: kein Budget-Alarm, stattdessen Tätigkeit-Aufschlüsselung
 - **Gewerke & Räume** – Stammdaten verwalten (CRUD), Räume nach Geschoss gruppiert
 - **Bauleiter-Bericht** – Professioneller PDF-Bericht mit Deckblatt, Budget-Übersicht, Kategorien-Analyse, Kosten nach Raum, Auftragsstatus, Monatsverlauf, Prognose und Lieferanten; 7 eingebettete Charts; optionale **KI-Analyse durch Claude** (Zusammenfassung, Risikobewertung, Cashflow, Empfehlungen)
+- **Steuer §35a** – Steuerauswertung für den Steuerberater: Arbeitslohn-Buchungen als §35a-fähige Handwerkerleistungen markieren, optional mit Arbeitsanteil bei Mischrechnungen; KPI-Karten (Arbeitslöhne, Steuerersparnis max. 1.200 €/Jahr, Limit-Auslastung); CSV-Export je Steuerjahr; Pflichtangaben-Checkliste direkt in der App
 - **Export / Import** – Vollständiges ZIP-Backup aller Daten inkl. Belege und Rechnungen; Restore per Import
 - **Icons & visuelles Design** – Heroicons (Inline-SVG) auf allen Seiten; sticky Navigation; konsistente Card- und Tabellen-Styles
 
@@ -102,6 +103,8 @@ Rückbuchungen werden als **negativer Betrag** gespeichert (`-5000` = −50,00 �
 | `taetigkeit` | `string?` | Optional, z.B. `"Fliesen Bad"` – für Sammelgewerke |
 | `rechnungId` | `string?` | Gesetzt wenn auto-erstellt aus bezahltem Abschlag |
 | `lieferungId` | `string?` | Gesetzt wenn auto-erstellt aus einer Lieferung |
+| `steuerrelevant` | `boolean?` | Manuell als §35a-fähige Handwerkerleistung bestätigt |
+| `arbeitsanteilCents` | `number?` | Cents – nur wenn Teilbetrag §35a-fähig (Mischrechnung) |
 | `belege` | `string[]` | Dateinamen hochgeladener Dokumente |
 
 ### Felder Rechnung / Abschlag / Nachtrag
@@ -220,9 +223,10 @@ src/
     ├── budget/               # Budget-Übersicht + Sammelgewerk-Aufschlüsselung
     ├── gewerke/              # Gewerke-Verwaltung (inkl. Sammelgewerk-Flag)
     ├── raeume/               # Räume-Verwaltung
+    ├── steuer/               # §35a EStG Steuerauswertung + CSV-Export
     ├── bericht/              # Bauleiter-Bericht (PDF mit KI-Analyse)
     ├── einstellungen/        # Export / Import
-    └── api/                  # PDF-Bericht, PDF-Analyse, ZIP-Download
+    └── api/                  # PDF-Bericht, PDF-Analyse, ZIP-Download, Steuer-CSV
 ```
 
 ## NPM Scripts

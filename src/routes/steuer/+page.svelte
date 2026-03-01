@@ -251,8 +251,44 @@
 	{/if}
 
 	<!-- Rechtlicher Hinweis -->
-	<div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-500 space-y-1">
-		<div class="font-medium text-gray-600">Hinweis §35a EStG Handwerkerleistungen</div>
-		<p>20 % Steuerermäßigung auf nachgewiesene Arbeitskosten (nicht Materialkosten), max. 1.200 €/Jahr. Zahlung muss per Überweisung erfolgt sein (keine Barzahlung anerkannt). Rechnungen müssen alle Pflichtangaben enthalten. Diese Auswertung dient als Arbeitshilfe – Angaben ohne Gewähr, bitte mit Ihrem Steuerberater abstimmen.</p>
+	<div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-500 space-y-3">
+		<div class="font-medium text-gray-700">Hinweis §35a EStG – Handwerkerleistungen</div>
+		<p>20 % Steuerermäßigung auf Arbeitskosten (nicht Materialkosten), max. <strong class="text-gray-600">1.200 €/Jahr</strong> (= max. 6.000 € anrechenbare Arbeitslöhne). Zahlung muss <strong class="text-gray-600">unbar</strong> erfolgt sein – Barzahlung wird vom Finanzamt nicht anerkannt.</p>
+
+		<div>
+			<div class="font-medium text-gray-600 mb-1.5">Pflichtangaben auf der Rechnung</div>
+			<ul class="space-y-1 text-gray-500">
+				<li class="flex gap-2">
+					<svg class="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+					<span><strong class="text-gray-600">Name und Anschrift</strong> des Leistungserbringers (Handwerker/Firma) und des Auftraggebers (Eigentümer)</span>
+				</li>
+				<li class="flex gap-2">
+					<svg class="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+					<span><strong class="text-gray-600">Art und Umfang der Leistung</strong> – konkrete Tätigkeitsbeschreibung (z. B. „Verlegen von Fliesen, 25 m², Bad EG")</span>
+				</li>
+				<li class="flex gap-2">
+					<svg class="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+					<span><strong class="text-gray-600">Zeitraum der Leistungserbringung</strong> (Ausführungszeitraum, nicht nur das Rechnungsdatum)</span>
+				</li>
+				<li class="flex gap-2">
+					<svg class="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+					<span><strong class="text-gray-600">Arbeitskosten und Materialkosten getrennt ausgewiesen</strong> – nur der Arbeitslohnanteil ist §35a-fähig; bei Mischrechnung muss der Anteil erkennbar sein</span>
+				</li>
+				<li class="flex gap-2">
+					<svg class="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+					<span><strong class="text-gray-600">Rechnungsnummer</strong> und Rechnungsdatum</span>
+				</li>
+				<li class="flex gap-2">
+					<svg class="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+					<span><strong class="text-gray-600">Bankverbindung (IBAN)</strong> des Leistungserbringers – erforderlich für den Überweisungsnachweis</span>
+				</li>
+				<li class="flex gap-2">
+					<svg class="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+					<span><strong class="text-gray-600">Zahlungsnachweis</strong> (Kontoauszug oder Überweisungsbeleg) – das Finanzamt kann diesen zusätzlich verlangen</span>
+				</li>
+			</ul>
+		</div>
+
+		<p class="text-xs text-gray-400 border-t border-gray-200 pt-2">Diese Auswertung dient als Arbeitshilfe – Angaben ohne Gewähr. Bitte alle Belege im Original aufbewahren und Angaben mit Ihrem Steuerberater abstimmen.</p>
 	</div>
 </div>
