@@ -85,5 +85,13 @@ export const load: PageServerLoad = ({ url }) => {
 	// Datum absteigend; leere Daten ans Ende
 	eintraege.sort((a, b) => (b.datum || '0').localeCompare(a.datum || '0'));
 
-	return { eintraege, gewerke: projekt.gewerke, filter: { gewerk } };
+	const stats = {
+		gesamt: eintraege.reduce((s, e) => s + e.belege.length, 0),
+		buchungen: eintraege.filter((e) => e.typ === 'buchung').length,
+		abschlaege: eintraege.filter((e) => e.typ === 'abschlag').length,
+		lieferungen: eintraege.filter((e) => e.typ === 'lieferung').length,
+		gesamtBetrag: eintraege.reduce((s, e) => s + e.betrag, 0)
+	};
+
+	return { eintraege, gewerke: projekt.gewerke, filter: { gewerk }, stats };
 };
