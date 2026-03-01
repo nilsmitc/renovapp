@@ -8,15 +8,14 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const gesamt = $derived(data.monate.reduce((s, m) => s + m.ausgaben, 0));
-	const gesamtAnzahl = $derived(data.monate.reduce((s, m) => s + m.anzahl, 0));
+	const gesamt = $derived(data.tabelle.reduce((s, m) => s + m.ausgaben, 0));
+	const gesamtAnzahl = $derived(data.tabelle.reduce((s, m) => s + m.anzahl, 0));
 
 	let chartCanvas: HTMLCanvasElement;
 	let kumulativCanvas: HTMLCanvasElement;
 
 	onMount(() => {
-		// Aelteste zuerst fuer das Chart (chronologisch)
-		const chronologisch = [...data.monate].reverse();
+		const chronologisch = data.chronologisch;
 
 		const chart = new Chart(chartCanvas, {
 			type: 'bar',
@@ -95,7 +94,7 @@
 		Monatsverlauf
 	</h1>
 
-	{#if data.monate.length === 0}
+	{#if data.tabelle.length === 0}
 		<div class="card px-4 py-12 text-center text-gray-400 text-sm">
 			<svg class="w-8 h-8 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
 			Noch keine Buchungen vorhanden.
@@ -125,7 +124,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.monate as m (m.monat)}
+					{#each data.tabelle as m (m.monat)}
 						<tr class="border-b last:border-b-0 hover:bg-gray-50/50 transition-colors">
 							<td class="px-4 py-3 text-sm">
 								<a href="/buchungen?monat={m.monat}" class="font-medium text-blue-600 hover:underline">

@@ -135,7 +135,7 @@
 					Ø Burn Rate
 				</div>
 				<div class="text-xl font-bold font-mono mt-1">{formatCents(data.burnRateMonatlich)}<span class="text-sm font-normal text-gray-400"> / Monat</span></div>
-				<div class="text-xs text-gray-400 mt-1">Durchschnitt über {data.anzahlMonate} {data.anzahlMonate === 1 ? 'Monat' : 'Monate'}</div>
+				<div class="text-xs text-gray-400 mt-1">Ø letzte {data.burnRateBasis} {data.burnRateBasis === 1 ? 'Monat' : 'Monate'}{#if data.teilmonatAusgaben > 0} · lfd. Monat: {formatCents(data.teilmonatAusgaben)}{/if}</div>
 			</div>
 
 			<div class="kpi-card border-l-4 border-l-orange-400">

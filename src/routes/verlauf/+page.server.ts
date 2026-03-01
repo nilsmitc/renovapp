@@ -42,10 +42,11 @@ export const load: PageServerLoad = () => {
 		return { monat, label, ausgaben: data.ausgaben, anzahl: data.anzahl, kumuliert, material: data.material, arbeitslohn: data.arbeitslohn, sonstiges: data.sonstiges };
 	});
 
-	// Neueste zuerst für die Anzeige
-	monate.reverse();
-
 	const maxAusgaben = Math.max(...monate.map((m) => m.ausgaben), 1);
 
-	return { monate, maxAusgaben };
+	// Chronologisch (aufsteigend) für Charts; neueste zuerst für Tabelle
+	const chronologisch = monate;
+	const tabelle = [...monate].reverse();
+
+	return { chronologisch, tabelle, maxAusgaben };
 };

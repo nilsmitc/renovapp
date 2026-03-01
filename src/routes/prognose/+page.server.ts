@@ -38,6 +38,8 @@ export const load: PageServerLoad = () => {
 		return {
 			keineDaten: true,
 			burnRateMonatlich: 0,
+			burnRateBasis: 0,
+			teilmonatAusgaben: 0,
 			gesamtIst: 0,
 			gesamtBudget,
 			restBudget: gesamtBudget,
@@ -76,11 +78,29 @@ export const load: PageServerLoad = () => {
 	});
 
 	const gesamtIst = kumuliert;
-	const anzahlMonate = monate.length;
 	const anzahlBuchungen = buchungen.length;
 
-	// Burn Rate
-	const burnRateMonatlich = Math.round(gesamtIst / anzahlMonate);
+	// Burn Rate: nur vollständige Monate verwenden (laufender Monat hat zu wenig Daten)
+	const heuteMonat = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+	const kompleteMonate = monate.filter((m) => m.monat < heuteMonat);
+	// Rolling Average der letzten 3 vollständigen Monate (aktuellerer Trend)
+	const relevanteMonateBurnRate = kompleteMonate.slice(-3);
+	const burnRateBasis = relevanteMonateBurnRate.length;
+	const burnRateMonatlich =
+		burnRateBasis > 0
+			? Math.round(
+					relevanteMonateBurnRate.reduce((s, m) => s + m.ausgaben, 0) / burnRateBasis
+				)
+			: 0;
+	// Ausgaben des laufenden Monats separat (für Info-Anzeige)
+	const teilmonatAusgaben = monate.find((m) => m.monat === heuteMonat)?.ausgaben ?? 0;
+
+	// Konfidenz basiert auf vollständigen Monaten
+	const anzahlMonate = kompleteMonate.length;
+	let konfidenz: 'niedrig' | 'mittel' | 'hoch';
+	if (anzahlMonate < 2) konfidenz = 'niedrig';
+	else if (anzahlMonate < 4) konfidenz = 'mittel';
+	else konfidenz = 'hoch';
 
 	// Restbudget & Erschöpfungsdatum
 	const restBudget = gesamtBudget - gesamtIst;
@@ -95,12 +115,6 @@ export const load: PageServerLoad = () => {
 		const datum = new Date(ly, lm - 1 + restMonate, 1);
 		erschoepfungsDatum = datum.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
 	}
-
-	// Konfidenz-Indikator
-	let konfidenz: 'niedrig' | 'mittel' | 'hoch';
-	if (anzahlMonate < 2) konfidenz = 'niedrig';
-	else if (anzahlMonate < 4) konfidenz = 'mittel';
-	else konfidenz = 'hoch';
 
 	// Chart-Datenpunkte aufbauen
 	const letzterHistorisch = monate[monate.length - 1];
@@ -180,6 +194,8 @@ export const load: PageServerLoad = () => {
 	return {
 		keineDaten: false,
 		burnRateMonatlich,
+		burnRateBasis,
+		teilmonatAusgaben,
 		gesamtIst,
 		gesamtBudget,
 		restBudget,

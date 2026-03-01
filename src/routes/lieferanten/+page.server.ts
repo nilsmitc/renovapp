@@ -1,5 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
-import { leseLieferanten, schreibeLieferanten } from '$lib/dataStore';
+import { leseLieferanten, leseProjekt, schreibeLieferanten } from '$lib/dataStore';
 import { createLieferant } from '$lib/domain';
 import { fail, redirect } from '@sveltejs/kit';
 
@@ -20,7 +20,26 @@ export const load: PageServerLoad = () => {
 	// Absteigend nach Gesamtbetrag sortieren
 	stats.sort((a, b) => b.gesamtBetrag - a.gesamtBetrag);
 
-	return { stats };
+	const { gewerke } = leseProjekt();
+
+	const gesamtAlle = stats.reduce((sum, s) => sum + s.gesamtBetrag, 0);
+
+	const gewerkePerLieferant: Record<string, Array<{ id: string; name: string; farbe: string }>> =
+		{};
+	for (const { lieferant } of stats) {
+		const lieferungenVonLieferant = lieferungen.filter((lu) => lu.lieferantId === lieferant.id);
+		const gewerkeIds = [
+			...new Set(
+				lieferungenVonLieferant.filter((lu) => lu.gewerk).map((lu) => lu.gewerk!)
+			)
+		];
+		gewerkePerLieferant[lieferant.id] = gewerkeIds
+			.map((gid) => gewerke.find((g) => g.id === gid))
+			.filter((g): g is NonNullable<typeof g> => g !== undefined)
+			.map((g) => ({ id: g.id, name: g.name, farbe: g.farbe }));
+	}
+
+	return { stats, gesamtAlle, gewerkePerLieferant };
 };
 
 export const actions: Actions = {
