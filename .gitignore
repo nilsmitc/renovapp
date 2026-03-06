@@ -4,3 +4,6 @@ data/
 build/
 .env
 .env.*
+.serena/cache/
+.serena/project.local.yml
+.serena/logs/

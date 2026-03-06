@@ -38,11 +38,11 @@ export async function extrahierePdfDaten(buffer: Buffer): Promise<PdfExtractResu
 // ─── Datum ───────────────────────────────────────────────────────────────────
 
 function extrahiereDatum(text: string): string | undefined {
-	// Suche zuerst nach Datum mit Keyword
+	// Zuerst: Datum mit eindeutigem Keyword (über Zeilenumbrüche hinweg)
 	const mitKeyword = [
-		/(?:Rechnungsdatum|Leistungsdatum|Belegdatum|Datum|Bestelldatum)\s*[:\-]?\s*(\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4})/i,
-		/vom\s+(\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4})/i,
-		/Datum\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})/i
+		/(?:Rechnungsdatum|Leistungsdatum|Belegdatum|Bestelldatum)\s*[:\-]?\s*(\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4})/is,
+		/Datum\s*[:\-]\s*(\d{1,2}\.\d{1,2}\.\d{4})/is,
+		/vom\s+(\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4})/is
 	];
 
 	for (const re of mitKeyword) {
@@ -58,7 +58,6 @@ function extrahiereDatum(text: string): string | undefined {
 }
 
 function normalisieresDatum(raw: string): string {
-	// Normalisiert DD.MM.YYYY → YYYY-MM-DD
 	const parts = raw.split(/[.\/-]/);
 	if (parts.length !== 3) return '';
 	const [a, b, c] = parts;
@@ -103,10 +102,21 @@ function extrahiereLieferscheinnummer(text: string): string | undefined {
 // ─── Gesamtbetrag ─────────────────────────────────────────────────────────────
 
 function extrahiereGesamtbetrag(text: string): number | undefined {
-	// Betrag-Patterns (in Cents umrechnen)
+	// Stufe 1: Keyword-Patterns mit optionalem Whitespace/Zeilenumbruch zwischen Keyword und Betrag
+	// Die \s* erlaubt Zeilenumbrüche (flag 's' nicht nötig bei \s)
 	const keywordPatterns = [
-		/(?:Gesamtbetrag|Rechnungsbetrag|Rechnungssumme|Bruttobetrag|Gesamt\s+inkl\.?\s*(?:MwSt|USt)|Zu\s+zahlen|Zahlbetrag|Total|Summe\s+brutto)\s*[:\-]?\s*(?:EUR|€)?\s*([\d.,]+)\s*(?:EUR|€)?/i,
-		/(?:EUR|€)\s*([\d.,]+)\s*(?:inkl\.?\s*MwSt|brutto)/i
+		// Brutto-Gesamtbetrag (höchste Priorität)
+		/(?:Gesamtbetrag|Rechnungsbetrag|Rechnungssumme|Bruttobetrag|Endbetrag|Gesamtsumme)\s*[:\-]?\s*(?:EUR|€)?\s*([\d.,]+)\s*(?:EUR|€)?/i,
+		// "Gesamt inkl. MwSt/USt"
+		/Gesamt\s+inkl\.?\s*(?:MwSt\.?|USt\.?)\s*[:\-]?\s*(?:EUR|€)?\s*([\d.,]+)\s*(?:EUR|€)?/i,
+		// "Zu zahlen" / "Zahlbetrag" / "Offener Betrag"
+		/(?:Zu\s+zahlen|Zahlbetrag|Zu\s+zahlender\s+Betrag|Offener\s+Betrag)\s*[:\-]?\s*(?:EUR|€)?\s*([\d.,]+)\s*(?:EUR|€)?/i,
+		// "Total" / "Summe brutto"
+		/(?:Total\s+(?:brutto|inkl\.?)|Summe\s+brutto)\s*[:\-]?\s*(?:EUR|€)?\s*([\d.,]+)\s*(?:EUR|€)?/i,
+		// Betrag steht auf nächster Zeile nach Keyword
+		/(?:Gesamtbetrag|Rechnungsbetrag|Zu\s+zahlen|Zahlbetrag)\s*[:\-]?\s*\n\s*(?:EUR|€)?\s*([\d.,]+)/i,
+		// "EUR 1.234,56" nach Brutto-Keyword
+		/(?:EUR|€)\s*([\d.,]+)\s*(?:inkl\.?\s*(?:MwSt\.?|USt\.?)|brutto)/i,
 	];
 
 	for (const re of keywordPatterns) {
@@ -117,45 +127,69 @@ function extrahiereGesamtbetrag(text: string): number | undefined {
 		}
 	}
 
-	// Fallback: höchsten Eurobetrag im Text nehmen
-	const allBetraege = [...text.matchAll(/(?:€|EUR)\s*([\d]{1,6}[.,][\d]{2})/gi)];
-	if (allBetraege.length > 0) {
-		const betraege = allBetraege.map((m) => parseBetragZuCents(m[1])).filter((b) => b > 0);
-		if (betraege.length > 0) return Math.max(...betraege);
-	}
-
-	// Fallback: Betrag der letzten Zeile mit €-Zeichen
+	// Stufe 2: Letzten Betrag in einer Zeile mit €/EUR nehmen
+	// (Gesamtbeträge stehen typischerweise am Ende der Rechnung)
 	const lines = text.split('\n');
 	for (let i = lines.length - 1; i >= 0; i--) {
-		if (lines[i].includes('€') || /EUR/i.test(lines[i])) {
-			const m = lines[i].match(/([\d]{1,6}[.,][\d]{2})/);
-			if (m) {
-				const cents = parseBetragZuCents(m[1]);
-				if (cents > 0) return cents;
-			}
+		const line = lines[i];
+		if (!line.includes('€') && !/EUR/i.test(line)) continue;
+
+		// Zeilen mit Netto/MwSt/Steuer überspringen (das sind Teilbeträge)
+		if (/(?:netto|mwst|ust|steuer|%|zwischensumme)/i.test(line)) continue;
+
+		const m = line.match(/([\d]{1,3}(?:[.,]\d{3})*[.,]\d{2})/);
+		if (m) {
+			const cents = parseBetragZuCents(m[1]);
+			if (cents > 0) return cents;
 		}
+	}
+
+	// Stufe 3: Alle €-Beträge sammeln, den vorletzten nehmen
+	// (letzter ist oft MwSt, vorletzter oft der Brutto-Gesamtbetrag)
+	const alleBetraege = [...text.matchAll(/(?:€|EUR)\s*([\d]{1,6}[.,][\d]{2})/gi)]
+		.map((m) => parseBetragZuCents(m[1]))
+		.filter((b) => b > 100); // < 1 € ignorieren
+
+	if (alleBetraege.length >= 2) {
+		// Vorletzten nehmen (oft: ..., Brutto, MwSt-Zeile am Ende)
+		return alleBetraege[alleBetraege.length - 2];
+	}
+	if (alleBetraege.length === 1) {
+		return alleBetraege[0];
 	}
 
 	return undefined;
 }
 
 function parseBetragZuCents(raw: string): number {
-	// Deutsches Format: 1.234,56 oder 1234,56 oder 1234.56
 	const cleaned = raw.trim().replace(/\s/g, '');
+
 	let normalized: string;
 
-	if (/^\d{1,3}(\.\d{3})*(,\d{2})$/.test(cleaned)) {
-		// Deutsches Format: 1.234,56
+	if (/^\d{1,3}(\.\d{3})+(,\d{2})$/.test(cleaned)) {
+		// Deutsches Format: 1.234,56 oder 1.234.567,89
 		normalized = cleaned.replaceAll('.', '').replace(',', '.');
 	} else if (/^\d+(,\d{2})$/.test(cleaned)) {
 		// 1234,56
 		normalized = cleaned.replace(',', '.');
+	} else if (/^\d{1,3}(,\d{3})+(\.\d{2})$/.test(cleaned)) {
+		// Englisches Format: 1,234.56
+		normalized = cleaned.replaceAll(',', '');
 	} else if (/^\d+(\.\d{2})$/.test(cleaned)) {
 		// 1234.56
 		normalized = cleaned;
 	} else {
 		// Generisch: letztes Komma/Punkt als Dezimaltrennzeichen
-		normalized = cleaned.replaceAll('.', '').replace(',', '.');
+		const letzterTrenner = Math.max(cleaned.lastIndexOf('.'), cleaned.lastIndexOf(','));
+		if (letzterTrenner !== -1 && cleaned.length - letzterTrenner === 3) {
+			// Dezimalstelle am Ende: alles davor ist Ganzzahl
+			normalized =
+				cleaned.slice(0, letzterTrenner).replaceAll(/[.,]/g, '') +
+				'.' +
+				cleaned.slice(letzterTrenner + 1);
+		} else {
+			normalized = cleaned.replaceAll(',', '.');
+		}
 	}
 
 	const num = parseFloat(normalized);
@@ -169,12 +203,9 @@ function extrahierePositionen(text: string): LieferungPosition[] {
 	const positionen: LieferungPosition[] = [];
 	const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
 
-	// Einfache Heuristik: Zeilen die mit einem Betrag enden und einen Beschreibungstext links haben
-	// Muster: "Beschreibung [optional: Menge] Betrag"
 	const positionRe = /^(.{5,60?}?)\s+((?:\d+\s*[xX×]\s*)?[\d.,]+\s*(?:Stk|Stück|m|m²|m2|lfm|kg|l|Pck|Pkg|Rolle|St\.?)?)?\s+([\d]{1,6}[.,]\d{2})\s*(?:€|EUR)?$/;
 
 	for (const line of lines) {
-		// Überspringe Zeilen die wie Überschriften, Summen-Zeilen oder sehr kurze Zeilen aussehen
 		if (line.length < 10) continue;
 		if (/(?:gesamt|summe|mwst|steuer|netto|brutto|zwischensumme|total|zahlung|ust)/i.test(line)) continue;
 		if (/^\s*%/.test(line)) continue;
@@ -191,6 +222,5 @@ function extrahierePositionen(text: string): LieferungPosition[] {
 		}
 	}
 
-	// Maximal 30 Positionen zurückgeben
 	return positionen.slice(0, 30);
 }
