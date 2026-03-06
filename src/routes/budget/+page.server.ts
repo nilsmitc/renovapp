@@ -1,12 +1,13 @@
 import type { Actions, PageServerLoad } from './$types';
-import { leseProjekt, schreibeProjekt, leseBuchungen } from '$lib/dataStore';
-import { berechneGewerkSummaries } from '$lib/domain';
+import { leseProjekt, schreibeProjekt, leseBuchungen, leseRechnungen } from '$lib/dataStore';
+import { berechneGewerkSummaries, abschlagEffektivStatus } from '$lib/domain';
 import { parseCentsFromInput } from '$lib/format';
 import { fail } from '@sveltejs/kit';
 
 export const load: PageServerLoad = () => {
 	const projekt = leseProjekt();
 	const buchungen = leseBuchungen();
+	const rechnungen = leseRechnungen();
 	const summaries = berechneGewerkSummaries(buchungen, projekt.gewerke, projekt.budgets);
 
 	const gesamtBudget = projekt.budgets.reduce((s, b) => s + b.geplant, 0);
@@ -28,7 +29,61 @@ export const load: PageServerLoad = () => {
 			.map(([taetigkeit, betrag]) => ({ taetigkeit, betrag }));
 	}
 
-	return { summaries, gesamtBudget, gesamtIst, notizen, taetigkeitSummaries };
+	// Verplante Kosten pro Gewerk aus Rechnungen
+	type RechnungKurz = {
+		id: string;
+		auftragnehmer: string;
+		bezahlt: number;
+		offen: number;
+		hatUeberfaellige: boolean;
+		auftragssumme?: number;
+	};
+
+	const verplantPerGewerk: Record<string, { offen: number; restauftrag: number; anzahl: number }> = {};
+	const rechnungenPerGewerk: Record<string, RechnungKurz[]> = {};
+
+	for (const rechnung of rechnungen) {
+		const g = rechnung.gewerk;
+		verplantPerGewerk[g] ??= { offen: 0, restauftrag: 0, anzahl: 0 };
+		verplantPerGewerk[g].anzahl++;
+		rechnungenPerGewerk[g] ??= [];
+
+		// Offene Abschläge
+		for (const a of rechnung.abschlaege) {
+			const s = abschlagEffektivStatus(a);
+			if (s === 'offen' || s === 'ueberfaellig' || s === 'bald_faellig') {
+				verplantPerGewerk[g].offen += a.rechnungsbetrag;
+			}
+		}
+
+		// Restauftrag: Auftragssumme + Nachträge - alle gestellten Abschläge
+		const gesamtAuftrag = (rechnung.auftragssumme ?? 0)
+			+ rechnung.nachtraege.reduce((s, n) => s + n.betrag, 0);
+		const gestellte = rechnung.abschlaege.reduce((s, a) => s + a.rechnungsbetrag, 0);
+		verplantPerGewerk[g].restauftrag += Math.max(0, gesamtAuftrag - gestellte);
+
+		// Compact Rechnung für Budget-Tabelle
+		const bezahlt = rechnung.abschlaege
+			.filter((a) => a.status === 'bezahlt')
+			.reduce((s, a) => s + a.rechnungsbetrag, 0);
+		const offeneAbschlaege = rechnung.abschlaege.filter((a) => {
+			const s = abschlagEffektivStatus(a);
+			return s === 'offen' || s === 'ueberfaellig' || s === 'bald_faellig';
+		});
+		const offen = offeneAbschlaege.reduce((s, a) => s + a.rechnungsbetrag, 0);
+		const hatUeberfaellige = rechnung.abschlaege.some((a) => abschlagEffektivStatus(a) === 'ueberfaellig');
+
+		rechnungenPerGewerk[g].push({
+			id: rechnung.id,
+			auftragnehmer: rechnung.auftragnehmer,
+			bezahlt,
+			offen,
+			hatUeberfaellige,
+			auftragssumme: rechnung.auftragssumme
+		});
+	}
+
+	return { summaries, gesamtBudget, gesamtIst, notizen, taetigkeitSummaries, verplantPerGewerk, rechnungenPerGewerk };
 };
 
 export const actions: Actions = {

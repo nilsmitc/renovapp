@@ -56,6 +56,20 @@
 </script>
 
 <div class="space-y-6">
+	{#if data.gewerkFilter}
+		{@const gewerk = data.gewerke.find(g => g.id === data.gewerkFilter)}
+		<div class="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+			<svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+			<div class="flex-1">
+				<p class="text-sm font-medium text-blue-900">
+					Gewerk: <span class="font-semibold">{gewerk?.name}</span>
+				</p>
+			</div>
+			<a href="/rechnungen" class="text-sm text-blue-600 hover:underline font-medium">× Filter entfernen</a>
+			<a href="/budget" class="text-sm text-blue-600 hover:underline font-medium">← Budget</a>
+		</div>
+	{/if}
+
 	<div class="flex items-center justify-between">
 		<div class="flex items-center gap-3">
 			<svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">

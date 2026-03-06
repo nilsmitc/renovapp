@@ -4,10 +4,16 @@ import { createRechnung } from '$lib/domain';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Kategorie } from '$lib/domain';
 
-export const load: PageServerLoad = () => {
+export const load: PageServerLoad = ({ url }) => {
 	const rechnungen = leseRechnungen();
 	const projekt = leseProjekt();
-	return { rechnungen, gewerke: projekt.gewerke };
+
+	const gewerkFilter = url.searchParams.get('gewerk');
+	const gefiltert = gewerkFilter
+		? rechnungen.filter(r => r.gewerk === gewerkFilter)
+		: rechnungen;
+
+	return { rechnungen: gefiltert, gewerke: projekt.gewerke, gewerkFilter };
 };
 
 export const actions: Actions = {
