@@ -16,6 +16,7 @@
 			kategorie?: string;
 			beschreibung?: string;
 			rechnungsreferenz?: string;
+			bezahltam?: string;
 			taetigkeit?: string;
 			lieferungId?: string;
 		};
@@ -48,6 +49,8 @@
 	const selectedGewerk = $derived(gewerke.find((g) => g.id === selectedGewerkId));
 
 	const today = new Date().toISOString().slice(0, 10);
+
+	let showBezahltam = $state(!!values.bezahltam);
 
 	function isPdf(name: string): boolean {
 		return name.toLowerCase().endsWith('.pdf');
@@ -150,6 +153,31 @@
 			placeholder="z.B. Fliesen Bad, Dämmung Dach, Verputz…"
 			maxlength="80"
 			class="input-base" />
+	</div>
+
+	<!-- Bezahlt am -->
+	<div class="border-t border-gray-100 pt-4">
+		<div class="flex items-center gap-2">
+			<input type="checkbox" id="bezahltam-toggle" class="rounded"
+				bind:checked={showBezahltam} />
+			<label for="bezahltam-toggle" class="text-sm font-medium text-gray-700">Als bezahlt markieren</label>
+			{#if showBezahltam && values.bezahltam}
+				<span class="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+					<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.5 12.75l6 6 9-13.5" /></svg>
+					bezahlt
+				</span>
+			{/if}
+		</div>
+		{#if showBezahltam}
+			<div class="mt-2">
+				<label for="bezahltam" class="block text-sm font-medium text-gray-600 mb-1">Bezahlt am</label>
+				<input type="date" name="bezahltam" id="bezahltam"
+					value={values.bezahltam ?? today}
+					class="input-base" />
+			</div>
+		{:else}
+			<input type="hidden" name="bezahltam" value="" />
+		{/if}
 	</div>
 
 	<!-- Lieferant & Lieferung -->

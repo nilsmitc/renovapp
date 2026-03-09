@@ -1,5 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
-import { leseProjekt, leseBuchungen, schreibeBuchungen, speicherBeleg, loescheBeleg, loescheBelegeOrdner, leseLieferanten } from '$lib/dataStore';
+import { leseProjekt, leseBuchungen, schreibeBuchungen, speicherBeleg, loescheBeleg, loescheBelegeOrdner, leseLieferanten, schreibeLieferanten, speicherBelegLieferung, loescheBelegLieferung } from '$lib/dataStore';
 import { validateBuchung, KATEGORIEN, type Kategorie } from '$lib/domain';
 import { parseCentsFromInput } from '$lib/format';
 import { error, fail, redirect } from '@sveltejs/kit';
@@ -32,6 +32,7 @@ export const actions: Actions = {
 		const betrag = isRueckbuchung ? -Math.abs(betragRaw) : Math.abs(betragRaw);
 		const taetigkeit = (form.get('taetigkeit') as string)?.trim() || undefined;
 		const lieferungId = (form.get('lieferungId') as string)?.trim() || undefined;
+		const bezahltam = (form.get('bezahltam') as string)?.trim() || undefined;
 		const data = {
 			datum: form.get('datum') as string,
 			betrag,
@@ -40,6 +41,7 @@ export const actions: Actions = {
 			kategorie: form.get('kategorie') as Kategorie,
 			beschreibung: (form.get('beschreibung') as string)?.trim(),
 			rechnungsreferenz: (form.get('rechnungsreferenz') as string)?.trim() || '',
+			bezahltam,
 			taetigkeit,
 			lieferungId
 		};
@@ -54,17 +56,18 @@ export const actions: Actions = {
 		const idx = buchungen.findIndex((b) => b.id === params.id);
 		if (idx === -1) return fail(404, { error: 'Buchung nicht gefunden' });
 
-		// Neue Belege verarbeiten
+		// Neue Belege verarbeiten (Buffer einmalig lesen)
 		const neueBelege = [...buchungen[idx].belege];
 		const dateien = form.getAll('belege') as File[];
+		const belegBuffers: { name: string; buffer: Buffer }[] = [];
 		for (const datei of dateien) {
 			if (datei.size > 0 && datei.name) {
-				const buffer = Buffer.from(await datei.arrayBuffer());
-				const name = speicherBeleg(params.id, datei.name, buffer);
-				if (!neueBelege.includes(name)) {
-					neueBelege.push(name);
-				}
+				belegBuffers.push({ name: datei.name, buffer: Buffer.from(await datei.arrayBuffer()) });
 			}
+		}
+		for (const { name, buffer } of belegBuffers) {
+			const safe = speicherBeleg(params.id, name, buffer);
+			if (!neueBelege.includes(safe)) neueBelege.push(safe);
 		}
 
 		buchungen[idx] = {
@@ -76,6 +79,31 @@ export const actions: Actions = {
 			geaendert: new Date().toISOString()
 		};
 		schreibeBuchungen(buchungen);
+
+		// Rück-Sync: Wenn diese Buchung aus einer Lieferung stammt, Lieferung aktualisieren
+		const lieferungIdLink = buchungen[idx].lieferungId;
+		if (lieferungIdLink) {
+			const { lieferanten, lieferungen } = leseLieferanten();
+			const lieferungIdx = lieferungen.findIndex((l) => l.id === lieferungIdLink);
+			if (lieferungIdx !== -1) {
+				lieferungen[lieferungIdx].betrag = data.betrag;
+				lieferungen[lieferungIdx].datum = data.datum;
+				if (data.gewerk) lieferungen[lieferungIdx].gewerk = data.gewerk;
+				if (data.rechnungsreferenz) lieferungen[lieferungIdx].rechnungsnummer = data.rechnungsreferenz;
+				lieferungen[lieferungIdx].geaendert = new Date().toISOString();
+
+				// Neue Belege auch in die Lieferung kopieren
+				for (const { name, buffer } of belegBuffers) {
+					const safe = speicherBelegLieferung(lieferungIdLink, name, buffer);
+					if (!lieferungen[lieferungIdx].belege) lieferungen[lieferungIdx].belege = [];
+					if (!lieferungen[lieferungIdx].belege.includes(safe)) {
+						lieferungen[lieferungIdx].belege.push(safe);
+					}
+				}
+
+				schreibeLieferanten({ lieferanten, lieferungen });
+			}
+		}
 
 		throw redirect(303, '/buchungen');
 	},
@@ -92,6 +120,20 @@ export const actions: Actions = {
 		buchungen[idx].belege = buchungen[idx].belege.filter((b) => b !== dateiname);
 		buchungen[idx].geaendert = new Date().toISOString();
 		schreibeBuchungen(buchungen);
+
+		// Rück-Sync: Beleg auch aus verknüpfter Lieferung entfernen
+		const lieferungIdLink = buchungen[idx].lieferungId;
+		if (lieferungIdLink) {
+			const { lieferanten, lieferungen } = leseLieferanten();
+			const lieferungIdx = lieferungen.findIndex((l) => l.id === lieferungIdLink);
+			if (lieferungIdx !== -1 && lieferungen[lieferungIdx].belege?.includes(dateiname)) {
+				loescheBelegLieferung(lieferungIdLink, dateiname);
+				lieferungen[lieferungIdx].belege = lieferungen[lieferungIdx].belege.filter((b) => b !== dateiname);
+				lieferungen[lieferungIdx].geaendert = new Date().toISOString();
+				schreibeLieferanten({ lieferanten, lieferungen });
+			}
+		}
+
 		return { success: true };
 	},
 

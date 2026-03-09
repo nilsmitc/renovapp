@@ -40,6 +40,7 @@ function syncLieferungBuchung(
 				buchungen[idx].gewerk = lieferung.gewerk!;
 				buchungen[idx].beschreibung = beschreibung;
 				buchungen[idx].rechnungsreferenz = lieferung.rechnungsnummer ?? '';
+				buchungen[idx].bezahltam = lieferung.bezahltam;
 				buchungen[idx].geaendert = new Date().toISOString();
 			} else {
 				// Betrag oder Gewerk entfernt → Buchung löschen
@@ -62,6 +63,7 @@ function syncLieferungBuchung(
 			kategorie: 'Material',
 			beschreibung,
 			rechnungsreferenz: lieferung.rechnungsnummer ?? '',
+			bezahltam: lieferung.bezahltam,
 			lieferungId: lieferung.id
 		});
 		buchungen.push(buchung);
@@ -112,6 +114,7 @@ export const actions: Actions = {
 		const betragRaw = (form.get('betrag') as string)?.trim();
 		const gewerk = (form.get('gewerk') as string)?.trim() || undefined;
 		const notiz = (form.get('notiz') as string)?.trim() || undefined;
+		const bezahltam = (form.get('bezahltam') as string)?.trim() || undefined;
 		const positionenRaw = (form.get('positionen') as string)?.trim();
 
 		if (!datum) return fail(400, { lieferungError: 'Datum ist erforderlich' });
@@ -145,7 +148,8 @@ export const actions: Actions = {
 			betrag,
 			gewerk,
 			positionen,
-			notiz
+			notiz,
+			bezahltam
 		});
 
 		// Belege verarbeiten
@@ -276,8 +280,12 @@ export const actions: Actions = {
 		const lieferant = lieferanten.find((l) => l.id === params.id);
 		if (!lieferant) return fail(404, { editError: 'Lieferant nicht gefunden' });
 
+		const isBankeinzug = form.get('zahlungsart') === 'bankeinzug';
+		const bankeinzugTageRaw = parseInt(form.get('bankeinzugTage') as string);
 		lieferant.name = name;
 		lieferant.notiz = notiz;
+		lieferant.zahlungsart = isBankeinzug ? 'bankeinzug' : undefined;
+		lieferant.bankeinzugTage = isBankeinzug && !isNaN(bankeinzugTageRaw) ? bankeinzugTageRaw : undefined;
 		lieferant.geaendert = new Date().toISOString();
 		schreibeLieferanten({ lieferanten, lieferungen });
 		return { editErfolg: true };
@@ -304,6 +312,7 @@ export const actions: Actions = {
 		lieferung.lieferscheinnummer = (form.get('lieferscheinnummer') as string)?.trim() || undefined;
 		lieferung.gewerk = (form.get('gewerk') as string)?.trim() || undefined;
 		lieferung.notiz = (form.get('notiz') as string)?.trim() || undefined;
+		lieferung.bezahltam = (form.get('bezahltam') as string)?.trim() || undefined;
 		const betragRaw = (form.get('betrag') as string)?.trim();
 		const isGutschriftEdit = form.get('gutschrift') === 'on';
 		if (betragRaw) {

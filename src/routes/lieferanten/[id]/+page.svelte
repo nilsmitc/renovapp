@@ -19,6 +19,9 @@
 	let bearbeiteteLieferungId = $state<string | null>(null);
 	let editLieferungError = $state('');
 
+	// ─── Lieferant-Edit State ───────────────────────────────────────────────
+	let editZahlungsart = $state(data.lieferant.zahlungsart ?? 'rechnung');
+
 	// ─── PDF-Extraktion State ───────────────────────────────────────────────
 	let formDatum = $state(new Date().toISOString().slice(0, 10));
 	let formRechnungsnummer = $state('');
@@ -31,8 +34,22 @@
 	let zeigePdfPositionen = $state(false);
 	let laufenderPdfRequest = $state<AbortController | null>(null);
 
+	// Bankeinzug-Datum auto-berechnen: Rechnungsdatum + bankeinzugTage
+	function berechneBezahltam(datum: string): string {
+		if (data.lieferant.zahlungsart === 'kartenzahlung') return datum;
+		if (data.lieferant.zahlungsart === 'bankeinzug') {
+			const d = new Date(datum);
+			d.setDate(d.getDate() + (data.lieferant.bankeinzugTage ?? 2));
+			return d.toISOString().slice(0, 10);
+		}
+		return '';
+	}
+
+	let formBezahltam = $state(berechneBezahltam(formDatum));
+
 	function resetLieferungForm() {
 		formDatum = new Date().toISOString().slice(0, 10);
+		formBezahltam = berechneBezahltam(formDatum);
 		formRechnungsnummer = '';
 		formLieferscheinnummer = '';
 		formBetrag = '';
@@ -97,7 +114,20 @@
 				</svg>
 			</a>
 			<div>
-				<h1 class="text-2xl font-bold text-gray-900">{data.lieferant.name}</h1>
+				<div class="flex flex-wrap items-center gap-2">
+					<h1 class="text-2xl font-bold text-gray-900">{data.lieferant.name}</h1>
+					{#if data.lieferant.zahlungsart === 'kartenzahlung'}
+						<span class="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-700">
+							<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+							Kartenzahlung
+						</span>
+					{:else if data.lieferant.zahlungsart === 'bankeinzug'}
+						<span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">
+							<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+							Bankeinzug{data.lieferant.bankeinzugTage !== undefined ? ` +${data.lieferant.bankeinzugTage}d` : ''}
+						</span>
+					{/if}
+				</div>
 				{#if data.lieferant.notiz}
 					<p class="text-sm text-gray-500">{data.lieferant.notiz}</p>
 				{/if}
@@ -144,6 +174,42 @@
 				<div>
 					<label class="mb-1 block text-sm font-medium text-gray-700" for="edit-notiz">Notiz</label>
 					<input type="text" name="notiz" id="edit-notiz" value={data.lieferant.notiz ?? ''} placeholder="Kundennummer, Ansprechpartner, ..." class="input-base" />
+				</div>
+				<div class="md:col-span-2">
+					<label class="mb-2 block text-sm font-medium text-gray-700">Zahlungsart</label>
+					<div class="flex flex-wrap gap-4">
+						<label class="flex items-center gap-2 cursor-pointer">
+							<input type="radio" name="zahlungsart" value="rechnung"
+								checked={editZahlungsart !== 'bankeinzug' && editZahlungsart !== 'kartenzahlung'}
+								onchange={() => (editZahlungsart = 'rechnung')} />
+							<span class="text-sm text-gray-700">Rechnung / Überweisung</span>
+						</label>
+						<label class="flex items-center gap-2 cursor-pointer">
+							<input type="radio" name="zahlungsart" value="kartenzahlung"
+								checked={editZahlungsart === 'kartenzahlung'}
+								onchange={() => (editZahlungsart = 'kartenzahlung')} />
+							<span class="text-sm text-gray-700">Kartenzahlung vor Ort</span>
+						</label>
+						<label class="flex items-center gap-2 cursor-pointer">
+							<input type="radio" name="zahlungsart" value="bankeinzug"
+								checked={editZahlungsart === 'bankeinzug'}
+								onchange={() => (editZahlungsart = 'bankeinzug')} />
+							<span class="text-sm text-gray-700">Bankeinzug (SEPA)</span>
+						</label>
+					</div>
+					{#if editZahlungsart === 'kartenzahlung'}
+						<p class="mt-2 text-xs text-gray-400">Neue Lieferungen werden automatisch als am selben Tag bezahlt markiert.</p>
+					{/if}
+					{#if editZahlungsart === 'bankeinzug'}
+						<div class="mt-3 flex flex-wrap items-center gap-3">
+							<label class="text-sm text-gray-600" for="edit-bankeinzugTage">Einzug nach</label>
+							<input type="number" name="bankeinzugTage" id="edit-bankeinzugTage"
+								value={data.lieferant.bankeinzugTage ?? 2}
+								min="0" max="30" class="input-base w-20 text-center" />
+							<span class="text-sm text-gray-600">Tagen</span>
+							<span class="text-xs text-gray-400">(wird beim Anlegen neuer Lieferungen als Bezahldatum vorgeschlagen)</span>
+						</div>
+					{/if}
 				</div>
 				<div class="flex gap-3 md:col-span-2">
 					<button type="submit" class="btn-sm-primary">Speichern</button>
@@ -218,7 +284,9 @@
 								<span class="rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700">Erkannt</span>
 							{/if}
 						</div>
-						<input type="date" name="datum" id="datum" required bind:value={formDatum} class="input-base" />
+						<input type="date" name="datum" id="datum" required bind:value={formDatum}
+						oninput={(e) => { formBezahltam = berechneBezahltam(e.currentTarget.value); }}
+						class="input-base" />
 					</div>
 
 					<!-- Beschreibung -->
@@ -280,6 +348,30 @@
 					<div class="md:col-span-2 lg:col-span-3">
 						<label class="mb-1 block text-sm font-medium text-gray-700" for="notiz">Notiz</label>
 						<input type="text" name="notiz" id="notiz" placeholder="Optional" class="input-base" />
+					</div>
+
+					
+
+					<!-- Bezahlt am -->
+					<div class="md:col-span-2 lg:col-span-3">
+						<div class="flex flex-wrap items-center gap-3">
+							<label class="text-sm font-medium text-gray-700" for="neu-bezahltam">Bezahlt am <span class="font-normal text-gray-400">(optional)</span></label>
+							{#if data.lieferant.zahlungsart === 'kartenzahlung'}
+								<span class="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
+									<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+									Kartenzahlung – auto-befüllt
+								</span>
+							{:else if data.lieferant.zahlungsart === 'bankeinzug'}
+								<span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+									<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+									Bankeinzug – auto-befüllt
+								</span>
+							{/if}
+						</div>
+						<input type="date" name="bezahltam" id="neu-bezahltam"
+							bind:value={formBezahltam}
+							class="mt-1 input-base" />
+						<p class="mt-1 text-xs text-gray-400">Leer lassen wenn noch nicht bezahlt</p>
 					</div>
 
 					<!-- Dokumente + PDF-Analyse -->
@@ -430,6 +522,12 @@
 											{anzahlBuchungen} Buchungen ({formatCents(gebuchtBetrag)})
 										</a>
 									{/if}
+									{#if lieferung.bezahltam}
+										<span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-xs font-medium text-emerald-700">
+											<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+											Bezahlt {formatDatum(lieferung.bezahltam)}
+										</span>
+									{/if}
 									{#if lieferung.notiz}
 										<span class="italic">{lieferung.notiz}</span>
 									{/if}
@@ -516,6 +614,18 @@
 									<div class="col-span-2 md:col-span-3">
 										<label class="mb-1 block text-xs font-medium text-gray-600" for="edit-notiz-{lieferung.id}">Notiz</label>
 										<input type="text" name="notiz" id="edit-notiz-{lieferung.id}" value={lieferung.notiz ?? ''} class="input-sm" />
+									</div>
+									<div class="col-span-2 md:col-span-3">
+										<div class="flex items-center gap-2 mb-1">
+											<input type="checkbox" id="edit-bezahlt-toggle-{lieferung.id}" class="rounded"
+												checked={!!lieferung.bezahltam}
+												onchange={(e) => { const inp = e.currentTarget.closest('form')?.querySelector('[name=bezahltam]') as HTMLInputElement | null; if (inp) inp.disabled = !e.currentTarget.checked; }} />
+											<label for="edit-bezahlt-toggle-{lieferung.id}" class="text-xs font-medium text-gray-600">Als bezahlt markieren</label>
+										</div>
+										<input type="date" name="bezahltam" id="edit-bezahltam-{lieferung.id}"
+											value={lieferung.bezahltam ?? new Date().toISOString().slice(0, 10)}
+											disabled={!lieferung.bezahltam}
+											class="input-sm {lieferung.bezahltam ? '' : 'opacity-40'}" />
 									</div>
 									<div class="col-span-2 flex gap-2 md:col-span-3">
 										<button type="submit" class="btn-sm-primary text-xs">Speichern</button>

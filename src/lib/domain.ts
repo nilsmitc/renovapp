@@ -28,6 +28,7 @@ export interface Buchung {
 	kategorie: Kategorie;
 	beschreibung: string;
 	rechnungsreferenz: string;
+	bezahltam?: string;    // YYYY-MM-DD – tatsächliches Zahlungsdatum (optional)
 	taetigkeit?: string;
 	rechnungId?: string;   // gesetzt wenn auto-erstellt aus bezahltem Abschlag
 	lieferungId?: string;  // optionaler Link zu einer Lieferung
@@ -62,6 +63,8 @@ export interface Lieferant {
 	id: string;      // slugified, z.B. "hornbach", "bauhaus"
 	name: string;
 	notiz?: string;  // Kundennummer, Ansprechpartner etc.
+	zahlungsart?: 'bankeinzug' | 'kartenzahlung';  // gesetzt wenn Bankeinzug (SEPA) oder Kartenzahlung vor Ort
+	bankeinzugTage?: number;     // Tage zwischen Rechnungsdatum und Einzug (default: 2)
 	erstellt: string;
 	geaendert: string;
 }
@@ -78,6 +81,7 @@ export interface Lieferung {
 	positionen?: LieferungPosition[]; // aus PDF extrahierte Einzelpositionen
 	belege: string[];              // Lieferscheine, Händlerrechnungen etc.
 	notiz?: string;
+	bezahltam?: string;            // YYYY-MM-DD – tatsächliches Zahlungsdatum (optional)
 	buchungId?: string;            // Link zur auto-erstellten Buchung in buchungen.json
 	erstellt: string;
 	geaendert: string;
