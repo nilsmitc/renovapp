@@ -50,6 +50,12 @@
 			.reduce((s, a) => s + a.rechnungsbetrag, 0);
 	}
 
+	function rechnungAusstehend(rechnung: (typeof data.rechnungen)[0]) {
+		return rechnung.abschlaege
+			.filter((a) => a.status === 'ausstehend')
+			.reduce((s, a) => s + a.rechnungsbetrag, 0);
+	}
+
 	function hatUeberfaellige(rechnung: (typeof data.rechnungen)[0]) {
 		return rechnung.abschlaege.some((a) => abschlagEffektivStatus(a) === 'ueberfaellig');
 	}
@@ -84,13 +90,13 @@
 			<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 			</svg>
-			Neue Rechnung
+			Neuer Auftrag
 		</button>
 	</div>
 
 	{#if zeigeFormular}
 		<div class="card">
-			<h2 class="mb-4 text-lg font-semibold text-gray-800">Neue Rechnung anlegen</h2>
+			<h2 class="mb-4 text-lg font-semibold text-gray-800">Neuen Auftrag anlegen</h2>
 			{#if formError}
 				<div class="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{formError}</div>
 			{/if}
@@ -171,7 +177,7 @@
 				</div>
 
 				<div class="flex gap-3 md:col-span-2">
-					<button type="submit" class="btn-primary">Rechnung anlegen</button>
+					<button type="submit" class="btn-primary">Auftrag anlegen</button>
 					<button
 						type="button"
 						onclick={() => (zeigeFormular = false)}
@@ -189,8 +195,8 @@
 			<svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
 			</svg>
-			<p class="mt-3 text-gray-500">Noch keine Rechnungen angelegt</p>
-			<button onclick={() => (zeigeFormular = true)} class="btn-primary mt-4">Erste Rechnung anlegen</button>
+			<p class="mt-3 text-gray-500">Noch keine Aufträge angelegt</p>
+			<button onclick={() => (zeigeFormular = true)} class="btn-primary mt-4">Ersten Auftrag anlegen</button>
 		</div>
 	{:else}
 		{#each data.gewerke as gewerk}
@@ -201,7 +207,7 @@
 						<div class="h-3 w-3 rounded-full" style="background-color: {gewerk.farbe}"></div>
 						<h2 class="text-base font-semibold text-gray-800">{gewerk.name}</h2>
 						<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-							{gRechnungen.length} {gRechnungen.length === 1 ? 'Rechnung' : 'Rechnungen'}
+							{gRechnungen.length} {gRechnungen.length === 1 ? 'Auftrag' : 'Aufträge'}
 						</span>
 					</div>
 
@@ -210,6 +216,7 @@
 							{@const gestellt = rechnungSumme(rechnung)}
 							{@const bezahlt = rechnungBezahlt(rechnung)}
 							{@const offen = rechnungOffen(rechnung)}
+							{@const ausstehend = rechnungAusstehend(rechnung)}
 							{@const ueberfaellig = hatUeberfaellige(rechnung)}
 							<a
 								href="/rechnungen/{rechnung.id}"
@@ -218,12 +225,14 @@
 								<div class="min-w-0 flex-1">
 									<div class="flex items-center gap-2">
 										<span class="font-medium text-gray-900">{rechnung.auftragnehmer}</span>
-										{#if ueberfaellig}
+										{#if bezahlt > 0 && (offen > 0 || ausstehend > 0)}
+											<span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">Teilw. bezahlt</span>
+										{:else if bezahlt > 0}
+											<span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Bezahlt</span>
+										{:else if ueberfaellig}
 											<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Überfällig</span>
 										{:else if offen > 0}
 											<span class="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">Offen</span>
-										{:else if gestellt > 0}
-											<span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Bezahlt</span>
 										{/if}
 									</div>
 									<div class="mt-1 flex flex-wrap gap-3 text-sm text-gray-500">

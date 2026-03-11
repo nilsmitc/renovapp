@@ -9,7 +9,7 @@ type BelegEintrag = {
 	gewerkName: string;
 	betrag: number;
 	belege: BelegDatei[];
-	typ: 'buchung' | 'abschlag' | 'lieferung';
+	typ: 'buchung' | 'abschlag' | 'lieferung' | 'angebot';
 	editHref: string;
 };
 
@@ -82,6 +82,22 @@ export const load: PageServerLoad = ({ url }) => {
 		});
 	}
 
+	// 4. Angebote (Aufträge)
+	for (const r of rechnungen) {
+		if (!r.angebot) continue;
+		if (gewerk && r.gewerk !== gewerk) continue;
+		eintraege.push({
+			key: `angebot-${r.id}`,
+			datum: r.auftragsdatum ?? r.erstellt.slice(0, 10),
+			beschreibung: `${r.auftragnehmer} – Angebot`,
+			gewerkName: gewerkeMap.get(r.gewerk) ?? r.gewerk,
+			betrag: r.auftragssumme ?? 0,
+			belege: [{ dateiname: r.angebot, href: `/rechnungen/${r.id}/angebot/${r.angebot}` }],
+			typ: 'angebot',
+			editHref: `/rechnungen/${r.id}`
+		});
+	}
+
 	// Datum absteigend; leere Daten ans Ende
 	eintraege.sort((a, b) => (b.datum || '0').localeCompare(a.datum || '0'));
 
@@ -90,6 +106,7 @@ export const load: PageServerLoad = ({ url }) => {
 		buchungen: eintraege.filter((e) => e.typ === 'buchung').length,
 		abschlaege: eintraege.filter((e) => e.typ === 'abschlag').length,
 		lieferungen: eintraege.filter((e) => e.typ === 'lieferung').length,
+		angebote: eintraege.filter((e) => e.typ === 'angebot').length,
 		gesamtBetrag: eintraege.reduce((s, e) => s + e.betrag, 0)
 	};
 

@@ -5,34 +5,101 @@ import { abschlagEffektivStatus } from '$lib/domain';
 export const load: PageServerLoad = () => {
 	const buchungen = leseBuchungen();
 	const projekt = leseProjekt();
+	const rechnungen = leseRechnungen();
 
 	const gesamtBudget = projekt.budgets.reduce((s, b) => s + b.geplant, 0);
+	const gesamtPuffer = projekt.budgets.reduce((s, b) => s + (b.puffer ?? 0), 0);
 
-	// Gebundene Mittel: offene Abschläge + nicht verplante Vertragssummen
-	const rechnungen = leseRechnungen();
-	let gebundeneMittelGesamt = 0;
-	const gebundenNachGewerk: Record<string, number> = {};
+	// Offene Abschläge und Restauftrag pro Gewerk
+	let gesamtOffen = 0;
+	let gesamtRestauftrag = 0;
+	const offenNachGewerk: Record<string, number> = {};
+	const restauftragNachGewerk: Record<string, number> = {};
 	for (const r of rechnungen) {
-		// Offene / überfällige Abschläge
 		for (const a of r.abschlaege) {
 			const s = abschlagEffektivStatus(a);
-			if (s === 'offen' || s === 'ueberfaellig') {
-				gebundeneMittelGesamt += a.rechnungsbetrag;
-				gebundenNachGewerk[r.gewerk] = (gebundenNachGewerk[r.gewerk] ?? 0) + a.rechnungsbetrag;
+			if (s === 'offen' || s === 'ueberfaellig' || s === 'bald_faellig') {
+				gesamtOffen += a.rechnungsbetrag;
+				offenNachGewerk[r.gewerk] = (offenNachGewerk[r.gewerk] ?? 0) + a.rechnungsbetrag;
 			}
 		}
-		// Noch nicht als Abschlag verplanter Teil der Auftragssumme
 		if (r.auftragssumme !== undefined) {
 			const nachtraege = r.nachtraege.reduce((s, n) => s + n.betrag, 0);
 			const gesamtAuftrag = r.auftragssumme + nachtraege;
 			const alleAbschlaege = r.abschlaege.reduce((s, a) => s + a.rechnungsbetrag, 0);
 			const nichtVerplant = gesamtAuftrag - alleAbschlaege;
 			if (nichtVerplant > 0) {
-				gebundeneMittelGesamt += nichtVerplant;
-				gebundenNachGewerk[r.gewerk] = (gebundenNachGewerk[r.gewerk] ?? 0) + nichtVerplant;
+				gesamtRestauftrag += nichtVerplant;
+				restauftragNachGewerk[r.gewerk] = (restauftragNachGewerk[r.gewerk] ?? 0) + nichtVerplant;
 			}
 		}
 	}
+
+	// Nächste Zahlungen aus offenen Abschlägen
+	const heute = new Date().toISOString().slice(0, 10);
+	const naechsteZahlungen: NaechsteZahlung[] = [];
+	for (const r of rechnungen) {
+		const gewerk = projekt.gewerke.find((g) => g.id === r.gewerk);
+		for (const a of r.abschlaege) {
+			if (a.status === 'bezahlt' || a.status === 'ausstehend') continue;
+			const effStatus = abschlagEffektivStatus(a);
+			let tageVerbleibend: number | null = null;
+			if (a.faelligkeitsdatum) {
+				const diff =
+					(new Date(a.faelligkeitsdatum).getTime() - new Date(heute).getTime()) /
+					(1000 * 60 * 60 * 24);
+				tageVerbleibend = Math.round(diff);
+			}
+			naechsteZahlungen.push({
+				rechnungId: r.id,
+				auftragnehmer: r.auftragnehmer,
+				gewerkName: gewerk?.name ?? r.gewerk,
+				gewerkFarbe: gewerk?.farbe ?? '#94a3b8',
+				typ:
+					a.typ === 'abschlag'
+						? 'Abschlag'
+						: a.typ === 'schlussrechnung'
+							? 'Schlussrechnung'
+							: 'Nachtragsrechnung',
+				nummer: a.nummer,
+				betrag: a.rechnungsbetrag,
+				faelligkeitsdatum: a.faelligkeitsdatum ?? null,
+				effektivStatus: effStatus,
+				tageVerbleibend
+			});
+		}
+	}
+	naechsteZahlungen.sort((a, b) => {
+		if (a.effektivStatus === 'ueberfaellig' && b.effektivStatus !== 'ueberfaellig') return -1;
+		if (b.effektivStatus === 'ueberfaellig' && a.effektivStatus !== 'ueberfaellig') return 1;
+		if (!a.faelligkeitsdatum && !b.faelligkeitsdatum) return 0;
+		if (!a.faelligkeitsdatum) return 1;
+		if (!b.faelligkeitsdatum) return -1;
+		return a.faelligkeitsdatum.localeCompare(b.faelligkeitsdatum);
+	});
+
+	// Gewerk-Übersicht (funktioniert auch ohne Buchungen)
+	const gewerkUebersichtRaw: GewerkUebersicht[] = projekt.gewerke
+		.sort((a, b) => a.sortierung - b.sortierung)
+		.map((gewerk) => {
+			const gb = buchungen.filter((b) => b.gewerk === gewerk.id);
+			const ist = gb.reduce((s, b) => s + b.betrag, 0);
+			const budget = projekt.budgets.find((b) => b.gewerk === gewerk.id)?.geplant ?? 0;
+			const puffer = projekt.budgets.find((b) => b.gewerk === gewerk.id)?.puffer ?? 0;
+			const offen = offenNachGewerk[gewerk.id] ?? 0;
+			const restauftrag = restauftragNachGewerk[gewerk.id] ?? 0;
+			const frei = budget - ist - offen - restauftrag - puffer;
+
+			let status: 'ok' | 'warnung' | 'kritisch' = 'ok';
+			if (budget > 0) {
+				if (frei < 0) status = 'kritisch';
+				else if (frei < budget * 0.2) status = 'warnung';
+			} else if (ist + offen + restauftrag > 0) {
+				status = 'warnung';
+			}
+
+			return { gewerk, budget, ist, offen, restauftrag, puffer, frei, status };
+		});
 
 	if (buchungen.length === 0) {
 		return {
@@ -52,9 +119,13 @@ export const load: PageServerLoad = () => {
 			chartIst: [] as (number | null)[],
 			chartPrognose: [] as (number | null)[],
 			chartBudget: [] as number[],
-			gewerkPrognosen: [] as GewerkPrognose[],
-			gebundeneMittelGesamt,
-			gebundenNachGewerk
+			gesamtOffen,
+			gesamtRestauftrag,
+			gesamtPuffer,
+			freiVerfuegbar: gesamtBudget - gesamtOffen - gesamtRestauftrag - gesamtPuffer,
+			naechsteZahlungen: naechsteZahlungen.slice(0, 10),
+			gewerkUebersicht: gewerkUebersichtRaw,
+			bekannteZahlungenGesamt: 0
 		};
 	}
 
@@ -80,10 +151,9 @@ export const load: PageServerLoad = () => {
 	const gesamtIst = kumuliert;
 	const anzahlBuchungen = buchungen.length;
 
-	// Burn Rate: nur vollständige Monate verwenden (laufender Monat hat zu wenig Daten)
-	const heuteMonat = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+	// Burn Rate: nur vollständige Monate (laufender Monat hat zu wenig Daten)
+	const heuteMonat = new Date().toISOString().slice(0, 7);
 	const kompleteMonate = monate.filter((m) => m.monat < heuteMonat);
-	// Rolling Average der letzten 3 vollständigen Monate (aktuellerer Trend)
 	const relevanteMonateBurnRate = kompleteMonate.slice(-3);
 	const burnRateBasis = relevanteMonateBurnRate.length;
 	const burnRateMonatlich =
@@ -92,104 +162,87 @@ export const load: PageServerLoad = () => {
 					relevanteMonateBurnRate.reduce((s, m) => s + m.ausgaben, 0) / burnRateBasis
 				)
 			: 0;
-	// Ausgaben des laufenden Monats separat (für Info-Anzeige)
 	const teilmonatAusgaben = monate.find((m) => m.monat === heuteMonat)?.ausgaben ?? 0;
 
-	// Konfidenz basiert auf vollständigen Monaten
+	// Konfidenz
 	const anzahlMonate = kompleteMonate.length;
 	let konfidenz: 'niedrig' | 'mittel' | 'hoch';
 	if (anzahlMonate < 2) konfidenz = 'niedrig';
 	else if (anzahlMonate < 4) konfidenz = 'mittel';
 	else konfidenz = 'hoch';
 
-	// Restbudget & Erschöpfungsdatum
+	// Restbudget + Frei verfügbar
 	const restBudget = gesamtBudget - gesamtIst;
-	const restMonate = burnRateMonatlich > 0 && restBudget > 0
-		? Math.ceil(restBudget / burnRateMonatlich)
-		: null;
-
-	let erschoepfungsDatum: string | null = null;
-	if (restMonate !== null) {
-		const letzterMonat = monate[monate.length - 1].monat;
-		const [ly, lm] = letzterMonat.split('-').map(Number);
-		const datum = new Date(ly, lm - 1 + restMonate, 1);
-		erschoepfungsDatum = datum.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
-	}
+	const freiVerfuegbar = gesamtBudget - gesamtIst - gesamtOffen - gesamtRestauftrag - gesamtPuffer;
 
 	// Chart-Datenpunkte aufbauen
 	const letzterHistorisch = monate[monate.length - 1];
 	const [lastYear, lastMonth] = letzterHistorisch.monat.split('-').map(Number);
+
+	// Bekannte zukünftige Zahlungen aus Abschlägen mit Fälligkeitsdatum
+	const ersteFutureDatum = new Date(lastYear, lastMonth, 1);
+	const ersteFutureMonat = `${ersteFutureDatum.getFullYear()}-${String(ersteFutureDatum.getMonth() + 1).padStart(2, '0')}`;
+	const bekannteZahlungenProMonat: Record<string, number> = {};
+	let bekannteZahlungenGesamt = 0;
+	for (const r of rechnungen) {
+		for (const a of r.abschlaege) {
+			if (a.status === 'bezahlt') continue;
+			if (!a.faelligkeitsdatum) continue;
+			const monat =
+				a.faelligkeitsdatum.slice(0, 7) <= letzterHistorisch.monat
+					? ersteFutureMonat
+					: a.faelligkeitsdatum.slice(0, 7);
+			bekannteZahlungenProMonat[monat] =
+				(bekannteZahlungenProMonat[monat] ?? 0) + a.rechnungsbetrag;
+			bekannteZahlungenGesamt += a.rechnungsbetrag;
+		}
+	}
+
+	// Erschöpfungsdatum via monatlicher Simulation (inkl. bekannte Zahlungen)
+	let restMonate: number | null = null;
+	let erschoepfungsDatum: string | null = null;
+	if (burnRateMonatlich > 0 || bekannteZahlungenGesamt > 0) {
+		let simKumuliert = gesamtIst;
+		for (let i = 1; i <= 120; i++) {
+			const d = new Date(lastYear, lastMonth - 1 + i, 1);
+			const ms = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+			simKumuliert += burnRateMonatlich + (bekannteZahlungenProMonat[ms] ?? 0);
+			if (simKumuliert >= gesamtBudget) {
+				restMonate = i;
+				erschoepfungsDatum = d.toLocaleDateString('de-DE', {
+					month: 'long',
+					year: 'numeric'
+				});
+				break;
+			}
+		}
+	}
+
 	const maxPrognoseMonate = Math.min(restMonate ?? 18, 18);
 
 	const chartLabels: string[] = monate.map((m) => m.label);
-	// Ist: Werte für historische Monate
 	const chartIst: (number | null)[] = monate.map((m) => m.kumuliert);
-	// Prognose: nur ab letztem Ist-Monat (Überlappung für nahtlosen Übergang)
 	const chartPrognose: (number | null)[] = monate.map((_, i) =>
 		i === monate.length - 1 ? letzterHistorisch.kumuliert : null
 	);
-	// Budget-Linie: konstant
 	const chartBudget: number[] = monate.map(() => gesamtBudget);
 
+	let progKumuliert = gesamtIst;
 	for (let i = 1; i <= maxPrognoseMonate; i++) {
 		const datum = new Date(lastYear, lastMonth - 1 + i, 1);
 		const label = datum.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
-		const progKumuliert = gesamtIst + burnRateMonatlich * i;
+		const monatStr = `${datum.getFullYear()}-${String(datum.getMonth() + 1).padStart(2, '0')}`;
+		const bekannt = bekannteZahlungenProMonat[monatStr] ?? 0;
+		const roh = progKumuliert + burnRateMonatlich + bekannt;
+		progKumuliert = Math.min(roh, gesamtBudget);
 
 		chartLabels.push(label);
 		chartIst.push(null);
-		chartPrognose.push(Math.min(progKumuliert, gesamtBudget));
+		chartPrognose.push(progKumuliert);
 		chartBudget.push(gesamtBudget);
 
-		if (progKumuliert >= gesamtBudget) break;
+		if (roh >= gesamtBudget) break;
 	}
-
-	// Gewerk-Prognosen
-	const gewerkPrognosen: GewerkPrognose[] = projekt.gewerke
-		.sort((a, b) => a.sortierung - b.sortierung)
-		.map((gewerk) => {
-			const gb = buchungen.filter((b) => b.gewerk === gewerk.id);
-			const ist = gb.reduce((s, b) => s + b.betrag, 0);
-			const budget = projekt.budgets.find((b) => b.gewerk === gewerk.id)?.geplant ?? 0;
-
-			// Auftragssummen aus Rechnungen (Festpreisverträge)
-			const gewerkRechnungen = rechnungen.filter((r) => r.gewerk === gewerk.id);
-			const rechnungsHochrechnung = gewerkRechnungen.reduce((s, r) => {
-				if (r.auftragssumme === undefined) return s;
-				const nachtraege = r.nachtraege.reduce((sn, n) => sn + n.betrag, 0);
-				return s + r.auftragssumme + nachtraege;
-			}, 0);
-			// Direkte Buchungen ohne Rechnungsbezug
-			const direkteIst = gb.filter((b) => !b.rechnungId).reduce((s, b) => s + b.betrag, 0);
-
-			let hochgerechnet: number | null = null;
-			let differenz: number | null = null;
-			let status: 'ok' | 'warnung' | 'kritisch' = 'ok';
-			let quelle: 'auftrag' | 'proportional' | null = null;
-
-			const berechneStatus = (hoch: number) => {
-				if (budget === 0) return hoch > 0 ? 'warnung' as const : 'ok' as const;
-				if (hoch > budget) return 'kritisch' as const;
-				if (hoch > budget * 0.8) return 'warnung' as const;
-				return 'ok' as const;
-			};
-
-			if (rechnungsHochrechnung > 0) {
-				// Festpreisvertrag bekannt → Auftragssumme als Hochrechnung
-				hochgerechnet = rechnungsHochrechnung + direkteIst;
-				differenz = budget - hochgerechnet;
-				quelle = 'auftrag';
-				status = berechneStatus(hochgerechnet);
-			} else if (ist > 0 && gesamtIst > 0) {
-				// Kein bekannter Festpreis → proportionale Hochrechnung
-				hochgerechnet = Math.round((ist / gesamtIst) * gesamtBudget);
-				differenz = budget - hochgerechnet;
-				quelle = 'proportional';
-				status = berechneStatus(hochgerechnet);
-			}
-
-			return { gewerk, budget, ist, hochgerechnet, differenz, status, quelle, gebunden: gebundenNachGewerk[gewerk.id] ?? 0 };
-		});
 
 	return {
 		keineDaten: false,
@@ -208,19 +261,36 @@ export const load: PageServerLoad = () => {
 		chartIst,
 		chartPrognose,
 		chartBudget,
-		gewerkPrognosen,
-		gebundeneMittelGesamt,
-		gebundenNachGewerk
+		gesamtOffen,
+		gesamtRestauftrag,
+		gesamtPuffer,
+		freiVerfuegbar,
+		naechsteZahlungen: naechsteZahlungen.slice(0, 10),
+		gewerkUebersicht: gewerkUebersichtRaw,
+		bekannteZahlungenGesamt
 	};
 };
 
-interface GewerkPrognose {
+interface NaechsteZahlung {
+	rechnungId: string;
+	auftragnehmer: string;
+	gewerkName: string;
+	gewerkFarbe: string;
+	typ: string;
+	nummer: number;
+	betrag: number;
+	faelligkeitsdatum: string | null;
+	effektivStatus: string;
+	tageVerbleibend: number | null;
+}
+
+interface GewerkUebersicht {
 	gewerk: { id: string; name: string; farbe: string; sortierung: number; pauschal?: boolean };
 	budget: number;
 	ist: number;
-	hochgerechnet: number | null;
-	differenz: number | null;
+	offen: number;
+	restauftrag: number;
+	puffer: number;
+	frei: number;
 	status: 'ok' | 'warnung' | 'kritisch';
-	gebunden: number;
-	quelle: 'auftrag' | 'proportional' | null;
 }

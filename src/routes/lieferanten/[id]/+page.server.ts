@@ -5,6 +5,7 @@ import {
 	leseBuchungen,
 	schreibeBuchungen,
 	leseProjekt,
+	leseRechnungen,
 	speicherBelegLieferung,
 	loescheBelegLieferung,
 	loescheBelegeOrdnerLieferung
@@ -26,6 +27,16 @@ function syncLieferungBuchung(
 	lieferant: Lieferant,
 	buchungen: Buchung[]
 ): void {
+	// Wenn Lieferung einem Auftrag zugeordnet ist: keine eigene Buchung
+	if (lieferung.inAuftragEnthalten) {
+		if (lieferung.buchungId) {
+			const idx = buchungen.findIndex((b) => b.id === lieferung.buchungId);
+			if (idx !== -1) buchungen.splice(idx, 1);
+			lieferung.buchungId = undefined;
+		}
+		return;
+	}
+
 	const hatBetragUndGewerk = lieferung.betrag && lieferung.gewerk;
 	const beschreibung =
 		lieferant.name + (lieferung.beschreibung ? ` – ${lieferung.beschreibung}` : '');
@@ -95,12 +106,15 @@ export const load: PageServerLoad = ({ params }) => {
 	const gesamtBetrag = lieferungenMitStats.reduce((s, l) => s + (l.lieferung.betrag ?? 0), 0);
 	const gesamtBuchungen = lieferungenMitStats.reduce((s, l) => s + l.anzahlBuchungen, 0);
 
+	const rechnungen = leseRechnungen();
+
 	return {
 		lieferant,
 		lieferungenMitStats,
 		gesamtBetrag,
 		gesamtBuchungen,
-		gewerke: projekt.gewerke
+		gewerke: projekt.gewerke,
+		rechnungen
 	};
 };
 
@@ -289,6 +303,37 @@ export const actions: Actions = {
 		lieferant.geaendert = new Date().toISOString();
 		schreibeLieferanten({ lieferanten, lieferungen });
 		return { editErfolg: true };
+	},
+
+	lieferungVerknuepfen: async ({ request, params }) => {
+		const form = await request.formData();
+		const lieferungId = (form.get('lieferungId') as string)?.trim();
+		const rechnungId = (form.get('rechnungId') as string)?.trim() || undefined;
+
+		if (!lieferungId) return fail(400, { error: 'Lieferung-ID fehlt' });
+
+		const { lieferanten, lieferungen } = leseLieferanten();
+		const lieferant = lieferanten.find((l) => l.id === params.id);
+		if (!lieferant) return fail(404, { error: 'Lieferant nicht gefunden' });
+		const lieferung = lieferungen.find((lu) => lu.id === lieferungId && lu.lieferantId === params.id);
+		if (!lieferung) return fail(404, { error: 'Lieferung nicht gefunden' });
+
+		if (rechnungId) {
+			const rechnungen = leseRechnungen();
+			if (!rechnungen.find((r) => r.id === rechnungId)) {
+				return fail(400, { error: 'Auftrag nicht gefunden' });
+			}
+		}
+
+		lieferung.inAuftragEnthalten = rechnungId;
+		lieferung.geaendert = new Date().toISOString();
+
+		const buchungen = leseBuchungen();
+		syncLieferungBuchung(lieferung, lieferant, buchungen);
+		schreibeBuchungen(buchungen);
+
+		schreibeLieferanten({ lieferanten, lieferungen });
+		return { verknuepfungErfolg: true };
 	},
 
 	lieferungBearbeiten: async ({ request, params }) => {

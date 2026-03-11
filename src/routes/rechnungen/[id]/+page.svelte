@@ -48,6 +48,7 @@
 	let bezahlenError = $state('');
 	let bearbeiten = $state(false);
 	let editError = $state('');
+	let loeschenError = $state('');
 	let zeigeNachtragFormular = $state(false);
 	let nachtragError = $state('');
 
@@ -108,7 +109,7 @@
 <div class="space-y-6">
 	<!-- Breadcrumb -->
 	<div class="flex items-center gap-2 text-sm text-gray-500">
-		<a href="/rechnungen" class="hover:text-blue-600">Rechnungen</a>
+		<a href="/rechnungen" class="hover:text-blue-600">Aufträge</a>
 		<span>/</span>
 		<span class="text-gray-900">{rechnung.auftragnehmer}</span>
 	</div>
@@ -117,8 +118,10 @@
 	<div class="card">
 		{#if bearbeiten}
 			<form
+				id="rechnung-edit-form"
 				method="POST"
 				action="?/rechnungBearbeiten"
+				enctype="multipart/form-data"
 				use:enhance={() => {
 					editError = '';
 					return async ({ result, update }) => {
@@ -157,11 +160,49 @@
 					<label class="mb-1 block text-sm font-medium text-gray-700">Notiz</label>
 					<input type="text" name="notiz" value={rechnung.notiz ?? ''} class="input-base" />
 				</div>
-				<div class="flex gap-3 md:col-span-2">
-					<button type="submit" class="btn-primary">Speichern</button>
-					<button type="button" onclick={() => (bearbeiten = false)} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Abbrechen</button>
+				<div class="md:col-span-2">
+					<label class="mb-1 block text-sm font-medium text-gray-700">Angebot (PDF/JPG/PNG)</label>
+					{#if rechnung.angebot}
+						<div class="mb-2 flex items-center gap-3 text-sm">
+							<a href="/rechnungen/{rechnung.id}/angebot/{rechnung.angebot}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">{rechnung.angebot}</a>
+							<label class="flex cursor-pointer items-center gap-1.5 text-red-600">
+								<input type="checkbox" name="angebotLoeschen" class="rounded" />
+								<span>Löschen</span>
+							</label>
+						</div>
+					{/if}
+					<input type="file" name="angebot" accept=".pdf,.jpg,.jpeg,.png" class="input-base" />
 				</div>
 			</form>
+			{#if loeschenError}
+				<div class="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">{loeschenError}</div>
+			{/if}
+			<div class="mt-4 flex items-center gap-3">
+				<button type="submit" form="rechnung-edit-form" class="btn-primary">Speichern</button>
+				<button type="button" onclick={() => (bearbeiten = false)} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Abbrechen</button>
+				<form
+					method="POST"
+					action="?/rechnungLoeschen"
+					class="ml-auto"
+					use:enhance={() => {
+						loeschenError = '';
+						return async ({ result, update }) => {
+							if (result.type === 'failure') {
+								loeschenError = (result.data?.loeschenError as string) ?? 'Fehler beim Löschen';
+							}
+							await update();
+						};
+					}}
+				>
+					<button
+						type="submit"
+						onclick={(e) => { if (!confirm(`Auftrag "${rechnung.auftragnehmer}" wirklich löschen? Alle zugehörigen Buchungen werden ebenfalls gelöscht.`)) e.preventDefault(); }}
+						class="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+					>
+						Auftrag löschen
+					</button>
+				</form>
+			</div>
 		{:else}
 			<div class="flex items-start justify-between gap-4">
 				<div>
@@ -181,11 +222,26 @@
 					{#if rechnung.notiz}
 						<p class="mt-1 text-sm text-gray-500">{rechnung.notiz}</p>
 					{/if}
+					{#if rechnung.angebot}
+						<div class="mt-2">
+							<a
+								href="/rechnungen/{rechnung.id}/angebot/{rechnung.angebot}"
+								target="_blank"
+								rel="noopener noreferrer"
+								class="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+								</svg>
+								Angebot: {rechnung.angebot}
+							</a>
+						</div>
+					{/if}
 				</div>
 				<button onclick={() => (bearbeiten = true)} class="flex-shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
-					Bearbeiten
-				</button>
-			</div>
+				Bearbeiten
+			</button>
+		</div>
 
 			<!-- KPI-Zeile -->
 			<div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -235,6 +291,45 @@
 			{/if}
 		{/if}
 	</div>
+
+	<!-- Verknüpfte Lieferungen -->
+	{#if data.verknuepfteLieferungen.length > 0}
+		<div class="card">
+			<h2 class="mb-3 flex items-center gap-2 text-base font-semibold text-gray-800">
+				<svg class="h-4 w-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+				Verknüpfte Lieferungen
+				<span class="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">{data.verknuepfteLieferungen.length}</span>
+			</h2>
+			<div class="space-y-2">
+				{#each data.verknuepfteLieferungen as lu}
+					<div class="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm">
+						<div class="flex flex-wrap items-center gap-3">
+							<span class="font-medium text-gray-800">{lu.lieferantName}</span>
+							{#if lu.beschreibung}
+								<span class="text-gray-500">{lu.beschreibung}</span>
+							{/if}
+							{#if lu.rechnungsnummer}
+								<span class="text-xs text-gray-400">Rg.-Nr. {lu.rechnungsnummer}</span>
+							{/if}
+							{#if lu.lieferscheinnummer}
+								<span class="text-xs text-gray-400">LS-Nr. {lu.lieferscheinnummer}</span>
+							{/if}
+							{#if lu.datum}
+								<span class="text-xs text-gray-400">{formatDatum(lu.datum)}</span>
+							{/if}
+						</div>
+						<div class="flex items-center gap-3">
+							{#if lu.betrag}
+								<span class="tabular-nums font-medium text-gray-700">{formatCents(lu.betrag)}</span>
+							{/if}
+							<a href="/lieferanten/{lu.lieferantId}" class="text-xs text-blue-500 hover:underline">Lieferant</a>
+						</div>
+					</div>
+				{/each}
+			</div>
+			<p class="mt-2 text-xs text-gray-400">Diese Lieferungen sind diesem Auftrag zugeordnet und werden nicht separat in Ausgaben gebucht.</p>
+		</div>
+	{/if}
 
 	<!-- Nachträge -->
 	<div class="card">

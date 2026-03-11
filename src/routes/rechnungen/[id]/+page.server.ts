@@ -5,8 +5,12 @@ import {
 	leseBuchungen,
 	schreibeBuchungen,
 	leseProjekt,
+	leseLieferanten,
+	schreibeLieferanten,
 	speicherBelegRechnung,
-	loescheBelegRechnung
+	loescheBelegRechnung,
+	speicherAngebotRechnung,
+	loescheAngebotRechnung
 } from '$lib/dataStore';
 import {
 	createAbschlag,
@@ -15,7 +19,7 @@ import {
 	abschlagEffektivStatus
 } from '$lib/domain';
 import type { AbschlagTyp } from '$lib/domain';
-import { fail, error } from '@sveltejs/kit';
+import { fail, error, redirect } from '@sveltejs/kit';
 
 export const load: PageServerLoad = ({ params }) => {
 	const rechnungen = leseRechnungen();
@@ -34,7 +38,15 @@ export const load: PageServerLoad = ({ params }) => {
 	const projekt = leseProjekt();
 	const gewerk = projekt.gewerke.find((g) => g.id === rechnung.gewerk);
 
-	return { rechnung, gewerk };
+	const { lieferanten, lieferungen } = leseLieferanten();
+	const verknuepfteLieferungen = lieferungen
+		.filter((lu) => lu.inAuftragEnthalten === params.id)
+		.map((lu) => ({
+			...lu,
+			lieferantName: lieferanten.find((l) => l.id === lu.lieferantId)?.name ?? lu.lieferantId
+		}));
+
+	return { rechnung, gewerk, verknuepfteLieferungen };
 };
 
 export const actions: Actions = {
@@ -135,6 +147,7 @@ export const actions: Actions = {
 			rechnungsreferenz: abschlag.rechnungsnummer ?? ''
 		});
 		buchung.rechnungId = rechnung.id;
+		buchung.bezahltam = bezahltam;
 
 		const buchungen = leseBuchungen();
 		buchungen.push(buchung);
@@ -253,12 +266,72 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	rechnungLoeschen: async ({ params }) => {
+		const rechnungen = leseRechnungen();
+		const rechnung = rechnungen.find((r) => r.id === params.id);
+		if (!rechnung) return fail(404, { loeschenError: 'Auftrag nicht gefunden' });
+
+		// Angebot löschen
+		if (rechnung.angebot) {
+			try { loescheAngebotRechnung(rechnung.id, rechnung.angebot); } catch { /* ignorieren */ }
+		}
+
+		// Abschlag-Belege löschen
+		for (const abschlag of rechnung.abschlaege) {
+			if (abschlag.beleg) {
+				try { loescheBelegRechnung(rechnung.id, abschlag.id, abschlag.beleg); } catch { /* ignorieren */ }
+			}
+		}
+
+		// Buchungen löschen die zu diesem Auftrag gehören (auto-erstellt aus bezahlten Abschlägen)
+		const buchungen = leseBuchungen();
+		const buchungenBereinigt = buchungen.filter((b) => b.rechnungId !== params.id);
+
+		// Verknüpfte Lieferungen lösen & auto-Buchungen wiederherstellen
+		const { lieferanten: lieferantenListe, lieferungen } = leseLieferanten();
+		let lieferantenGeaendert = false;
+
+		for (const lu of lieferungen) {
+			if (lu.inAuftragEnthalten === params.id) {
+				lu.inAuftragEnthalten = undefined;
+				lieferantenGeaendert = true;
+				// Auto-Buchung wiederherstellen wenn betrag + gewerk vorhanden
+				if (lu.betrag && lu.gewerk && !lu.buchungId) {
+					const lieferantName = lieferantenListe.find((l) => l.id === lu.lieferantId)?.name ?? lu.lieferantId;
+					const b = createBuchung({
+						datum: lu.datum,
+						betrag: lu.betrag,
+						gewerk: lu.gewerk,
+						raum: null,
+						kategorie: 'Material',
+						beschreibung: lu.beschreibung || `Lieferung ${lieferantName}`,
+						rechnungsreferenz: lu.rechnungsnummer ?? ''
+					});
+					b.lieferungId = lu.id;
+					buchungenBereinigt.push(b);
+					lu.buchungId = b.id;
+				}
+			}
+		}
+
+		schreibeBuchungen(buchungenBereinigt);
+		if (lieferantenGeaendert) {
+			schreibeLieferanten({ lieferanten: lieferantenListe, lieferungen });
+		}
+
+		const remaining = rechnungen.filter((r) => r.id !== params.id);
+		schreibeRechnungen(remaining);
+		redirect(303, '/rechnungen');
+	},
+
 	rechnungBearbeiten: async ({ params, request }) => {
 		const form = await request.formData();
 		const auftragnehmer = (form.get('auftragnehmer') as string)?.trim();
 		const auftragssummeRaw = (form.get('auftragssumme') as string)?.trim();
 		const auftragsdatum = (form.get('auftragsdatum') as string)?.trim() || undefined;
 		const notiz = (form.get('notiz') as string)?.trim() || undefined;
+		const angebotFile = form.get('angebot') as File | null;
+		const angebotLoeschenFlag = form.get('angebotLoeschen') === 'on';
 
 		if (!auftragnehmer) return fail(400, { editError: 'Auftragnehmer ist erforderlich' });
 
@@ -284,6 +357,25 @@ export const actions: Actions = {
 		}
 		rechnung.auftragsdatum = auftragsdatum;
 		rechnung.notiz = notiz;
+
+		// Angebot löschen
+		if (angebotLoeschenFlag && rechnung.angebot) {
+			loescheAngebotRechnung(rechnung.id, rechnung.angebot);
+			rechnung.angebot = undefined;
+		}
+
+		// Angebot hochladen
+		if (angebotFile && angebotFile.size > 0) {
+			const erlaubteTypen = ['application/pdf', 'image/jpeg', 'image/png'];
+			if (!erlaubteTypen.includes(angebotFile.type))
+				return fail(400, { editError: 'Angebot: Nur PDF, JPG und PNG erlaubt' });
+			if (angebotFile.size > 10 * 1024 * 1024)
+				return fail(400, { editError: 'Angebot: Datei zu groß (max. 10 MB)' });
+			if (rechnung.angebot) loescheAngebotRechnung(rechnung.id, rechnung.angebot);
+			const buffer = Buffer.from(await angebotFile.arrayBuffer());
+			rechnung.angebot = speicherAngebotRechnung(rechnung.id, angebotFile.name, buffer);
+		}
+
 		rechnung.geaendert = new Date().toISOString();
 		schreibeRechnungen(rechnungen);
 		return { success: true };

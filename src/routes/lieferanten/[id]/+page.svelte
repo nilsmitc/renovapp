@@ -506,7 +506,13 @@
 									{#if lieferung.betrag}
 										<span>Händlerrechnung: {formatCents(lieferung.betrag)}</span>
 									{/if}
-									{#if lieferung.buchungId}
+									{#if lieferung.inAuftragEnthalten}
+										{@const verknAuftrag = data.rechnungen.find((r) => r.id === lieferung.inAuftragEnthalten)}
+										<span class="inline-flex items-center gap-1 rounded-full bg-violet-100 px-1.5 py-0.5 text-xs font-medium text-violet-700">
+											<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+											In Auftrag: {verknAuftrag?.auftragnehmer ?? '—'}
+										</span>
+									{:else if lieferung.buchungId}
 										<a href="/buchungen/{lieferung.buchungId}" class="inline-flex items-center gap-1 rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700 hover:bg-green-200">
 											<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 											In Ausgaben
@@ -763,6 +769,25 @@
 								</svg>
 								Bearbeiten
 							</button>
+
+							{#if data.rechnungen.length > 0}
+								<form method="POST" action="?/lieferungVerknuepfen" use:enhance={() => async ({ update }) => update()}>
+									<input type="hidden" name="lieferungId" value={lieferung.id} />
+									<select
+										name="rechnungId"
+										class="rounded border border-gray-200 bg-white px-1.5 py-0.5 text-xs text-gray-600 hover:border-gray-300"
+										title="Lieferung einem Auftrag zuordnen"
+										onchange={(e) => e.currentTarget.form?.requestSubmit()}
+									>
+										<option value="">— Kein Auftrag —</option>
+										{#each data.rechnungen as r}
+											<option value={r.id} selected={lieferung.inAuftragEnthalten === r.id}>
+												{r.auftragnehmer}
+											</option>
+										{/each}
+									</select>
+								</form>
+							{/if}
 
 							<span class="ml-auto">
 								<form

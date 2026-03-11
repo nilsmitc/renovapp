@@ -23,14 +23,13 @@
 		return { label: '🟢', class: 'bg-green-100 text-green-700' };
 	}
 
-	function getStackedBarWidths(ist: number, offen: number, restauftrag: number, budget: number) {
-		if (budget === 0) return { bezahlt: 0, offen: 0, restauftrag: 0 };
-		const total = ist + offen + restauftrag;
-		return {
-			bezahlt: Math.min(100, (ist / budget) * 100),
-			offen: Math.min(100 - (ist / budget) * 100, (offen / budget) * 100),
-			restauftrag: Math.min(100 - (ist / budget) * 100 - (offen / budget) * 100, (restauftrag / budget) * 100)
-		};
+	function getStackedBarWidths(ist: number, offen: number, restauftrag: number, puffer: number, budget: number) {
+		if (budget === 0) return { bezahlt: 0, offen: 0, restauftrag: 0, puffer: 0 };
+		const bezahlt = Math.min(100, (ist / budget) * 100);
+		const offenPct = Math.min(100 - bezahlt, (offen / budget) * 100);
+		const restauftragPct = Math.min(100 - bezahlt - offenPct, (restauftrag / budget) * 100);
+		const pufferPct = Math.min(100 - bezahlt - offenPct - restauftragPct, (puffer / budget) * 100);
+		return { bezahlt, offen: offenPct, restauftrag: restauftragPct, puffer: pufferPct };
 	}
 
 	const gesamtOffen = $derived(Object.values(data.verplantPerGewerk).reduce((s, v) => s + v.offen, 0));
@@ -113,8 +112,10 @@
 			<tbody>
 				{#each data.summaries as s (s.gewerk.id)}
 					{@const vp = data.verplantPerGewerk[s.gewerk.id] ?? { offen: 0, restauftrag: 0, anzahl: 0 }}
+					{@const puffer = data.pufferBetraege[s.gewerk.id] ?? 0}
 					{@const restbudget = s.budget - s.ist - vp.offen - vp.restauftrag}
-					{@const barWidths = getStackedBarWidths(s.ist, vp.offen, vp.restauftrag, s.budget)}
+					{@const restbudgetEffektiv = restbudget - puffer}
+					{@const barWidths = getStackedBarWidths(s.ist, vp.offen, vp.restauftrag, puffer, s.budget)}
 					<tr class="border-b {ampelClass(restbudget, s.budget, s.gewerk.pauschal)}">
 						{#if editGewerk === s.gewerk.id}
 							<td colspan="9" class="px-4 py-3">
@@ -134,6 +135,20 @@
 										<label for="notiz" class="text-xs text-gray-500">Notiz</label>
 										<input type="text" name="notiz" id="notiz"
 											value={data.notizen[s.gewerk.id] ?? ''}
+											class="w-full input-sm" />
+									</div>
+									<div>
+										<label for="puffer" class="text-xs text-gray-500">Puffer (EUR)</label>
+										<input type="text" name="puffer" id="puffer" inputmode="decimal"
+											value={data.pufferBetraege[s.gewerk.id] ? centsToInputValue(data.pufferBetraege[s.gewerk.id]) : ''}
+											placeholder="0,00"
+											class="w-28 input-sm" />
+									</div>
+									<div class="flex-1">
+										<label for="pufferNotiz" class="text-xs text-amber-700">Puffer-Notiz</label>
+										<input type="text" name="pufferNotiz" id="pufferNotiz"
+											value={data.pufferNotizen[s.gewerk.id] ?? ''}
+											placeholder="z.B. ~80m² Fliesen OG"
 											class="w-full input-sm" />
 									</div>
 									<button type="submit" class="btn-sm-primary inline-flex items-center gap-1.5">
@@ -162,6 +177,11 @@
 							<td class="px-4 py-3 text-sm text-right font-mono tabular-nums text-gray-600">{formatCents(vp.restauftrag)}</td>
 							<td class="px-4 py-3 text-sm text-right font-mono tabular-nums" class:text-red-600={restbudget < 0}>
 								{formatCents(restbudget)}
+								{#if puffer > 0}
+									<div class="text-xs font-normal tabular-nums mt-0.5" class:text-red-500={restbudgetEffektiv < 0} class:text-amber-600={restbudgetEffektiv >= 0}>
+										nach Puffer: {formatCents(restbudgetEffektiv)}
+									</div>
+								{/if}
 							</td>
 							<td class="px-4 py-3 text-center">
 								{#if s.gewerk.pauschal}
@@ -201,6 +221,7 @@
 									<div class="bg-green-500 transition-all" style="width: {barWidths.bezahlt}%"></div>
 									<div class="bg-orange-400 transition-all" style="width: {barWidths.offen}%"></div>
 									<div class="bg-gray-400 transition-all" style="width: {barWidths.restauftrag}%"></div>
+								<div class="bg-amber-300 transition-all" style="width: {barWidths.puffer}%"></div>
 								</div>
 							</td>
 						</tr>

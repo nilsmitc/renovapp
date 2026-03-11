@@ -91,7 +91,7 @@
 		{/if}
 
 		<div class="flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1">
-			{#each [['', 'Alle'], ['direkt', 'Direkt'], ['rechnung', 'Aus Rechnung'], ['lieferung', 'Aus Lieferung']] as [val, label]}
+			{#each [['', 'Alle'], ['direkt', 'Direkt'], ['rechnung', 'Aus Auftrag'], ['lieferung', 'Aus Lieferung']] as [val, label]}
 				<button
 					onclick={() => applyFilter('herkunft', val)}
 					class="rounded px-2.5 py-1 text-xs font-medium transition-colors {data.filter.herkunft === val || (!data.filter.herkunft && val === '') ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-800'}"
@@ -125,7 +125,7 @@
 								{#if buchung.rechnungId}
 									<a href="/rechnungen/{buchung.rechnungId}" class="inline-flex items-center gap-0.5 rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-600 hover:bg-blue-100 transition-colors">
 										<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-										Rechnung
+										Auftrag
 									</a>
 								{/if}
 								{#if buchung.lieferungId}
@@ -145,7 +145,7 @@
 									</a>
 								{/if}
 							</div>
-								{#if buchung.bezahltam}
+								{#if buchung.bezahltam && buchung.bezahltam !== buchung.datum}
 									<span class="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">
 										<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.5 12.75l6 6 9-13.5" /></svg>
 										Bezahlt {formatDatum(buchung.bezahltam)}

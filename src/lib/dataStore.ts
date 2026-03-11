@@ -159,6 +159,27 @@ export function loescheBelegRechnung(
 	if (existsSync(pfad)) unlinkSync(pfad);
 }
 
+// === Angebot für Rechnungen ===
+
+export function speicherAngebotRechnung(rechnungId: string, dateiname: string, buffer: Buffer): string {
+	const dir = join(DATA_DIR, 'rechnungen', rechnungId, 'angebot');
+	mkdirSync(dir, { recursive: true });
+	const safe = dateiname.replace(/[^a-zA-Z0-9._-]/g, '_');
+	writeFileSync(join(dir, safe), buffer);
+	return safe;
+}
+
+export function leseAngebotRechnung(rechnungId: string, dateiname: string): Buffer | null {
+	const pfad = join(DATA_DIR, 'rechnungen', rechnungId, 'angebot', dateiname);
+	if (!existsSync(pfad)) return null;
+	return readFileSync(pfad);
+}
+
+export function loescheAngebotRechnung(rechnungId: string, dateiname: string): void {
+	const pfad = join(DATA_DIR, 'rechnungen', rechnungId, 'angebot', dateiname);
+	if (existsSync(pfad)) unlinkSync(pfad);
+}
+
 // === Belege für Lieferungen ===
 
 export function belegePfadLieferung(lieferungId: string): string {

@@ -6,7 +6,7 @@
 	let { data }: { data: PageData } = $props();
 
 	let suche = $state('');
-	let typFilter = $state<'alle' | 'buchung' | 'abschlag' | 'lieferung'>('alle');
+	let typFilter = $state<'alle' | 'buchung' | 'abschlag' | 'lieferung' | 'angebot'>('alle');
 
 	function isPdf(name: string): boolean {
 		return name.toLowerCase().endsWith('.pdf');
@@ -28,14 +28,16 @@
 	const typLabel: Record<string, string> = {
 		buchung: 'Buchung',
 		abschlag: 'Abschlag',
-		lieferung: 'Lieferung'
+		lieferung: 'Lieferung',
+		angebot: 'Angebot'
 	};
 
-	const typFilterOptions: { key: 'alle' | 'buchung' | 'abschlag' | 'lieferung'; label: string }[] = [
+	const typFilterOptions: { key: 'alle' | 'buchung' | 'abschlag' | 'lieferung' | 'angebot'; label: string }[] = [
 		{ key: 'alle', label: 'Alle' },
 		{ key: 'buchung', label: 'Buchungen' },
 		{ key: 'abschlag', label: 'Abschläge' },
-		{ key: 'lieferung', label: 'Lieferungen' }
+		{ key: 'lieferung', label: 'Lieferungen' },
+		{ key: 'angebot', label: 'Angebote' }
 	];
 
 	const gefilterteEintraege = $derived(
@@ -74,7 +76,7 @@
 
 	<!-- KPI-Zeile -->
 	{#if data.eintraege.length > 0}
-		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 			<div class="kpi-card border-l-4 border-l-blue-500">
 				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
@@ -91,7 +93,7 @@
 				</div>
 				<div class="text-xl font-bold font-mono mt-1">{data.stats.buchungen + data.stats.abschlaege + data.stats.lieferungen}</div>
 				<div class="text-xs text-gray-400 mt-1">
-					{data.stats.buchungen} Buchungen · {data.stats.abschlaege} Abschläge · {data.stats.lieferungen} Lieferungen
+					{data.stats.buchungen} Buchungen · {data.stats.abschlaege} Abschläge · {data.stats.lieferungen} Lieferungen · {data.stats.angebote} Angebote
 				</div>
 			</div>
 
@@ -109,7 +111,7 @@
 	<!-- Filter -->
 	<div class="flex flex-wrap gap-3 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
 		<!-- Gewerk-Dropdown -->
-		<select onchange={(e) => applyFilter('gewerk', e.currentTarget.value)} class="input-sm">
+		<select onchange={(e) => applyFilter('gewerk', e.currentTarget.value)} class="input-sm w-full sm:w-auto">
 			<option value="">Alle Gewerke</option>
 			{#each data.gewerke as g}
 				<option value={g.id} selected={data.filter.gewerk === g.id}>{g.name}</option>
@@ -117,11 +119,11 @@
 		</select>
 
 		<!-- Typ-Tabs -->
-		<div class="flex rounded-lg border border-gray-200 overflow-hidden">
+		<div class="flex overflow-x-auto rounded-lg border border-gray-200">
 			{#each typFilterOptions as opt}
 				<button
 					onclick={() => (typFilter = opt.key)}
-					class="px-3 py-1.5 text-sm font-medium transition-colors
+					class="whitespace-nowrap shrink-0 px-3 py-1.5 text-sm font-medium transition-colors
 						{typFilter === opt.key
 							? 'bg-blue-600 text-white'
 							: 'bg-white text-gray-600 hover:bg-gray-50'}"
@@ -132,7 +134,7 @@
 		</div>
 
 		<!-- Suche -->
-		<div class="relative flex-1 min-w-40">
+		<div class="relative flex-1 min-w-40 w-full sm:w-auto">
 			<svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
 			<input
 				type="text"
@@ -169,14 +171,14 @@
 					{#each eintraege as eintrag (eintrag.key)}
 						<div class="card p-4">
 							<!-- Info -->
-							<div class="flex items-start justify-between mb-3">
+							<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3">
 								<div>
 									<div class="font-medium text-gray-900">{eintrag.beschreibung}</div>
 									<div class="text-sm text-gray-500 mt-0.5">
 										{eintrag.datum ? formatDatum(eintrag.datum) : '—'} &middot; {eintrag.gewerkName} &middot; <span class="font-mono tabular-nums">{formatCents(eintrag.betrag)}</span>
 									</div>
 								</div>
-								<div class="flex items-center gap-2 shrink-0 ml-4">
+								<div class="flex items-center gap-2 shrink-0 mt-2 sm:mt-0 sm:ml-4">
 									<span class="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">
 										{typLabel[eintrag.typ]}
 									</span>

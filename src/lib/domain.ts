@@ -43,6 +43,8 @@ export interface Budget {
 	gewerk: string;
 	geplant: number; // cents
 	notiz: string;
+	puffer?: number;       // geplante, noch nicht beauftragte Kosten in Cents
+	pufferNotiz?: string;  // Erläuterung z.B. "~80m² Bodenfliesen OG"
 }
 
 export interface ProjektData {
@@ -83,6 +85,7 @@ export interface Lieferung {
 	notiz?: string;
 	bezahltam?: string;            // YYYY-MM-DD – tatsächliches Zahlungsdatum (optional)
 	buchungId?: string;            // Link zur auto-erstellten Buchung in buchungen.json
+	inAuftragEnthalten?: string;   // rechnungId — wenn gesetzt: keine auto-Buchung (Lieferung = reiner Lieferschein)
 	erstellt: string;
 	geaendert: string;
 }
@@ -132,6 +135,7 @@ export interface Rechnung {
 	auftragssumme?: number;  // Cents, optional
 	auftragsdatum?: string;  // YYYY-MM-DD
 	notiz?: string;
+	angebot?: string;        // Dateiname in data/rechnungen/{rechnungId}/angebot/
 	nachtraege: Nachtrag[];  // genehmigte Mehraufwände (Change Orders)
 	abschlaege: Abschlag[];
 	erstellt: string;
