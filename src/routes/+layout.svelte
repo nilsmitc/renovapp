@@ -1,10 +1,24 @@
 <script lang="ts">
 	import '../app.css';
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
+	import Onboarding from '$lib/components/Onboarding.svelte';
 
 	let { children } = $props();
 
 	let menuOpen = $state(false);
+	let showOnboarding = $state(false);
+
+	onMount(() => {
+		if (!localStorage.getItem('onboarding_done')) {
+			showOnboarding = true;
+		}
+	});
+
+	function closeOnboarding() {
+		showOnboarding = false;
+		localStorage.setItem('onboarding_done', '1');
+	}
 
 	const nav = [
 		{
@@ -142,4 +156,8 @@
 	<main class="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
 		{@render children()}
 	</main>
+
+	{#if showOnboarding}
+		<Onboarding onClose={closeOnboarding} />
+	{/if}
 </div>
