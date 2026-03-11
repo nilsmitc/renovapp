@@ -39,6 +39,12 @@ export const GET: RequestHandler = () => {
 		files['lieferanten.json'] = readFileSync(lieferantenJson);
 	}
 
+	// KI-Analyse (optional)
+	const aiAnalyseJson = join(DATA_DIR, 'ai-analyse.json');
+	if (existsSync(aiAnalyseJson)) {
+		files['ai-analyse.json'] = readFileSync(aiAnalyseJson);
+	}
+
 	// Rechnungs-Belege rekursiv (data/rechnungen/{rechnungId}/{abschlagId}/{datei})
 	const rechnungenBelegeDir = join(DATA_DIR, 'rechnungen');
 	if (existsSync(rechnungenBelegeDir)) {

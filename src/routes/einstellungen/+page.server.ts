@@ -97,6 +97,16 @@ export const actions: Actions = {
 			} catch { /* beschädigter Eintrag – ignorieren */ }
 		}
 
+		// KI-Analyse (optional)
+		if (eintraege['ai-analyse.json']) {
+			try {
+				const aiJson = JSON.parse(decoder.decode(eintraege['ai-analyse.json']));
+				if (aiJson && typeof aiJson === 'object') {
+					writeFileSync(join(DATA_DIR, 'ai-analyse.json'), JSON.stringify(aiJson, null, 2));
+				}
+			} catch { /* beschädigter Eintrag – ignorieren */ }
+		}
+
 		throw redirect(303, '/einstellungen?success=1');
 	}
 };
