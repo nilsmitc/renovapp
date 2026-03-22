@@ -6,6 +6,7 @@ type BelegEintrag = {
 	key: string;
 	datum: string;
 	beschreibung: string;
+	gewerkId: string;
 	gewerkName: string;
 	betrag: number;
 	belege: BelegDatei[];
@@ -33,6 +34,7 @@ export const load: PageServerLoad = ({ url }) => {
 			key: `buchung-${b.id}`,
 			datum: b.datum,
 			beschreibung: b.beschreibung,
+			gewerkId: b.gewerk,
 			gewerkName: gewerkeMap.get(b.gewerk) ?? b.gewerk,
 			betrag: b.betrag,
 			belege: b.belege.map((f) => ({ dateiname: f, href: `/belege/${b.id}/${f}` })),
@@ -56,6 +58,7 @@ export const load: PageServerLoad = ({ url }) => {
 				key: `abschlag-${a.id}`,
 				datum: a.faelligkeitsdatum ?? '',
 				beschreibung: `${r.auftragnehmer} – ${typLabel}`,
+				gewerkId: r.gewerk,
 				gewerkName: gewerkeMap.get(r.gewerk) ?? r.gewerk,
 				betrag: a.rechnungsbetrag,
 				belege: [{ dateiname: a.beleg, href: `/rechnungen/${r.id}/${a.id}/${a.beleg}` }],
@@ -74,6 +77,7 @@ export const load: PageServerLoad = ({ url }) => {
 			key: `lieferung-${l.id}`,
 			datum: l.datum,
 			beschreibung: lieferantName + (l.rechnungsnummer ? ` – ${l.rechnungsnummer}` : ''),
+			gewerkId: l.gewerk ?? '',
 			gewerkName: gewerkeMap.get(l.gewerk ?? '') ?? '—',
 			betrag: l.betrag ?? 0,
 			belege: l.belege.map((f) => ({ dateiname: f, href: `/lieferungen/${l.id}/${f}` })),
@@ -90,6 +94,7 @@ export const load: PageServerLoad = ({ url }) => {
 			key: `angebot-${r.id}`,
 			datum: r.auftragsdatum ?? r.erstellt.slice(0, 10),
 			beschreibung: `${r.auftragnehmer} – Angebot`,
+			gewerkId: r.gewerk,
 			gewerkName: gewerkeMap.get(r.gewerk) ?? r.gewerk,
 			betrag: r.auftragssumme ?? 0,
 			belege: [{ dateiname: r.angebot, href: `/rechnungen/${r.id}/angebot/${r.angebot}` }],
@@ -110,5 +115,21 @@ export const load: PageServerLoad = ({ url }) => {
 		gesamtBetrag: eintraege.reduce((s, e) => s + e.betrag, 0)
 	};
 
-	return { eintraege, gewerke: projekt.gewerke, filter: { gewerk }, stats };
+	// Fehlende Belege zählen
+	const fehlendBuchungen = buchungen.filter(b => b.belege.length === 0 && (!gewerk || b.gewerk === gewerk)).length;
+	let fehlendAbschlaege = 0;
+	for (const r of rechnungen) {
+		if (gewerk && r.gewerk !== gewerk) continue;
+		fehlendAbschlaege += r.abschlaege.filter(a => !a.beleg).length;
+	}
+	const fehlendLieferungen = lieferungen.filter(l => l.belege.length === 0 && (!gewerk || l.gewerk === gewerk)).length;
+
+	const fehlend = {
+		buchungen: fehlendBuchungen,
+		abschlaege: fehlendAbschlaege,
+		lieferungen: fehlendLieferungen,
+		gesamt: fehlendBuchungen + fehlendAbschlaege + fehlendLieferungen
+	};
+
+	return { eintraege, gewerke: projekt.gewerke, filter: { gewerk }, stats, fehlend };
 };
