@@ -10,9 +10,17 @@ const DATA_DIR = join(process.cwd(), 'data');
 const PROJECT_DIR = process.cwd();
 const MAX_GROESSE = 200 * 1024 * 1024; // 200 MB
 
-export const load: PageServerLoad = ({ url }) => ({
-	updating: url.searchParams.get('updating') === '1'
-});
+export const load: PageServerLoad = ({ url }) => {
+	let version = '?';
+	try {
+		version = execSync('git rev-parse --short HEAD', { cwd: PROJECT_DIR, encoding: 'utf-8', timeout: 5000 }).trim();
+	} catch { /* git nicht verfügbar */ }
+
+	return {
+		updating: url.searchParams.get('updating') === '1',
+		version
+	};
+};
 
 export const actions: Actions = {
 	import: async ({ request }) => {

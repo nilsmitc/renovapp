@@ -238,4 +238,9 @@
 			Einweisung erneut anzeigen
 		</button>
 	</div>
+
+	<!-- Version -->
+	<div class="text-center text-xs text-gray-400 pt-2">
+		RenovApp &middot; Version {data.version}
+	</div>
 </div>
