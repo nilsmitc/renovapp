@@ -295,9 +295,12 @@ Altbau/
 │   ├── rechnungen.json             # Rechnungen mit Abschlägen und Nachträgen
 │   ├── lieferanten.json            # Lieferanten + Lieferungen
 │   ├── ai-analyse.json            # KI-Analyse (von Claude Code geschrieben)
+│   ├── dokumente-texte.json       # Extrahierte PDF-Texte (von /api/dokumente-extrakt)
+│   ├── email-scan-cache.json      # E-Mail-Import-Cache (Thunderbird-Scan)
 │   ├── belege/                     # Beleg-Dateien pro Buchung
 │   ├── rechnungen/                 # Belege pro Abschlag ({rechnungId}/{abschlagId}/)
 │   ├── lieferungen/                # Belege pro Lieferung ({lieferungId}/)
+│   ├── email-scan/                 # Gescannte E-Mail-Anhänge (PDFs)
 │   └── summary.json                # Auto-generiert
 ├── src/
 │   ├── lib/
@@ -305,8 +308,9 @@ Altbau/
 │   │   ├── dataStore.ts            # JSON Datei-I/O (server-only, synchron)
 │   │   ├── format.ts               # formatCents(), parseCentsFromInput(), formatDatum()
 │   │   ├── pdfExtract.ts           # PDF-Textextraktion via pdf-parse v2 (für Lieferungen)
-│   │   ├── pdfReport.ts            # PDF-Berichtserstellung (pdfmake, A4, 9 Abschnitte)
+│   │   ├── pdfReport.ts            # PDF-Berichtserstellung (pdfmake, A4, 11 Abschnitte)
 │   │   ├── pdfCharts.ts            # Server-side Chart-Rendering (chartjs-node-canvas → base64 PNG)
+│   │   ├── reportData.ts           # Shared Berechnungslogik (Finanz, BurnRate, Steuer, Zahlungen)
 │   │   ├── aiAnalyse.ts            # KI-Analyse lesen (leseAnalyse() → data/ai-analyse.json)
 │   │   └── components/
 │   │       ├── BuchungForm.svelte   # Wiederverwendbares Buchungs-Formular
@@ -338,12 +342,14 @@ Altbau/
 │       ├── bericht/
 │       │   ├── +page.svelte         # Bericht-Seite (PDF-Download mit KI-Option)
 │       │   └── +page.server.ts      # Claude-Verfügbarkeit prüfen, Summary-Daten laden
-│       ├── einstellungen/+page.svelte  # Export / Import (ZIP-Backup)
+│       ├── einstellungen/+page.svelte  # Export / Import / Auto-Update
 │       └── api/
-│           ├── bericht/+server.ts   # GET-Endpoint: PDF-Bericht (optional ?ai=true)
-│           ├── export/+server.ts    # GET-Endpoint: ZIP-Download aller Daten
-│           └── pdf-analyse/+server.ts  # POST-Endpoint: PDF → Datum/Betrag/Rg-Nr./Positionen
-├── start.sh                         # Dev-Server starten + Browser öffnen
+│           ├── bericht/+server.ts           # GET: PDF-Bericht (optional ?ai=true)
+│           ├── export/+server.ts            # GET: ZIP-Download aller Daten
+│           ├── pdf-analyse/+server.ts       # POST: PDF → Datum/Betrag/Rg-Nr./Positionen
+│           ├── dokumente-extrakt/+server.ts # GET: PDF-Texte extrahieren → dokumente-texte.json
+│           └── update-status/+server.ts     # GET: git fetch + Update-Verfügbarkeit prüfen
+├── start.sh                         # Dev-Server mit Auto-Restart-Schleife + Browser öffnen
 ├── altbau-kosten.desktop            # Desktop-Shortcut
 ├── CLAUDE.md                        # Diese Datei
 ├── package.json
@@ -367,6 +373,49 @@ Alle Filter funktionieren über URL-Parameter – kombinierbar, browser-back-fä
 - `/buchungen?monat=2026-02` (vom Monatsverlauf-Link)
 - `/buchungen?raum=@EG` — nur Stockwerk-Buchungen EG
 - `/buchungen?geschoss=EG` — alle EG-Buchungen (Einzelräume + `@EG` kombiniert)
+
+---
+
+## Erweiterungen (22.03.2026) — Bericht, KI-Analyse, Auto-Update, Backup
+
+### PDF-Bericht modernisiert
+Komplette Überarbeitung des Bauleiter-Berichts (`pdfReport.ts`, ~700 Zeilen):
+- **Deckblatt**: 8 KPIs statt 4 (+ Burn Rate 3-Mo., Fest eingeplant, Offene Rechnungen, Nächste Fälligkeit)
+- **Fortschrittsbalken**: gestapelt (Bezahlt blau + Offen orange + Restauftrag violett) mit Legende
+- **Budget-Tabelle**: 8 Spalten (Bezahlt/Offen/Restauftrag/Puffer/Frei/Status) statt 6
+- **Neuer Stacked-Bar-Chart** (`renderBudgetStackedChart` in `pdfCharts.ts`): Budget vs. Bindung pro Gewerk
+- **Sammelgewerk-Aufschlüsselung**: Tätigkeits-Breakdown nach Budget-Tabelle
+- **Auftragsstatus**: Nachträge-Spalte (Ursprüngl./Nachträge/Gesamt) + Unterabschnitt "Nächste Zahlungen" (Top 10)
+- **Steuer §35a**: Neuer konditionaler Abschnitt (pro Steuerjahr KPIs + Buchungstabelle)
+- **Prognose**: 3-Monats-Burn-Rate, Simulation mit bekannten Zahlungsterminen, Gewerk-Prognose-Tabelle
+- **Lieferanten**: Zahlungsart-Spalte ergänzt
+
+### Shared Berechnungslogik (`reportData.ts`)
+Neue Datei `src/lib/reportData.ts` — extrahierte Logik aus Dashboard, Prognose, Steuer:
+- `berechneFinanzuebersicht()` → offen/restauftrag/puffer/frei pro Gewerk
+- `berechneNaechsteZahlungen()` → sortierte offene Abschläge
+- `berechneMonatsDaten()` + `berechneBurnRate()` → 3-Monats-Rolling-Average
+- `berechneSteuerDaten()` → §35a pro Jahr
+- Genutzt von: `+page.server.ts` (Dashboard), `steuer/+page.server.ts`, `pdfReport.ts`
+
+### KI-Analyse mit Dokumenten-Extraktion
+- **Neuer Endpoint**: `GET /api/dokumente-extrakt` — extrahiert Text aus allen Angebots-/Rechnungs-PDFs via `extrahierePdfDaten()`, schreibt `data/dokumente-texte.json`
+- **Button auf `/bericht`**: "Dokumente für KI-Analyse vorbereiten" mit Status-Anzeige
+- **Neues Analyse-Feld**: `dokumentenAnalyse?: string` in `BauAnalyse`-Interface
+- **PDF-Bericht**: zeigt "Dokumentenanalyse"-Abschnitt im KI-Teil (falls vorhanden)
+- **CLAUDE.md**: Anweisungen für Analyse erweitert (Angebots-Positionen, Zahlungsbedingungen, Förder-Klauseln, Angebot-vs-Rechnung)
+
+### Auto-Update-Mechanismus
+- **`start.sh`**: Server läuft im Hintergrund, Shell-Schleife überwacht Marker-Datei `.restart-after-update` (1-Sekunden-Poll). Bei Marker → Server-Prozessbaum killen → npm install falls nötig → Neustart
+- **`GET /api/update-status`**: `git fetch` + Vergleich HEAD vs. origin/master, Commit-Liste
+- **`POST /einstellungen?/update`**: `git stash` → `git pull` → `git stash pop` → Marker schreiben
+- **UI auf `/einstellungen`**: 4 Zustände (nicht geprüft → aktuell → Update verfügbar → Neustart läuft), Auto-Reload mit Retry-Logik
+- **Versionsanzeige**: Git-Commit-Hash unten auf Einstellungen-Seite
+
+### Backup aktualisiert
+- **Export ergänzt**: `email-scan-cache.json` + `email-scan/`-Verzeichnis
+- **Import-Bug behoben**: `dokumente-texte.json` wurde exportiert aber nicht wiederhergestellt
+- **Import ergänzt**: `dokumente-texte.json` + `email-scan-cache.json` + `email-scan/`-Verzeichnis
 
 ---
 
@@ -627,7 +676,7 @@ Neues optionales Feld `taetigkeit?: string` auf jeder Buchung. Im Buchungsformul
 
 ---
 
-## Features (Stand 23.02.2026, aktualisiert)
+## Features (Stand 22.03.2026, aktualisiert)
 
 ### Dashboard (`/`)
 - KPI-Karten (je nach Datenlage 4–8): Budget · Ausgaben · Verbleibend · Verbraucht% · Top-Raum (klickbar) · **Ausstehend/Bald fällig/Überfällig** (3 Zustände: gelb/amber/rot) · **Gebunden** (Vertragssummen noch nicht fakturiert, blau) · **Burn Rate** (Ø/Monat + Hochrechnung Restbudget)
@@ -703,14 +752,21 @@ Neues optionales Feld `taetigkeit?: string` auf jeder Buchung. Im Buchungsformul
 - Inline-Bearbeitung bestehender Lieferungen
 
 ### Bauleiter-Bericht (`/bericht`)
-- Professioneller PDF-Bericht mit allen Finanzdaten und Charts (8–10 Seiten)
+- Professioneller PDF-Bericht mit allen Finanzdaten und Charts (10–14 Seiten)
+- **Deckblatt**: 8 KPIs (Budget, Ausgaben, Frei verfügbar, Verbraucht%, Fest eingeplant, Burn Rate 3-Mo., Offene Rechnungen, Nächste Fälligkeit) + gestapelter Fortschrittsbalken (Bezahlt/Offen/Restauftrag)
+- **Budget-Übersicht**: Erweiterte Tabelle (Bezahlt/Offen/Restauftrag/Puffer/Frei/Status) + Stacked-Bar-Chart (Budget vs. Bindung) + Sammelgewerk-Aufschlüsselung nach Tätigkeit
+- **Auftragsstatus**: Nachträge-Spalte (Ursprüngl./Nachträge/Gesamt) + **Nächste Zahlungen** (Top 10 mit Countdown und Farbmarkierung)
+- **Steuer §35a** (konditional): Pro Steuerjahr KPIs + Buchungstabelle (nur wenn steuerrelevante Buchungen vorhanden)
+- **Prognose**: 3-Monats-Burn-Rate (statt Gesamtdurchschnitt), Simulation mit bekannten Zahlungsterminen, Gewerk-Prognose-Tabelle
 - **KI-Analyse** (optional): Claude Code schreibt Analyse nach `data/ai-analyse.json`, Webapp liest sie ein
-- PDF enthält: Deckblatt, Budget-Übersicht, Kategorien, Kosten nach Raum, Auftragsstatus, Monatsverlauf, Prognose, Lieferanten
-- 7 server-side gerenderte Charts (volle Breite, portiert aus Dashboard-Charts)
-- Checkbox "Mit KI-Analyse" (aktiv wenn `data/ai-analyse.json` existiert)
-- Anleitung: "erstelle Bauleiter-Analyse" in Claude Code → Datei wird geschrieben → PDF enthält Analyse
+- **Dokumentenanalyse** (optional): Neues Feld `dokumentenAnalyse` — Erkenntnisse aus extrahierten Angebots-/Rechnungs-PDFs
+- **Dokumenten-Vorbereitung**: Button extrahiert Text aus allen hinterlegten PDFs → `data/dokumente-texte.json`
+- 7 server-side gerenderte Charts + Stacked-Bar-Chart für Budget-Bindung
 - Download als `bauleiter-bericht-YYYY-MM-DD.pdf`
+- Shared Berechnungslogik in `src/lib/reportData.ts` (genutzt von Dashboard, Prognose, Steuer und PDF-Bericht)
 
 ### Einstellungen (`/einstellungen`)
-- **Export**: ZIP-Download mit projekt.json + buchungen.json + rechnungen.json + lieferanten.json + alle Belege
-- **Import**: ZIP hochladen → vollständiges Restore (ersetzt alle Daten)
+- **Auto-Update**: Button "Nach Updates suchen" prüft via `git fetch` auf neue Commits; "Jetzt aktualisieren" → `git pull` + automatischer Server-Neustart via `start.sh`-Überwachungsschleife + Auto-Reload im Browser
+- **Export**: ZIP-Download mit allen Daten (projekt.json, buchungen.json, rechnungen.json, lieferanten.json, ai-analyse.json, dokumente-texte.json, email-scan-cache.json, alle Belege inkl. email-scan/)
+- **Import**: ZIP hochladen → vollständiges Restore (ersetzt alle Daten, inkl. dokumente-texte.json und E-Mail-Scan-Cache)
+- **Versionsanzeige**: Git-Commit-Hash unten auf der Seite
