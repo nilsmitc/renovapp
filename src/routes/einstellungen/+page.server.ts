@@ -162,11 +162,8 @@ export const actions: Actions = {
 			// Lokale Änderungen wiederherstellen
 			try { execSync('git stash pop', opts); } catch { /* Konflikte ignorieren */ }
 
-			// Marker für Neustart schreiben
+			// Marker für Neustart schreiben — start.sh erkennt die Datei und startet den Server neu
 			writeFileSync(join(PROJECT_DIR, '.restart-after-update'), '', 'utf-8');
-
-			// Server nach kurzer Verzögerung beenden (gibt Zeit für HTTP-Response)
-			setTimeout(() => process.exit(0), 500);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			return fail(500, { updateError: `Update fehlgeschlagen: ${msg}` });

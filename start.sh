@@ -90,24 +90,40 @@ echo ""
 rm -f .restart-after-update
 
 # Browser oeffnen (OS-unabhaengig, nur beim ersten Start)
+BROWSER_OPENED=false
 if command -v xdg-open &>/dev/null; then
     sleep 2 && xdg-open http://localhost:5173 &
+    BROWSER_OPENED=true
 elif command -v open &>/dev/null; then
     sleep 2 && open http://localhost:5173 &
+    BROWSER_OPENED=true
 fi
 
 while true; do
-    npm run dev
+    # Server im Hintergrund starten
+    npm run dev &
+    SERVER_PID=$!
 
-    # Nur bei Update-Marker neu starten
+    # Warten: entweder Server beendet sich oder Marker-Datei erscheint
+    while kill -0 $SERVER_PID 2>/dev/null; do
+        if [ -f ".restart-after-update" ]; then
+            echo ""
+            echo "=============================="
+            echo "  Update-Marker erkannt – Server wird neu gestartet..."
+            echo "=============================="
+            # Server-Prozessbaum beenden
+            kill -- -$SERVER_PID 2>/dev/null || kill $SERVER_PID 2>/dev/null
+            wait $SERVER_PID 2>/dev/null
+            break
+        fi
+        sleep 1
+    done
+
+    # Kein Marker = normales Ende (Ctrl+C etc.) → Schleife beenden
     if [ ! -f ".restart-after-update" ]; then
         break
     fi
     rm -f .restart-after-update
-    echo ""
-    echo "=============================="
-    echo "  Update installiert – Neustart..."
-    echo "=============================="
     echo ""
 
     # Dependencies aktualisieren falls noetig

@@ -47,11 +47,11 @@ export const GET: RequestHandler = () => {
 
 		let commits: { hash: string; datum: string; nachricht: string }[] = [];
 		if (updateVerfuegbar) {
-			const log = git('log HEAD..origin/master --format=%h|%as|%s');
+			const log = git('log HEAD..origin/master --format=%h§%as§%s');
 			if (log) {
 				commits = log.split('\n').map((line) => {
-					const [hash, datum, ...rest] = line.split('|');
-					return { hash, datum, nachricht: rest.join('|') };
+					const [hash, datum, ...rest] = line.split('§');
+					return { hash, datum, nachricht: rest.join('§') };
 				});
 			}
 		}

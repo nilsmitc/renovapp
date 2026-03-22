@@ -33,12 +33,23 @@
 		}
 	}
 
-	// Auto-Reload nach Update
+	// Auto-Reload nach Update: Server braucht ein paar Sekunden zum Neustart
 	onMount(() => {
 		if (data.updating) {
-			const timer = setTimeout(() => {
-				window.location.href = '/einstellungen';
-			}, 5000);
+			let versuche = 0;
+			const retry = () => {
+				versuche++;
+				fetch('/einstellungen', { method: 'HEAD' })
+					.then(() => {
+						// Server ist wieder da
+						window.location.href = '/einstellungen';
+					})
+					.catch(() => {
+						// Server noch nicht bereit, erneut versuchen (max. 30 Sekunden)
+						if (versuche < 15) setTimeout(retry, 2000);
+					});
+			};
+			const timer = setTimeout(retry, 3000);
 			return () => clearTimeout(timer);
 		}
 	});
