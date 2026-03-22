@@ -247,29 +247,29 @@
 			<div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
 				{#if rechnung.auftragssumme}
 					<div class="rounded-lg bg-gray-50 p-3">
-						<div class="text-xs uppercase tracking-wide text-gray-500">Auftrag</div>
+						<div class="text-xs text-gray-500">Auftrag</div>
 						<div class="mt-1 text-lg font-bold tabular-nums text-gray-900">{formatCents(rechnung.auftragssumme)}</div>
 					</div>
 				{/if}
 				{#if nachtraegeSumme > 0}
 					<div class="rounded-lg bg-orange-50 p-3">
-						<div class="text-xs uppercase tracking-wide text-orange-600">Nachträge</div>
+						<div class="text-xs text-orange-600">Nachträge</div>
 						<div class="mt-1 text-lg font-bold tabular-nums text-orange-700">+{formatCents(nachtraegeSumme)}</div>
 					</div>
 				{/if}
 				<div class="rounded-lg bg-gray-50 p-3">
-					<div class="text-xs uppercase tracking-wide text-gray-500">Gestellt</div>
+					<div class="text-xs text-gray-500">Gestellt</div>
 					<div class="mt-1 text-lg font-bold tabular-nums text-gray-900">{formatCents(gestelltSumme)}</div>
 				</div>
 				{#if bezahltSumme > 0}
 					<div class="rounded-lg bg-green-50 p-3">
-						<div class="text-xs uppercase tracking-wide text-green-600">Bezahlt</div>
+						<div class="text-xs text-green-600">Bezahlt</div>
 						<div class="mt-1 text-lg font-bold tabular-nums text-green-700">{formatCents(bezahltSumme)}</div>
 					</div>
 				{/if}
 				{#if offenSumme > 0}
 					<div class="rounded-lg bg-yellow-50 p-3">
-						<div class="text-xs uppercase tracking-wide text-yellow-600">Offen</div>
+						<div class="text-xs text-yellow-600">Offen</div>
 						<div class="mt-1 text-lg font-bold tabular-nums text-yellow-700">{formatCents(offenSumme)}</div>
 					</div>
 				{/if}
@@ -406,10 +406,10 @@
 				<table class="min-w-full">
 					<thead>
 						<tr class="thead-row">
-							<th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Beschreibung</th>
-							<th class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wide text-gray-500">Betrag</th>
-							<th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Datum</th>
-							<th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Notiz</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Beschreibung</th>
+							<th class="px-3 py-2 text-right text-xs font-medium text-gray-500">Betrag</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Datum</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Notiz</th>
 							<th class="px-3 py-2"></th>
 						</tr>
 					</thead>
@@ -540,13 +540,13 @@
 				<table class="min-w-full">
 					<thead>
 						<tr class="thead-row">
-							<th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Nr.</th>
-							<th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Typ</th>
-							<th class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wide text-gray-500">Betrag</th>
-							<th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Rg.-Nr.</th>
-							<th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Fällig</th>
-							<th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Status</th>
-							<th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Bezahlt am</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Nr.</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Typ</th>
+							<th class="px-3 py-2 text-right text-xs font-medium text-gray-500">Betrag</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Rg.-Nr.</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Fällig</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Bezahlt am</th>
 							<th class="px-3 py-2"></th>
 						</tr>
 					</thead>

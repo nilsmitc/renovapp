@@ -220,20 +220,20 @@
 	{/if}
 
 	<!-- KPI-Karten -->
-	<div class="grid grid-cols-3 gap-4">
-		<div class="kpi-card">
-			<div class="text-xs font-medium uppercase tracking-wide text-gray-500">Gesamtausgaben</div>
-			<div class="mt-1 text-2xl font-bold tabular-nums text-gray-900">
+	<div class="grid grid-cols-3 gap-4 stagger">
+		<div class="kpi-card animate-in">
+			<div class="text-xs font-medium text-gray-500">Gesamtausgaben</div>
+			<div class="mt-1 text-2xl font-bold tabular-nums text-gray-900 kpi-value">
 				{data.gesamtBetrag !== 0 ? formatCents(data.gesamtBetrag) : '—'}
 			</div>
 		</div>
-		<div class="kpi-card">
-			<div class="text-xs font-medium uppercase tracking-wide text-gray-500">Lieferungen</div>
-			<div class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{data.lieferungenMitStats.length}</div>
+		<div class="kpi-card animate-in">
+			<div class="text-xs font-medium text-gray-500">Lieferungen</div>
+			<div class="mt-1 text-2xl font-bold tabular-nums text-gray-900 kpi-value">{data.lieferungenMitStats.length}</div>
 		</div>
-		<div class="kpi-card">
-			<div class="text-xs font-medium uppercase tracking-wide text-gray-500">Buchungen</div>
-			<div class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{data.gesamtBuchungen}</div>
+		<div class="kpi-card animate-in">
+			<div class="text-xs font-medium text-gray-500">Buchungen</div>
+			<div class="mt-1 text-2xl font-bold tabular-nums text-gray-900 kpi-value">{data.gesamtBuchungen}</div>
 		</div>
 	</div>
 
@@ -385,7 +385,7 @@
 							id="belege-neu"
 							multiple
 							accept=".pdf,.jpg,.jpeg,.png"
-							class="block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
+							class="block w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
 							oninput={(e) => analysierePdf(e.currentTarget.files)}
 						/>
 						<div class="mt-2 flex flex-wrap items-center gap-2">
@@ -647,7 +647,7 @@
 								<summary class="cursor-pointer text-xs font-medium text-gray-500 hover:text-gray-800">
 									{lieferung.positionen.length} Positionen (aus PDF)
 								</summary>
-								<div class="mt-2 overflow-hidden rounded-md border border-gray-200">
+								<div class="mt-2 overflow-hidden rounded-lg border border-gray-200">
 									<table class="w-full text-xs">
 										<thead>
 											<tr class="bg-gray-50">
@@ -676,7 +676,7 @@
 						{#if lieferung.belege.length > 0}
 							<div class="mt-3 flex flex-wrap gap-2">
 								{#each lieferung.belege as beleg}
-									<div class="flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2 py-1">
+									<div class="flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1">
 										<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 											<path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
 										</svg>

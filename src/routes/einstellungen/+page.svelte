@@ -80,14 +80,14 @@
 			</h2>
 
 			{#if form?.updateError}
-				<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-md border border-red-200 text-sm">
+				<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200 text-sm">
 					<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
 					{form.updateError}
 				</div>
 			{/if}
 
 			{#if updateStatus?.fehler}
-				<div class="flex items-center gap-2 bg-yellow-50 text-yellow-700 px-4 py-3 rounded-md border border-yellow-200 text-sm">
+				<div class="flex items-center gap-2 bg-yellow-50 text-yellow-700 px-4 py-3 rounded-lg border border-yellow-200 text-sm">
 					<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" /></svg>
 					{updateStatus.fehler}
 				</div>
@@ -115,7 +115,7 @@
 							updateLaeuft = false;
 						};
 					}}>
-						<button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50" disabled={updateLaeuft}>
+						<button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50" disabled={updateLaeuft}>
 							{#if updateLaeuft}
 								<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
 								Aktualisiere...
@@ -128,7 +128,7 @@
 					<p class="text-xs text-gray-500 ml-7">Der Server wird kurz neu gestartet. Deine Daten bleiben erhalten.</p>
 				</div>
 			{:else if updateStatus && !updateStatus.updateVerfuegbar}
-				<div class="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-3 rounded-md border border-green-200 text-sm">
+				<div class="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-3 rounded-lg border border-green-200 text-sm">
 					<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 					Deine Version ist aktuell
 					<span class="text-green-500 font-mono text-xs ml-1">({updateStatus.aktuellerCommit})</span>
@@ -182,13 +182,13 @@
 		</p>
 
 		{#if form?.error}
-			<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-md border border-red-200 text-sm">
+			<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200 text-sm">
 				<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
 				{form.error}
 			</div>
 		{/if}
 		{#if erfolg}
-			<div class="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-3 rounded-md border border-green-200 text-sm">
+			<div class="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-3 rounded-lg border border-green-200 text-sm">
 				<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 				Backup erfolgreich importiert.
 			</div>
@@ -213,7 +213,7 @@
 				name="backup"
 				accept=".zip,application/zip"
 				required
-				class="input-base file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+				class="input-base file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
 			/>
 			<div>
 				<button type="submit" class="btn-primary inline-flex items-center gap-1.5" disabled={laeuft}>

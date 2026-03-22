@@ -119,73 +119,73 @@
 	{/if}
 
 	<!-- KPI-Karten Reihe 1: Budget-Überblick -->
-	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger">
 		<!-- Gesamtbudget -->
-		<div class="kpi-card border-l-4 border-l-gray-400">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+		<div class="kpi-card animate-in">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
 				</svg>
 				Gesamtbudget
 			</div>
-			<div class="text-xl font-bold font-mono mt-1">{formatCents(data.gesamtBudget)}</div>
+			<div class="text-xl font-bold font-mono mt-1 kpi-value">{formatCents(data.gesamtBudget)}</div>
 		</div>
 
 		<!-- Bezahlt -->
-		<div class="kpi-card border-l-4 border-l-blue-400">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+		<div class="kpi-card animate-in">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
 				</svg>
 				Bezahlt
 			</div>
-			<div class="text-xl font-bold font-mono mt-1">{formatCents(data.gesamtIst)}</div>
+			<div class="text-xl font-bold font-mono mt-1 kpi-value">{formatCents(data.gesamtIst)}</div>
 			<div class="text-xs text-gray-400 mt-1">{data.gesamtBudget > 0 ? Math.round((data.gesamtIst / data.gesamtBudget) * 100) : 0}% des Budgets</div>
 		</div>
 
 		<!-- Frei verfügbar -->
-		<div class="kpi-card border-l-4 {data.freiVerfuegbar >= 0 ? 'border-l-green-500' : 'border-l-red-500'}">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+		<div class="kpi-card animate-in">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971z" />
 				</svg>
 				Frei verfügbar
 			</div>
-			<div class="text-xl font-bold font-mono mt-1 {data.freiVerfuegbar < 0 ? 'text-red-600' : ''}">{formatCents(data.freiVerfuegbar)}</div>
+			<div class="text-xl font-bold font-mono mt-1 kpi-value {data.freiVerfuegbar < 0 ? 'text-red-600' : ''}">{formatCents(data.freiVerfuegbar)}</div>
 			<div class="text-xs text-gray-400 mt-1">Budget abzgl. aller Kosten</div>
 		</div>
 
 		<!-- Budget-Erschöpfung -->
-		<div class="kpi-card border-l-4 border-l-orange-400">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+		<div class="kpi-card animate-in">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
 				</svg>
 				Budget-Erschöpfung
 			</div>
 			{#if data.erschoepfungsDatum && data.restBudget > 0}
-				<div class="text-xl font-bold mt-1">{data.erschoepfungsDatum}</div>
+				<div class="text-xl font-bold mt-1 kpi-value">{data.erschoepfungsDatum}</div>
 				<div class="text-xs text-gray-400 mt-1">in ca. {data.restMonate} {data.restMonate === 1 ? 'Monat' : 'Monaten'}</div>
 				{#if data.bekannteZahlungenGesamt > 0}
 					<div class="mt-1 text-xs text-blue-500">inkl. {formatCents(data.bekannteZahlungenGesamt)} geplanter Abschläge</div>
 				{/if}
 			{:else if data.restBudget <= 0}
-				<div class="text-xl font-bold text-red-600 mt-1">Überschritten</div>
+				<div class="text-xl font-bold text-red-600 mt-1 kpi-value">Überschritten</div>
 				<div class="text-xs text-red-400 mt-1">Budget bereits überzogen</div>
 			{:else if data.keineDaten}
 				<div class="text-sm text-gray-400 mt-1">Noch keine Daten</div>
 			{:else}
-				<div class="text-xl font-bold text-green-600 mt-1">Im Rahmen</div>
+				<div class="text-xl font-bold text-green-600 mt-1 kpi-value">Im Rahmen</div>
 				<div class="text-xs text-gray-400 mt-1">Budget reicht laut Prognose</div>
 			{/if}
 		</div>
 	</div>
 
 	<!-- KPI-Karten Reihe 2: Geplante Ausgaben -->
-	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger">
 		<!-- Ø Burn Rate -->
-		<div class="kpi-card border-l-4 border-l-teal-500">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+		<div class="kpi-card animate-in">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1.001A3.75 3.75 0 0012 18z" />
@@ -193,7 +193,7 @@
 				Ø Burn Rate
 			</div>
 			{#if data.burnRateMonatlich > 0}
-				<div class="text-xl font-bold font-mono mt-1">{formatCents(data.burnRateMonatlich)}<span class="text-sm font-normal text-gray-400"> / Monat</span></div>
+				<div class="text-xl font-bold font-mono mt-1 kpi-value">{formatCents(data.burnRateMonatlich)}<span class="text-sm font-normal text-gray-400"> / Monat</span></div>
 				<div class="text-xs text-gray-400 mt-1">Ø letzte {data.burnRateBasis} {data.burnRateBasis === 1 ? 'Monat' : 'Monate'}{#if data.teilmonatAusgaben > 0} · lfd. Monat: {formatCents(data.teilmonatAusgaben)}{/if}</div>
 			{:else}
 				<div class="text-sm text-gray-400 mt-1">Noch keine Daten</div>
@@ -201,14 +201,14 @@
 		</div>
 
 		<!-- Offene Rechnungen -->
-		<div class="kpi-card border-l-4 border-l-orange-400">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+		<div class="kpi-card animate-in">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
 				</svg>
 				Offene Rechnungen
 			</div>
-			<div class="text-xl font-bold font-mono mt-1 {data.gesamtOffen > 0 ? 'text-orange-600' : ''}">{formatCents(data.gesamtOffen)}</div>
+			<div class="text-xl font-bold font-mono mt-1 kpi-value {data.gesamtOffen > 0 ? 'text-orange-600' : ''}">{formatCents(data.gesamtOffen)}</div>
 			{#if data.gesamtOffen > 0}
 				<a href="/rechnungen" class="text-xs text-orange-500 hover:underline mt-1 block">Aufträge ansehen</a>
 			{:else}
@@ -217,26 +217,26 @@
 		</div>
 
 		<!-- Restauftrag -->
-		<div class="kpi-card border-l-4 border-l-violet-500">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+		<div class="kpi-card animate-in">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5A3.375 3.375 0 006.375 7.5H6m12 10.5H6a2.25 2.25 0 01-2.25-2.25V6.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V9.75M12 12.75h.008v.008H12v-.008z" />
 				</svg>
 				Restauftrag
 			</div>
-			<div class="text-xl font-bold font-mono mt-1 {data.gesamtRestauftrag > 0 ? 'text-violet-600' : ''}">{formatCents(data.gesamtRestauftrag)}</div>
+			<div class="text-xl font-bold font-mono mt-1 kpi-value {data.gesamtRestauftrag > 0 ? 'text-violet-600' : ''}">{formatCents(data.gesamtRestauftrag)}</div>
 			<div class="text-xs text-gray-400 mt-1">Vertraglich gebunden, nicht fakturiert</div>
 		</div>
 
 		<!-- Planungsreserve -->
-		<div class="kpi-card border-l-4 border-l-amber-400">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+		<div class="kpi-card animate-in">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
 				</svg>
 				Planungsreserve
 			</div>
-			<div class="text-xl font-bold font-mono mt-1 {data.gesamtPuffer > 0 ? 'text-amber-600' : ''}">{formatCents(data.gesamtPuffer)}</div>
+			<div class="text-xl font-bold font-mono mt-1 kpi-value {data.gesamtPuffer > 0 ? 'text-amber-600' : ''}">{formatCents(data.gesamtPuffer)}</div>
 			<div class="text-xs text-gray-400 mt-1">Puffer aus Budget-Planung</div>
 		</div>
 	</div>

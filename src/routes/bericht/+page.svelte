@@ -77,19 +77,19 @@
 		<!-- Projektinfo -->
 		<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
 			<div class="bg-gray-50 rounded-lg p-3">
-				<div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Budget</div>
+				<div class="text-xs font-medium text-gray-500">Budget</div>
 				<div class="text-sm font-bold font-mono mt-1">{formatCents(data.gesamtBudget)}</div>
 			</div>
 			<div class="bg-gray-50 rounded-lg p-3">
-				<div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Ausgaben</div>
+				<div class="text-xs font-medium text-gray-500">Ausgaben</div>
 				<div class="text-sm font-bold font-mono mt-1">{formatCents(data.gesamtIst)}</div>
 			</div>
 			<div class="bg-gray-50 rounded-lg p-3">
-				<div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Buchungen</div>
+				<div class="text-xs font-medium text-gray-500">Buchungen</div>
 				<div class="text-sm font-bold mt-1">{data.anzahlBuchungen}</div>
 			</div>
 			<div class="bg-gray-50 rounded-lg p-3">
-				<div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Gewerke</div>
+				<div class="text-xs font-medium text-gray-500">Gewerke</div>
 				<div class="text-sm font-bold mt-1">{data.anzahlGewerke}</div>
 			</div>
 		</div>
@@ -145,7 +145,7 @@
 						<button
 							onclick={dokumenteExtrahieren}
 							disabled={extrahiertLaeuft}
-							class="mt-2 text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 inline-flex items-center gap-1.5"
+							class="mt-2 text-sm px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 inline-flex items-center gap-1.5"
 						>
 							{#if extrahiertLaeuft}
 								<svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">

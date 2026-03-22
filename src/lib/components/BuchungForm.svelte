@@ -58,7 +58,7 @@
 </script>
 
 {#if error}
-	<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-md border border-red-200 mb-4">
+	<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200 mb-4">
 		<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
 		{error}
 	</div>
@@ -223,7 +223,7 @@
 	<div>
 		<label for="belege" class="block text-sm font-medium text-gray-700 mb-1">Belege <span class="text-gray-400">(optional)</span></label>
 		<input type="file" name="belege" id="belege" multiple accept=".pdf,.jpg,.jpeg,.png"
-			class="input-base file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
+			class="input-base file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
 		<p class="text-xs text-gray-400 mt-1">PDF, JPG oder PNG</p>
 	</div>
 
@@ -233,7 +233,7 @@
 			<div class="text-sm font-medium text-gray-700 mb-2">Vorhandene Belege</div>
 			<div class="flex flex-wrap gap-2">
 				{#each belege as beleg}
-					<div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-sm">
+					<div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm">
 						{#if isPdf(beleg)}
 							<svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12a2 2 0 002-2V6l-4-4H4a2 2 0 00-2 2v12a2 2 0 002 2zm2-10h2v4H6V8zm3 0h2v4H9V8zm3 0h2v4h-2V8z"/></svg>
 						{:else}

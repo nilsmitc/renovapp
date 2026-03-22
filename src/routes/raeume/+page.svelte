@@ -16,7 +16,7 @@
 	</h1>
 
 	{#if form?.error}
-		<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-md border border-red-200">
+		<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200">
 			<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
 			{form.error}
 		</div>
@@ -51,7 +51,7 @@
 		{@const raeume = data.raeume.filter((r) => r.geschoss === geschoss)}
 		{#if raeume.length > 0}
 			<div class="card">
-				<h2 class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b bg-gray-50/80 rounded-t-lg">{geschoss}</h2>
+				<h2 class="px-4 py-3 text-xs font-semibold text-gray-500 border-b bg-gray-50/80 rounded-t-lg">{geschoss}</h2>
 				<table class="w-full">
 					<tbody>
 						{#each raeume as raum (raum.id)}

@@ -34,42 +34,42 @@
 	</h1>
 
 	<!-- KPIs Reihe 1: Budget-Überblick -->
-	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-		<div class="kpi-card border-l-4 border-l-gray-400">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger">
+		<div class="kpi-card animate-in">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>
 				Gesamtbudget
 			</div>
-			<div class="text-xl font-bold font-mono mt-1">{formatCents(data.gesamtBudget)}</div>
+			<div class="text-xl font-bold font-mono mt-1 kpi-value">{formatCents(data.gesamtBudget)}</div>
 		</div>
 
-		<div class="kpi-card border-l-4 border-l-blue-400">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+		<div class="kpi-card animate-in">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
 				Ausgaben
 			</div>
-			<div class="text-xl font-bold font-mono mt-1">{formatCents(data.gesamtIst)}</div>
-			<div class="text-xs text-gray-400 mt-1">{prozent}% des Budgets ausgegeben</div>
+			<div class="text-xl font-bold font-mono mt-1 kpi-value">{formatCents(data.gesamtIst)}</div>
+			<div class="text-xs text-gray-400 mt-1">{prozent}% des Budgets</div>
 		</div>
 
-		<div class="kpi-card border-l-4 {data.freiVerfuegbar < 0 ? 'border-l-red-500' : 'border-l-green-500'}">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+		<div class="kpi-card animate-in">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971z" /></svg>
 				Noch verfügbar
 			</div>
-			<div class="text-xl font-bold font-mono mt-1" class:text-red-600={data.freiVerfuegbar < 0}>{formatCents(data.freiVerfuegbar)}</div>
+			<div class="text-xl font-bold font-mono mt-1 kpi-value" class:text-red-600={data.freiVerfuegbar < 0}>{formatCents(data.freiVerfuegbar)}</div>
 			<div class="text-xs text-gray-400 mt-1">abzgl. offener Aufträge & Rücklagen</div>
 		</div>
 
-		<div class="kpi-card border-l-4 border-l-gray-300">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+		<div class="kpi-card animate-in">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" /></svg>
 				Budgetverbrauch
 			</div>
-			<div class="text-xl font-bold mt-1">{prozent}%</div>
-			<div class="mt-2 w-full bg-gray-200 rounded-full h-2">
+			<div class="text-xl font-bold mt-1 kpi-value">{prozent}%</div>
+			<div class="mt-2 w-full bg-gray-100 rounded-full h-2.5">
 				<div
-					class="h-2 rounded-full transition-all duration-500 {prozent > 100 ? 'bg-red-500' : prozent >= 80 ? 'bg-yellow-500' : 'bg-blue-500'}"
+					class="h-2.5 rounded-full {prozent > 100 ? 'progress-bar-red' : prozent >= 80 ? 'progress-bar-yellow' : 'progress-bar'}"
 					style="width: {Math.min(prozent, 100)}%"
 				></div>
 			</div>
@@ -77,18 +77,18 @@
 	</div>
 
 	<!-- KPIs Reihe 2: Status & Tempo -->
-	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger">
 		{#if verplant > 0}
-		<div class="kpi-card border-l-4 {bindungProzent > 95 ? 'border-l-red-500' : 'border-l-indigo-500'}">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+		<div class="kpi-card">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
 				Fest eingeplant
 			</div>
 			<div class="text-xl font-bold font-mono mt-1">{formatCents(gesamtBindung)}</div>
-			<div class="mt-2 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+			<div class="mt-2 w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
 				<div class="h-2 flex">
-					<div class="bg-blue-500 h-2" style="width: {data.gesamtBudget > 0 ? Math.min(data.gesamtIst / data.gesamtBudget * 100, 100) : 0}%"></div>
-					<div class="bg-violet-500 h-2" style="width: {data.gesamtBudget > 0 ? Math.min(verplant / data.gesamtBudget * 100, 100 - Math.min(data.gesamtIst / data.gesamtBudget * 100, 100)) : 0}%"></div>
+					<div class="bg-gradient-to-r from-blue-500 to-blue-400 h-2.5 transition-all duration-700" style="width: {data.gesamtBudget > 0 ? Math.min(data.gesamtIst / data.gesamtBudget * 100, 100) : 0}%"></div>
+					<div class="bg-gradient-to-r from-violet-500 to-violet-400 h-2.5 transition-all duration-700" style="width: {data.gesamtBudget > 0 ? Math.min(verplant / data.gesamtBudget * 100, 100 - Math.min(data.gesamtIst / data.gesamtBudget * 100, 100)) : 0}%"></div>
 				</div>
 			</div>
 			<div class="text-xs text-gray-400 mt-1">{formatCents(data.gesamtIst)} ausgegeben + {formatCents(verplant)} in Aufträgen</div>
@@ -98,8 +98,8 @@
 		</div>
 		{/if}
 
-		<div class="kpi-card border-l-4 border-l-teal-500">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+		<div class="kpi-card">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1.001A3.75 3.75 0 0012 18z" /></svg>
 				Kosten pro Monat
 			</div>
@@ -114,7 +114,7 @@
 			{/if}
 		</div>
 
-		<a href="/rechnungen" class="kpi-card border-l-4 {kpiColor === 'red' ? 'border-l-red-500' : kpiColor === 'amber' ? 'border-l-amber-400' : kpiColor === 'orange' ? 'border-l-orange-400' : 'border-l-gray-300'} hover:bg-gray-50 transition-colors">
+		<a href="/rechnungen" class="kpi-card hover:bg-gray-50/50">
 			<div class="flex items-center gap-1.5 text-xs font-medium {kpiColor === 'red' ? 'text-red-600' : kpiColor === 'amber' ? 'text-amber-600' : kpiColor === 'orange' ? 'text-orange-600' : 'text-gray-500'} uppercase tracking-wide">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
 				{#if kpiColor === 'red'}Überfällig{:else if kpiColor === 'amber'}Bald fällig{:else}Offene Rechnungen{/if}
@@ -128,7 +128,7 @@
 		</a>
 
 		{#if naechsteFaelligkeit}
-			<a href="/rechnungen/{naechsteFaelligkeit.rechnungId}" class="kpi-card border-l-4 {naechsteFaelligkeit.effektivStatus === 'ueberfaellig' ? 'border-l-red-500' : 'border-l-amber-400'} hover:bg-gray-50 transition-colors">
+			<a href="/rechnungen/{naechsteFaelligkeit.rechnungId}" class="kpi-card hover:bg-gray-50/50">
 				<div class="flex items-center gap-1.5 text-xs font-medium {naechsteFaelligkeit.effektivStatus === 'ueberfaellig' ? 'text-red-600' : 'text-amber-600'} uppercase tracking-wide">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 					Nächste Fälligkeit
@@ -145,8 +145,8 @@
 				{/if}
 			</a>
 		{:else}
-			<div class="kpi-card border-l-4 border-l-gray-300">
-				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+			<div class="kpi-card">
+				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 					Nächste Fälligkeit
 				</div>
@@ -156,8 +156,8 @@
 		{/if}
 
 		{#if topRaum}
-			<a href="/buchungen?raum={topRaum.raum.id}" class="kpi-card border-l-4 border-l-purple-400 hover:bg-gray-50 transition-colors">
-				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+			<a href="/buchungen?raum={topRaum.raum.id}" class="kpi-card hover:bg-gray-50 transition-colors">
+				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
 					Teuerster Raum
 				</div>
@@ -165,8 +165,8 @@
 				<div class="text-xs text-gray-400 mt-1">{topRaum.raum.name} ({topRaum.raum.geschoss})</div>
 			</a>
 		{:else}
-			<div class="kpi-card border-l-4 border-l-purple-400">
-				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+			<div class="kpi-card">
+				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
 					Teuerster Raum
 				</div>
@@ -334,17 +334,17 @@
 							</div>
 						</div>
 						{#if s.budget > 0}
-							<div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-								<div class="h-1.5 flex">
-									<div class="h-1.5 transition-all duration-500 bg-blue-500" style="width: {pctIst}%"></div>
+							<div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+								<div class="h-2 flex">
+									<div class="h-2 transition-all duration-700 bg-gradient-to-r from-blue-500 to-blue-400" style="width: {pctIst}%"></div>
 									{#if pctOffen > 0}
-										<div class="h-1.5 transition-all duration-500 bg-orange-400" style="width: {pctOffen}%"></div>
+										<div class="h-2 transition-all duration-700 bg-gradient-to-r from-orange-400 to-orange-300" style="width: {pctOffen}%"></div>
 									{/if}
 									{#if pctRestauftrag > 0}
-										<div class="h-1.5 transition-all duration-500 bg-violet-500" style="width: {pctRestauftrag}%"></div>
+										<div class="h-2 transition-all duration-700 bg-gradient-to-r from-violet-500 to-violet-400" style="width: {pctRestauftrag}%"></div>
 									{/if}
 									{#if pctPuffer > 0}
-										<div class="h-1.5 transition-all duration-500 bg-amber-400" style="width: {pctPuffer}%"></div>
+										<div class="h-2 transition-all duration-700 bg-gradient-to-r from-amber-400 to-amber-300" style="width: {pctPuffer}%"></div>
 									{/if}
 								</div>
 							</div>

@@ -155,7 +155,7 @@
 										name="datum"
 										value={k.extraktion.datum ?? k.datum}
 										required
-										class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+										class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
 								</div>
 								<!-- Betrag -->
 								<div>
@@ -165,7 +165,7 @@
 										name="betrag"
 										value={k.extraktion.betrag ? (k.extraktion.betrag / 100).toFixed(2).replace('.', ',') : ''}
 										placeholder="0,00"
-										class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+										class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
 								</div>
 								<!-- Rechnungsnummer -->
 								<div>
@@ -175,7 +175,7 @@
 										name="rechnungsnummer"
 										value={k.extraktion.rechnungsnummer ?? ''}
 										placeholder="optional"
-										class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+										class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
 								</div>
 								<!-- Gewerk -->
 								<div>
@@ -183,7 +183,7 @@
 									<select
 										name="gewerk"
 										required
-										class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+										class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
 										<option value="">– auswählen –</option>
 										{#each data.gewerke as g}
 											<option value={g.id}>{g.name}</option>
@@ -195,7 +195,7 @@
 									<label class="block text-xs font-medium text-gray-700 mb-1">Lieferant</label>
 									<select
 										name="lieferantId"
-										class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+										class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
 										{#each data.lieferanten as l}
 											<option value={l.id} selected={l.id === k.lieferantId}>{l.name}</option>
 										{/each}
@@ -209,7 +209,7 @@
 										name="beschreibung"
 										value={k.betreff}
 										maxlength="120"
-										class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+										class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
 								</div>
 							</div>
 
@@ -220,7 +220,7 @@
 							<div class="flex gap-2 pt-1">
 								<button
 									type="submit"
-									class="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 transition-colors">
+									class="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
 									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
 									</svg>
@@ -229,7 +229,7 @@
 								<button
 									type="button"
 									onclick={() => aktivesFormular = null}
-									class="px-4 py-2 text-gray-600 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors">
+									class="px-4 py-2 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
 									Abbrechen
 								</button>
 							</div>
@@ -247,14 +247,14 @@
 								<input type="hidden" name="id" value={k.id} />
 								<button
 									type="submit"
-									class="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-md transition-colors">
+									class="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
 									Überspringen
 								</button>
 							</form>
 							<button
 								type="button"
 								onclick={() => aktivesFormular = k.id}
-								class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
+								class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
 								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
 								</svg>

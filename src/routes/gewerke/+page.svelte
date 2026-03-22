@@ -14,7 +14,7 @@
 	</h1>
 
 	{#if form?.error}
-		<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-md border border-red-200">
+		<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200">
 			<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
 			{form.error}
 		</div>
@@ -31,7 +31,7 @@
 			</div>
 			<div>
 				<label for="farbe" class="block text-sm text-gray-600 mb-1">Farbe</label>
-				<input type="color" name="farbe" id="farbe" value="#6B7280" class="h-10 w-14 rounded-md border border-gray-300 cursor-pointer" />
+				<input type="color" name="farbe" id="farbe" value="#6B7280" class="h-10 w-14 rounded-lg border border-gray-300 cursor-pointer" />
 			</div>
 			<button type="submit" class="btn-primary inline-flex items-center gap-1.5">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15" /></svg>
@@ -62,7 +62,7 @@
 											<input type="text" name="name" value={gewerk.name} required
 												class="input-base" />
 										</div>
-										<input type="color" name="farbe" value={gewerk.farbe} class="h-10 w-14 rounded-md border border-gray-300 cursor-pointer" />
+										<input type="color" name="farbe" value={gewerk.farbe} class="h-10 w-14 rounded-lg border border-gray-300 cursor-pointer" />
 										<button type="submit" class="btn-sm-primary inline-flex items-center gap-1.5">
 											<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 12.75l6 6 9-13.5" /></svg>
 											Speichern
