@@ -86,11 +86,41 @@ echo "Server startet unter http://localhost:5173"
 echo "Fenster schliessen beendet den Server."
 echo ""
 
-# Browser oeffnen (OS-unabhaengig)
+# Aufraemen: alter Update-Marker entfernen
+rm -f .restart-after-update
+
+# Browser oeffnen (OS-unabhaengig, nur beim ersten Start)
 if command -v xdg-open &>/dev/null; then
     sleep 2 && xdg-open http://localhost:5173 &
 elif command -v open &>/dev/null; then
     sleep 2 && open http://localhost:5173 &
 fi
 
-npm run dev
+while true; do
+    npm run dev
+
+    # Nur bei Update-Marker neu starten
+    if [ ! -f ".restart-after-update" ]; then
+        break
+    fi
+    rm -f .restart-after-update
+    echo ""
+    echo "=============================="
+    echo "  Update installiert – Neustart..."
+    echo "=============================="
+    echo ""
+
+    # Dependencies aktualisieren falls noetig
+    if [ "package.json" -nt "node_modules" ]; then
+        echo "Neue Abhaengigkeiten – fuehre npm install aus..."
+        npm install
+        if [ $? -ne 0 ]; then
+            echo "FEHLER: npm install fehlgeschlagen."
+            read -p "Druecke Enter zum Beenden..."
+            break
+        fi
+    fi
+
+    echo "Server startet unter http://localhost:5173"
+    echo ""
+done

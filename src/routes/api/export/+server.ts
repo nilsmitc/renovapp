@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import { zipSync } from 'fflate';
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const DATA_DIR = join(process.cwd(), 'data');
@@ -45,6 +45,18 @@ export const GET: RequestHandler = () => {
 		files['ai-analyse.json'] = readFileSync(aiAnalyseJson);
 	}
 
+	// Dokumente-Texte (optional)
+	const dokumenteTexteJson = join(DATA_DIR, 'dokumente-texte.json');
+	if (existsSync(dokumenteTexteJson)) {
+		files['dokumente-texte.json'] = readFileSync(dokumenteTexteJson);
+	}
+
+	// E-Mail-Scan-Cache (optional)
+	const emailCacheJson = join(DATA_DIR, 'email-scan-cache.json');
+	if (existsSync(emailCacheJson)) {
+		files['email-scan-cache.json'] = readFileSync(emailCacheJson);
+	}
+
 	// Rechnungs-Belege rekursiv (data/rechnungen/{rechnungId}/{abschlagId}/{datei})
 	const rechnungenBelegeDir = join(DATA_DIR, 'rechnungen');
 	if (existsSync(rechnungenBelegeDir)) {
@@ -81,6 +93,17 @@ export const GET: RequestHandler = () => {
 				}
 			} catch {
 				// Einzelne defekte Ordner überspringen
+			}
+		}
+	}
+
+	// E-Mail-Scan PDFs (data/email-scan/{datei})
+	const emailScanDir = join(DATA_DIR, 'email-scan');
+	if (existsSync(emailScanDir)) {
+		for (const datei of readdirSync(emailScanDir)) {
+			const pfad = join(emailScanDir, datei);
+			if (statSync(pfad).isFile()) {
+				files[`email-scan/${datei}`] = readFileSync(pfad);
 			}
 		}
 	}

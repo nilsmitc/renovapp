@@ -47,9 +47,11 @@ export async function renderKostenVerteilungChart(summaries: GewerkSummary[]): P
 	});
 }
 
-/** Bar: Budget vs. Ausgaben nach Gewerk */
-export async function renderBudgetVsIstChart(summaries: GewerkSummary[]): Promise<string> {
-	const active = summaries.filter((s) => s.ist > 0 || s.budget > 0);
+/** Stacked Bar: Budget vs. Bindung nach Gewerk (Bezahlt + Offen + Restauftrag + Puffer) */
+export async function renderBudgetStackedChart(
+	data: Array<{ gewerk: { name: string }; budget: number; ist: number; offen: number; restauftrag: number; puffer: number }>
+): Promise<string> {
+	const active = data.filter((s) => s.ist > 0 || s.budget > 0);
 	return renderChart({
 		type: 'bar',
 		data: {
@@ -58,15 +60,32 @@ export async function renderBudgetVsIstChart(summaries: GewerkSummary[]): Promis
 				{
 					label: 'Budget',
 					data: active.map((s) => s.budget / 100),
-					backgroundColor: '#E5E7EB'
+					backgroundColor: '#E5E7EB',
+					stack: 'budget'
 				},
 				{
-					label: 'Ausgaben',
+					label: 'Bezahlt',
 					data: active.map((s) => s.ist / 100),
-					backgroundColor: active.map((s) =>
-						s.ist > s.budget && s.budget > 0 ? '#EF4444' :
-						s.ist >= s.budget * 0.8 && s.budget > 0 ? '#F59E0B' : '#3B82F6'
-					)
+					backgroundColor: '#10B981',
+					stack: 'bindung'
+				},
+				{
+					label: 'Offen',
+					data: active.map((s) => s.offen / 100),
+					backgroundColor: '#F97316',
+					stack: 'bindung'
+				},
+				{
+					label: 'Restauftrag',
+					data: active.map((s) => s.restauftrag / 100),
+					backgroundColor: '#8B5CF6',
+					stack: 'bindung'
+				},
+				{
+					label: 'Puffer',
+					data: active.map((s) => s.puffer / 100),
+					backgroundColor: '#D97706',
+					stack: 'bindung'
 				}
 			]
 		},
@@ -74,7 +93,11 @@ export async function renderBudgetVsIstChart(summaries: GewerkSummary[]): Promis
 			responsive: false,
 			animation: false,
 			scales: {
-				y: { ticks: { callback: (v) => `${Number(v).toLocaleString('de-DE')} \u20ac` } }
+				x: { stacked: true },
+				y: {
+					stacked: true,
+					ticks: { callback: (v) => `${Number(v).toLocaleString('de-DE')} \u20ac` }
+				}
 			},
 			plugins: { legend: { labels: { font: { size: 13 } } } }
 		}

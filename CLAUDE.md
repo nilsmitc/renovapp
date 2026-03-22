@@ -444,7 +444,10 @@ Wenn der User sagt "erstelle Bauleiter-Analyse", "analysiere die Baudaten", "akt
 → Read data/buchungen.json        ← Detail-Buchungen für Zeitreihen, Kategorien
 → Read data/lieferanten.json      ← Lieferanten und Materialkosten
 → Read data/projekt.json          ← Gewerke, Räume, Budgets (Stammdaten)
+→ Read data/dokumente-texte.json  ← Extrahierte Texte aus Angeboten/Rechnungsbelegen (falls vorhanden)
 ```
+
+**Dokumente-Texte:** Die Datei `data/dokumente-texte.json` enthält die aus PDFs extrahierten Volltexte aller hinterlegten Angebote und Rechnungsbelege. Sie wird über den Button "Dokumente vorbereiten" auf `/bericht` erzeugt. Falls die Datei nicht existiert, die Analyse ohne Dokumententexte erstellen.
 
 ### Schritt 2: Analysieren als erfahrener Bauleiter/Baukostenberater
 - Konkrete Zahlen und Eurobeträge nennen
@@ -452,6 +455,13 @@ Wenn der User sagt "erstelle Bauleiter-Analyse", "analysiere die Baudaten", "akt
 - Trends erkennen (Burn Rate, Monatsentwicklung)
 - Risiken identifizieren (Gewerke nahe/über Budget, große offene Aufträge)
 - Cashflow bewerten (offene Rechnungen, gebundene Mittel, Zahlungstermine)
+
+**Falls Dokumententexte vorhanden, zusätzlich prüfen:**
+- **Angebots-Positionen**: Optionale Leistungen ("Bedarf", "auf Wunsch"), Aufpreise, Alternativpositionen
+- **Zahlungsbedingungen**: Skonto-Fristen, Zahlungsziele, Vorauszahlungen
+- **Förder-Klauseln**: KfW, BAFA, aufschiebende Bedingungen, Förderfähigkeit
+- **Angebot vs. Rechnung**: Abweichungen zwischen Angebotssumme und tatsächlichen Abrechnungen erkennen
+- **Vertragliche Risiken**: Pauschalpreise vs. Aufmaß, Nachtragsklauseln, fehlende Leistungsbeschreibungen
 
 ### Schritt 3: Datei schreiben
 ```
@@ -471,7 +481,8 @@ Wenn der User sagt "erstelle Bauleiter-Analyse", "analysiere die Baudaten", "akt
       "Zweite konkrete Empfehlung",
       "Dritte konkrete Empfehlung",
       "Weitere falls nötig"
-    ]
+    ],
+    "dokumentenAnalyse": "Optional: Erkenntnisse aus Angeboten und Rechnungsbelegen. Einzelpositionen, optionale Leistungen, Zahlungsbedingungen, Förder-Klauseln, Abweichungen Angebot↔Rechnung. Nur wenn dokumente-texte.json vorhanden war."
   }
 }
 ```
@@ -482,7 +493,8 @@ Wenn der User sagt "erstelle Bauleiter-Analyse", "analysiere die Baudaten", "akt
 - `risikobewertung`: Fließtext, Gewerke mit % und €-Beträgen
 - `cashflowBewertung`: Fließtext, offene Beträge, Termine, Reichweite
 - `empfehlungen`: Array von Strings, jede Empfehlung ein eigener Eintrag, 3-6 Stück
-- Alle Felder sind Pflicht, alle müssen nicht-leere Strings/Arrays sein
+- `dokumentenAnalyse`: optional, Fließtext mit Erkenntnissen aus den extrahierten Dokumenten (nur wenn `data/dokumente-texte.json` gelesen wurde)
+- Alle Felder außer `dokumentenAnalyse` sind Pflicht, alle müssen nicht-leere Strings/Arrays sein
 - Die Webapp zeigt diese Daten 1:1 im PDF an — Qualität zählt
 
 ### Schritt 4: User informieren

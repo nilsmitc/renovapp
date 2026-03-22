@@ -2,6 +2,6 @@
 Name=RenovApp
 Exec=/home/nils/Altbau/start.sh
 Icon=accessories-calculator
-Terminal=false
+Terminal=true
 Type=Application
 Categories=Office;

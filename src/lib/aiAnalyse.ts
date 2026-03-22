@@ -6,6 +6,7 @@ export interface BauAnalyse {
 	risikobewertung: string;
 	cashflowBewertung: string;
 	empfehlungen: string[];
+	dokumentenAnalyse?: string;  // Erkenntnisse aus Angeboten/Rechnungsbelegen
 }
 
 export interface BauAnalyseDatei {

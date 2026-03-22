@@ -7,3 +7,4 @@ build/
 .serena/cache/
 .serena/project.local.yml
 .serena/logs/
+.restart-after-update

@@ -10,6 +10,9 @@
 	const topRaum = $derived([...data.raumSummaries].sort((a, b) => b.ist - a.ist)[0] ?? null);
 	const warnungen = $derived(data.gewerkSummaries.filter((s) => !s.gewerk.pauschal && s.budget > 0 && s.ist / s.budget >= 0.8));
 	const naechsteFaelligkeit = $derived(data.naechsteZahlungen[0] ?? null);
+	const gesamtBindung = $derived(data.gesamtIst + data.gesamtOffen + data.gesamtRestauftrag);
+	const bindungProzent = $derived(data.gesamtBudget > 0 ? Math.round((gesamtBindung / data.gesamtBudget) * 100) : 0);
+	const verplant = $derived(data.gesamtOffen + data.gesamtRestauftrag);
 	const kpiColor = $derived(
 		data.gesamtOffen > 0
 			? data.hatUeberfaellige ? 'red' : data.hatBaldFaellige ? 'amber' : 'orange'
@@ -43,25 +46,25 @@
 		<div class="kpi-card border-l-4 border-l-blue-400">
 			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
-				Bezahlt
+				Ausgaben
 			</div>
 			<div class="text-xl font-bold font-mono mt-1">{formatCents(data.gesamtIst)}</div>
-			<div class="text-xs text-gray-400 mt-1">{prozent}% des Budgets</div>
+			<div class="text-xs text-gray-400 mt-1">{prozent}% des Budgets ausgegeben</div>
 		</div>
 
 		<div class="kpi-card border-l-4 {data.freiVerfuegbar < 0 ? 'border-l-red-500' : 'border-l-green-500'}">
 			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971z" /></svg>
-				Frei verfügbar
+				Noch verfügbar
 			</div>
 			<div class="text-xl font-bold font-mono mt-1" class:text-red-600={data.freiVerfuegbar < 0}>{formatCents(data.freiVerfuegbar)}</div>
-			<div class="text-xs text-gray-400 mt-1">nach Abzug aller Verpflichtungen</div>
+			<div class="text-xs text-gray-400 mt-1">abzgl. offener Aufträge & Rücklagen</div>
 		</div>
 
 		<div class="kpi-card border-l-4 border-l-gray-300">
 			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" /></svg>
-				Verbraucht
+				Budgetverbrauch
 			</div>
 			<div class="text-xl font-bold mt-1">{prozent}%</div>
 			<div class="mt-2 w-full bg-gray-200 rounded-full h-2">
@@ -75,15 +78,35 @@
 
 	<!-- KPIs Reihe 2: Status & Tempo -->
 	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+		{#if verplant > 0}
+		<div class="kpi-card border-l-4 {bindungProzent > 95 ? 'border-l-red-500' : 'border-l-indigo-500'}">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+				Fest eingeplant
+			</div>
+			<div class="text-xl font-bold font-mono mt-1">{formatCents(gesamtBindung)}</div>
+			<div class="mt-2 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+				<div class="h-2 flex">
+					<div class="bg-blue-500 h-2" style="width: {data.gesamtBudget > 0 ? Math.min(data.gesamtIst / data.gesamtBudget * 100, 100) : 0}%"></div>
+					<div class="bg-violet-500 h-2" style="width: {data.gesamtBudget > 0 ? Math.min(verplant / data.gesamtBudget * 100, 100 - Math.min(data.gesamtIst / data.gesamtBudget * 100, 100)) : 0}%"></div>
+				</div>
+			</div>
+			<div class="text-xs text-gray-400 mt-1">{formatCents(data.gesamtIst)} ausgegeben + {formatCents(verplant)} in Aufträgen</div>
+			<div class="text-xs mt-0.5">
+				<span class="{data.freiVerfuegbar < 0 ? 'text-red-600 font-semibold' : 'text-green-600'}">{formatCents(data.freiVerfuegbar)} echt frei</span>
+			</div>
+		</div>
+		{/if}
+
 		<div class="kpi-card border-l-4 border-l-teal-500">
 			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1.001A3.75 3.75 0 0012 18z" /></svg>
-				Ø Burn Rate
+				Kosten pro Monat
 			</div>
 			{#if data.burnRateMonatlich > 0}
 				<div class="text-xl font-bold font-mono mt-1">{formatCents(data.burnRateMonatlich)}<span class="text-sm font-normal text-gray-400"> / Mo.</span></div>
 				<div class="text-xs text-gray-400 mt-1">
-					Ø {data.burnRateBasis} Monate{#if data.restMonate !== null} · ~{data.restMonate} Mo. Budget{/if}
+					Ø letzte {data.burnRateBasis} Monate{#if data.restMonate !== null} · reicht noch ~{data.restMonate} Mo.{/if}
 				</div>
 			{:else}
 				<div class="text-xl font-bold mt-1 text-gray-300">—</div>
@@ -136,7 +159,7 @@
 			<a href="/buchungen?raum={topRaum.raum.id}" class="kpi-card border-l-4 border-l-purple-400 hover:bg-gray-50 transition-colors">
 				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
-					Top Raum
+					Teuerster Raum
 				</div>
 				<div class="text-xl font-bold font-mono mt-1">{formatCents(topRaum.ist)}</div>
 				<div class="text-xs text-gray-400 mt-1">{topRaum.raum.name} ({topRaum.raum.geschoss})</div>
@@ -145,7 +168,7 @@
 			<div class="kpi-card border-l-4 border-l-purple-400">
 				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
-					Top Raum
+					Teuerster Raum
 				</div>
 				<div class="text-xl font-bold mt-1 text-gray-300">—</div>
 				<div class="text-xs text-gray-400 mt-1">Noch keine Raum-Buchungen</div>

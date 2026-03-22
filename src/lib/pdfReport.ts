@@ -3,19 +3,25 @@ import PdfPrinter from 'pdfmake/js/Printer';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import vfsFonts from 'pdfmake/build/vfs_fonts';
 import type { TDocumentDefinitions, Content, TableCell, StyleDictionary } from 'pdfmake/interfaces';
-import type { ProjektData, Buchung, Rechnung, LieferantenData, GewerkSummary, RaumSummary } from './domain';
+import type { ProjektData, Buchung, Rechnung, LieferantenData } from './domain';
 import { berechneGewerkSummaries, berechneRaumSummaries, abschlagEffektivStatus } from './domain';
 import { formatCents, formatDatum } from './format';
 import type { BauAnalyse } from './aiAnalyse';
 import {
+	berechneFinanzuebersicht,
+	berechneNaechsteZahlungen,
+	berechneMonatsDaten,
+	berechneBurnRate,
+	berechneSteuerDaten
+} from './reportData';
+import {
 	renderKostenVerteilungChart,
-	renderBudgetVsIstChart,
+	renderBudgetStackedChart,
 	renderKategorieChart,
 	renderKategorienNachGewerkChart,
 	renderMonatsverlaufChart,
 	renderKumuliertChart,
-	renderPrognoseChart,
-	type MonatsDaten
+	renderPrognoseChart
 } from './pdfCharts';
 
 // pdfmake fonts (Roboto aus vfs_fonts als Buffer)
@@ -47,18 +53,6 @@ const TABLE_LAYOUT = {
 	paddingBottom: () => 5
 };
 
-function prozent(ist: number, budget: number): string {
-	if (budget === 0) return '—';
-	return Math.round((ist / budget) * 100) + ' %';
-}
-
-function ampelFarbe(ist: number, budget: number): string {
-	if (budget === 0) return '#6B7280';
-	const p = ist / budget;
-	if (p > 1) return '#EF4444';
-	if (p >= 0.8) return '#F59E0B';
-	return '#10B981';
-}
 
 function headerZelle(text: string, alignment: 'left' | 'right' | 'center' = 'left'): TableCell {
 	return { text, style: 'tabelleHeader', alignment };
@@ -66,6 +60,17 @@ function headerZelle(text: string, alignment: 'left' | 'right' | 'center' = 'lef
 
 function betragZelle(cents: number, farbe?: string): TableCell {
 	return { text: formatCents(cents), alignment: 'right' as const, fontSize: 9, color: farbe ?? '#1F2937' };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function kpiBlock(label: string, wert: string, farbe?: string): any {
+	return {
+		width: '*',
+		stack: [
+			{ text: label, style: 'klein' },
+			{ text: wert, fontSize: 14, bold: true, color: farbe ?? '#1F2937', margin: [0, 2, 0, 0] }
+		]
+	};
 }
 
 export async function erstelleBauleiterbericht(
@@ -81,82 +86,90 @@ export async function erstelleBauleiterbericht(
 
 	const gesamtIst = buchungen.reduce((s, b) => s + b.betrag, 0);
 	const gesamtBudget = projekt.budgets.reduce((s, b) => s + b.geplant, 0);
-	const restBudget = gesamtBudget - gesamtIst;
 	const verbrauchtProzent = gesamtBudget > 0 ? Math.round((gesamtIst / gesamtBudget) * 100) : 0;
 
-	// Monatsdaten berechnen
-	const monatsMap = new Map<string, { ausgaben: number; material: number; arbeitslohn: number; sonstiges: number }>();
-	for (const b of buchungen) {
-		const monat = b.datum.slice(0, 7);
-		const existing = monatsMap.get(monat) ?? { ausgaben: 0, material: 0, arbeitslohn: 0, sonstiges: 0 };
-		monatsMap.set(monat, {
-			ausgaben: existing.ausgaben + b.betrag,
-			material: existing.material + (b.kategorie === 'Material' ? b.betrag : 0),
-			arbeitslohn: existing.arbeitslohn + (b.kategorie === 'Arbeitslohn' ? b.betrag : 0),
-			sonstiges: existing.sonstiges + (b.kategorie === 'Sonstiges' ? b.betrag : 0)
-		});
-	}
-	const sortedMonate = [...monatsMap.entries()].sort(([a], [b]) => a.localeCompare(b));
-	let kumuliert = 0;
-	const monate: (MonatsDaten & { material: number; arbeitslohn: number; sonstiges: number; monat: string })[] = sortedMonate.map(([monat, data]) => {
-		kumuliert += data.ausgaben;
-		const [year, month] = monat.split('-').map(Number);
-		const label = new Date(year, month - 1, 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
-		return { monat, label, ausgaben: data.ausgaben, kumuliert, material: data.material, arbeitslohn: data.arbeitslohn, sonstiges: data.sonstiges };
-	});
+	// Finanzübersicht (offen, restauftrag, puffer, frei verfügbar)
+	const finanz = berechneFinanzuebersicht(buchungen, projekt, rechnungen);
+	const naechsteZahlungen = berechneNaechsteZahlungen(rechnungen, projekt.gewerke);
 
-	// Prognose berechnen
-	const burnRate = monate.length > 0 ? Math.round(gesamtIst / monate.length) : 0;
-	const restMonate = burnRate > 0 && restBudget > 0 ? Math.ceil(restBudget / burnRate) : null;
+	// Monatsdaten + Burn Rate
+	const monatsDaten = berechneMonatsDaten(buchungen);
+	const burnRateResult = berechneBurnRate(monatsDaten, finanz.freiVerfuegbar);
+
+	// Prognose-Chart-Daten (mit bekannten Zahlungen)
 	let erschoepfungsDatum: string | null = null;
-	if (restMonate !== null && monate.length > 0) {
-		const letzterMonat = monate[monate.length - 1].monat;
-		const [ly, lm] = letzterMonat.split('-').map(Number);
-		const datum = new Date(ly, lm - 1 + restMonate, 1);
-		erschoepfungsDatum = datum.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
-	}
+	const chartLabels = monatsDaten.map((m) => m.label);
+	const chartIst: (number | null)[] = monatsDaten.map((m) => m.kumuliert);
+	const chartPrognose: (number | null)[] = monatsDaten.map((_, i) =>
+		i === monatsDaten.length - 1 ? monatsDaten[monatsDaten.length - 1].kumuliert : null
+	);
+	const chartBudget: number[] = monatsDaten.map(() => gesamtBudget);
 
-	// Prognose-Chart-Daten
-	const chartLabels = monate.map((m) => m.label);
-	const chartIst: (number | null)[] = monate.map((m) => m.kumuliert);
-	const chartPrognose: (number | null)[] = monate.map((_, i) => i === monate.length - 1 ? monate[monate.length - 1].kumuliert : null);
-	const chartBudget: number[] = monate.map(() => gesamtBudget);
-
-	if (monate.length > 0 && burnRate > 0) {
-		const letzterHistorisch = monate[monate.length - 1];
+	if (monatsDaten.length > 0 && burnRateResult.burnRateMonatlich > 0) {
+		const letzterHistorisch = monatsDaten[monatsDaten.length - 1];
 		const [lastYear, lastMonth] = letzterHistorisch.monat.split('-').map(Number);
+
+		// Bekannte zukünftige Zahlungen aus offenen Abschlägen
+		const ersteFutureDatum = new Date(lastYear, lastMonth, 1);
+		const ersteFutureMonat = `${ersteFutureDatum.getFullYear()}-${String(ersteFutureDatum.getMonth() + 1).padStart(2, '0')}`;
+		const bekannteZahlungenProMonat: Record<string, number> = {};
+		for (const r of rechnungen) {
+			for (const a of r.abschlaege) {
+				if (a.status === 'bezahlt') continue;
+				if (!a.faelligkeitsdatum) continue;
+				const monat =
+					a.faelligkeitsdatum.slice(0, 7) <= letzterHistorisch.monat
+						? ersteFutureMonat
+						: a.faelligkeitsdatum.slice(0, 7);
+				bekannteZahlungenProMonat[monat] =
+					(bekannteZahlungenProMonat[monat] ?? 0) + a.rechnungsbetrag;
+			}
+		}
+
+		// Erschöpfungsdatum via monatlicher Simulation
+		let restMonate: number | null = null;
+		let simKumuliert = gesamtIst;
+		for (let i = 1; i <= 120; i++) {
+			const d = new Date(lastYear, lastMonth - 1 + i, 1);
+			const ms = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+			simKumuliert += burnRateResult.burnRateMonatlich + (bekannteZahlungenProMonat[ms] ?? 0);
+			if (simKumuliert >= gesamtBudget) {
+				restMonate = i;
+				erschoepfungsDatum = d.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+				break;
+			}
+		}
+
+		// Chart-Datenpunkte
 		const maxProg = Math.min(restMonate ?? 18, 18);
+		let progKumuliert = gesamtIst;
 		for (let i = 1; i <= maxProg; i++) {
 			const datum = new Date(lastYear, lastMonth - 1 + i, 1);
+			const monatStr = `${datum.getFullYear()}-${String(datum.getMonth() + 1).padStart(2, '0')}`;
 			chartLabels.push(datum.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' }));
 			chartIst.push(null);
-			const progKumuliert = gesamtIst + burnRate * i;
-			chartPrognose.push(Math.min(progKumuliert, gesamtBudget));
+			const bekannt = bekannteZahlungenProMonat[monatStr] ?? 0;
+			const roh = progKumuliert + burnRateResult.burnRateMonatlich + bekannt;
+			progKumuliert = Math.min(roh, gesamtBudget);
+			chartPrognose.push(progKumuliert);
 			chartBudget.push(gesamtBudget);
-			if (progKumuliert >= gesamtBudget) break;
+			if (roh >= gesamtBudget) break;
 		}
 	}
 
-	// Gebundene Mittel
-	let gebundenGesamt = 0;
-	for (const r of rechnungen) {
-		for (const a of r.abschlaege) {
-			const s = abschlagEffektivStatus(a);
-			if (s === 'offen' || s === 'ueberfaellig') gebundenGesamt += a.rechnungsbetrag;
-		}
-		if (r.auftragssumme !== undefined) {
-			const nachtraege = r.nachtraege.reduce((s, n) => s + n.betrag, 0);
-			const gesamtAuftrag = r.auftragssumme + nachtraege;
-			const alleAbschlaege = r.abschlaege.reduce((s, a) => s + a.rechnungsbetrag, 0);
-			const nichtVerplant = gesamtAuftrag - alleAbschlaege;
-			if (nichtVerplant > 0) gebundenGesamt += nichtVerplant;
-		}
-	}
+	// Gewerk-Finanzdaten für erweiterte Tabelle
+	const gewerkFinanz = gewerkSummaries.map((s) => {
+		const offen = finanz.offenPerGewerk[s.gewerk.id] ?? 0;
+		const restauftrag = finanz.restauftragPerGewerk[s.gewerk.id] ?? 0;
+		const puffer = finanz.pufferPerGewerk[s.gewerk.id] ?? 0;
+		const frei = s.budget - s.ist - offen - restauftrag - puffer;
+		return { ...s, offen, restauftrag, puffer, frei };
+	});
 
 	// Charts rendern
 	const [
 		chartKosten,
-		chartBudgetVsIst,
+		chartBudgetStacked,
 		chartKategorie,
 		chartKatNachGewerk,
 		chartMonat,
@@ -164,15 +177,15 @@ export async function erstelleBauleiterbericht(
 		chartPrognoseImg
 	] = await Promise.all([
 		renderKostenVerteilungChart(gewerkSummaries),
-		renderBudgetVsIstChart(gewerkSummaries),
+		renderBudgetStackedChart(gewerkFinanz),
 		renderKategorieChart(
 			gewerkSummaries.reduce((s, g) => s + g.material, 0),
 			gewerkSummaries.reduce((s, g) => s + g.arbeitslohn, 0),
 			gewerkSummaries.reduce((s, g) => s + g.sonstiges, 0)
 		),
 		renderKategorienNachGewerkChart(gewerkSummaries),
-		monate.length > 0 ? renderMonatsverlaufChart(monate) : Promise.resolve(''),
-		monate.length > 0 ? renderKumuliertChart(monate) : Promise.resolve(''),
+		monatsDaten.length > 0 ? renderMonatsverlaufChart(monatsDaten) : Promise.resolve(''),
+		monatsDaten.length > 0 ? renderKumuliertChart(monatsDaten) : Promise.resolve(''),
 		chartLabels.length > 0 ? renderPrognoseChart(chartLabels, chartIst, chartPrognose, chartBudget) : Promise.resolve('')
 	]);
 
@@ -181,60 +194,78 @@ export async function erstelleBauleiterbericht(
 	// === PDF-Inhalt aufbauen ===
 	const content: Content[] = [];
 
-	// --- Deckblatt ---
+	// ─── DECKBLATT ───
+	const festEingeplant = finanz.gesamtOffen + finanz.gesamtRestauftrag;
+	const naechsteFaelligkeit = naechsteZahlungen.length > 0 ? naechsteZahlungen[0] : null;
+
 	content.push(
 		{ text: 'Bauleiter-Bericht', style: 'h1', fontSize: 32, margin: [0, 80, 0, 8] },
 		{ text: `Kostenstand per ${formatDatum(heute)}`, fontSize: 14, color: '#6B7280', margin: [0, 0, 0, 40] },
+		// KPI-Zeile 1
 		{
 			columns: [
-				{ width: '*', stack: [
-					{ text: 'Gesamtbudget', style: 'klein' },
-					{ text: formatCents(gesamtBudget), fontSize: 18, bold: true, margin: [0, 2, 0, 0] }
-				]},
-				{ width: '*', stack: [
-					{ text: 'Ausgaben', style: 'klein' },
-					{ text: formatCents(gesamtIst), fontSize: 18, bold: true, margin: [0, 2, 0, 0] }
-				]},
-				{ width: '*', stack: [
-					{ text: 'Verbleibend', style: 'klein' },
-					{ text: formatCents(restBudget), fontSize: 18, bold: true, color: restBudget < 0 ? '#EF4444' : '#10B981', margin: [0, 2, 0, 0] }
-				]},
-				{ width: '*', stack: [
-					{ text: 'Verbraucht', style: 'klein' },
-					{ text: `${verbrauchtProzent} %`, fontSize: 18, bold: true, margin: [0, 2, 0, 0] }
-				]}
+				kpiBlock('Gesamtbudget', formatCents(gesamtBudget)),
+				kpiBlock('Ausgaben', formatCents(gesamtIst)),
+				kpiBlock('Noch verfügbar', formatCents(finanz.freiVerfuegbar), finanz.freiVerfuegbar < 0 ? '#EF4444' : '#10B981'),
+				kpiBlock('Verbraucht', `${verbrauchtProzent} %`)
 			],
-			margin: [0, 0, 0, 20]
+			margin: [0, 0, 0, 16]
 		},
-		// Fortschrittsbalken
+		// KPI-Zeile 2
 		{
-			canvas: [
-				{ type: 'rect', x: 0, y: 0, w: 515, h: 12, r: 4, color: '#E5E7EB' },
-				{ type: 'rect', x: 0, y: 0, w: Math.min(515, 515 * verbrauchtProzent / 100), h: 12, r: 4, color: verbrauchtProzent > 100 ? '#EF4444' : verbrauchtProzent >= 80 ? '#F59E0B' : '#3B82F6' }
+			columns: [
+				kpiBlock('Fest eingeplant', formatCents(festEingeplant), festEingeplant > 0 ? '#8B5CF6' : '#6B7280'),
+				kpiBlock('Burn Rate (3 Mo.)', burnRateResult.burnRateMonatlich > 0 ? `${formatCents(burnRateResult.burnRateMonatlich)} / Mo.` : '—'),
+				kpiBlock('Offene Rechnungen', finanz.ausstehendRechnungen > 0 ? `${finanz.ausstehendRechnungen}` : '—',
+					finanz.hatUeberfaellige ? '#EF4444' : finanz.hatBaldFaellige ? '#D97706' : finanz.ausstehendRechnungen > 0 ? '#F97316' : '#6B7280'),
+				kpiBlock('Nächste Fälligkeit',
+					naechsteFaelligkeit?.faelligkeitsdatum ? formatDatum(naechsteFaelligkeit.faelligkeitsdatum) : '—',
+					naechsteFaelligkeit?.effektivStatus === 'ueberfaellig' ? '#EF4444' : naechsteFaelligkeit?.effektivStatus === 'bald_faellig' ? '#D97706' : '#6B7280')
 			],
 			margin: [0, 0, 0, 20]
 		}
 	);
 
-	if (gebundenGesamt > 0) {
-		content.push({
-			text: [
-				{ text: 'Gebundene Mittel (offene Rechnungen + Verträge): ', style: 'klein' },
-				{ text: formatCents(gebundenGesamt), fontSize: 10, bold: true, color: '#F97316' }
+	// Gestapelter Fortschrittsbalken: Bezahlt (blau) + Offen (orange) + Restauftrag (violett)
+	const barWidth = 515;
+	const bindungGesamt = gesamtIst + finanz.gesamtOffen + finanz.gesamtRestauftrag;
+	const barBasis = Math.max(gesamtBudget, bindungGesamt);
+	const barBezahlt = barBasis > 0 ? Math.min(barWidth, barWidth * gesamtIst / barBasis) : 0;
+	const barOffen = barBasis > 0 ? Math.min(barWidth - barBezahlt, barWidth * finanz.gesamtOffen / barBasis) : 0;
+	const barRestauftrag = barBasis > 0 ? Math.min(barWidth - barBezahlt - barOffen, barWidth * finanz.gesamtRestauftrag / barBasis) : 0;
+
+	content.push(
+		{
+			canvas: [
+				{ type: 'rect', x: 0, y: 0, w: barWidth, h: 12, r: 4, color: '#E5E7EB' },
+				...(barRestauftrag > 0 ? [{ type: 'rect' as const, x: 0, y: 0, w: Math.min(barWidth, barBezahlt + barOffen + barRestauftrag), h: 12, r: 4, color: '#8B5CF6' }] : []),
+				...(barOffen > 0 ? [{ type: 'rect' as const, x: 0, y: 0, w: Math.min(barWidth, barBezahlt + barOffen), h: 12, r: 4, color: '#F97316' }] : []),
+				...(barBezahlt > 0 ? [{ type: 'rect' as const, x: 0, y: 0, w: barBezahlt, h: 12, r: 4, color: '#3B82F6' }] : [])
 			],
+			margin: [0, 0, 0, 4]
+		},
+		{
+			columns: [
+				{ text: 'Bezahlt', fontSize: 7, color: '#3B82F6', width: 'auto' },
+				{ text: '  ', width: 4 },
+				{ text: 'Offen', fontSize: 7, color: '#F97316', width: 'auto' },
+				{ text: '  ', width: 4 },
+				{ text: 'Restauftrag', fontSize: 7, color: '#8B5CF6', width: 'auto' },
+				{ text: '', width: '*' }
+			],
+			margin: [0, 0, 0, 12]
+		}
+	);
+
+	if (buchungen.length > 0) {
+		content.push({
+			text: `${buchungen.length} Buchungen | ${monatsDaten.length} Monate | ${projekt.gewerke.length} Gewerke | ${projekt.raeume.length} Räume`,
+			style: 'klein',
 			margin: [0, 0, 0, 0]
 		});
 	}
 
-	if (buchungen.length > 0) {
-		content.push({
-			text: `${buchungen.length} Buchungen | ${monate.length} Monate | ${projekt.gewerke.length} Gewerke | ${projekt.raeume.length} Räume`,
-			style: 'klein',
-			margin: [0, 8, 0, 0]
-		});
-	}
-
-	// --- KI-Einschätzung ---
+	// ─── KI-EINSCHÄTZUNG ───
 	if (aiAngefragt && !aiAnalyse) {
 		content.push(
 			{ text: '', pageBreak: 'after' },
@@ -282,6 +313,13 @@ export async function erstelleBauleiterbericht(
 			);
 		}
 
+		if (aiAnalyse.dokumentenAnalyse) {
+			content.push(
+				{ text: 'Dokumentenanalyse', style: 'h3' },
+				{ text: aiAnalyse.dokumentenAnalyse, fontSize: 10, lineHeight: 1.5, margin: [0, 0, 0, 12] }
+			);
+		}
+
 		content.push({
 			text: 'Diese Analyse wurde von Claude AI erstellt und dient als Orientierung.',
 			fontSize: 8,
@@ -291,7 +329,7 @@ export async function erstelleBauleiterbericht(
 		});
 	}
 
-	// --- Budget-Übersicht ---
+	// ─── BUDGET-ÜBERSICHT ───
 	content.push(
 		{ text: '', pageBreak: 'after' },
 		{ text: 'Budget-Übersicht', style: 'h2', fontSize: 20 }
@@ -303,51 +341,89 @@ export async function erstelleBauleiterbericht(
 			{ image: chartKosten, width: 500, margin: [0, 0, 0, 12] }
 		);
 	}
-	if (chartBudgetVsIst) {
+	if (chartBudgetStacked) {
 		content.push(
-			{ text: 'Budget vs. Ausgaben', style: 'h3' },
-			{ image: chartBudgetVsIst, width: 500, margin: [0, 0, 0, 12] }
+			{ text: 'Budget vs. Bindung nach Gewerk', style: 'h3' },
+			{ image: chartBudgetStacked, width: 500, margin: [0, 0, 0, 12] }
 		);
 	}
 
-	// Budget-Tabelle
+	// Budget-Tabelle (erweitert: 8 Spalten)
 	const budgetBody: TableCell[][] = [
-		[headerZelle('Gewerk'), headerZelle('Budget', 'right'), headerZelle('Ausgaben', 'right'), headerZelle('Differenz', 'right'), headerZelle('%', 'right'), headerZelle('Status', 'center')]
+		[headerZelle('Gewerk'), headerZelle('Budget', 'right'), headerZelle('Bezahlt', 'right'), headerZelle('Offen', 'right'), headerZelle('Restauftrag', 'right'), headerZelle('Puffer', 'right'), headerZelle('Frei', 'right'), headerZelle('Status', 'center')]
 	];
-	for (const s of gewerkSummaries.filter((g) => g.ist > 0 || g.budget > 0)) {
-		const pz = s.budget > 0 ? Math.round((s.ist / s.budget) * 100) : (s.ist > 0 ? 999 : 0);
-		const farbe = ampelFarbe(s.ist, s.budget);
-		const statusText = s.gewerk.pauschal ? 'Sammelgewerk' : (pz > 100 ? 'Überschritten' : pz >= 80 ? 'Achtung' : 'Im Rahmen');
+	for (const s of gewerkFinanz.filter((g) => g.ist > 0 || g.budget > 0)) {
+		const statusText = s.gewerk.pauschal ? 'Sammelgewerk'
+			: s.frei < 0 ? 'Kritisch'
+			: s.budget > 0 && s.frei < s.budget * 0.2 ? 'Achtung'
+			: 'Im Rahmen';
+		const statusFarbe = s.gewerk.pauschal ? '#6B7280'
+			: s.frei < 0 ? '#EF4444'
+			: s.budget > 0 && s.frei < s.budget * 0.2 ? '#F59E0B'
+			: '#10B981';
 		budgetBody.push([
 			{ text: s.gewerk.name, fontSize: 9, bold: true },
 			betragZelle(s.budget, '#6B7280'),
-			betragZelle(s.ist),
-			betragZelle(s.differenz, s.differenz < 0 ? '#EF4444' : '#10B981'),
-			{ text: prozent(s.ist, s.budget), alignment: 'right', fontSize: 9 },
-			{ text: statusText, alignment: 'center', fontSize: 8, bold: true, color: s.gewerk.pauschal ? '#6B7280' : farbe }
+			betragZelle(s.ist, '#10B981'),
+			s.offen > 0 ? betragZelle(s.offen, '#F97316') : { text: '—', alignment: 'right' as const, fontSize: 9, color: '#D1D5DB' },
+			s.restauftrag > 0 ? betragZelle(s.restauftrag, '#8B5CF6') : { text: '—', alignment: 'right' as const, fontSize: 9, color: '#D1D5DB' },
+			s.puffer > 0 ? betragZelle(s.puffer, '#D97706') : { text: '—', alignment: 'right' as const, fontSize: 9, color: '#D1D5DB' },
+			betragZelle(s.frei, s.frei < 0 ? '#EF4444' : '#10B981'),
+			{ text: statusText, alignment: 'center' as const, fontSize: 8, bold: true, color: statusFarbe }
 		]);
 	}
 	// Summenzeile
 	budgetBody.push([
 		{ text: 'Gesamt', fontSize: 9, bold: true, fillColor: '#F3F4F6' },
-		{ text: formatCents(gesamtBudget), alignment: 'right', fontSize: 9, bold: true, fillColor: '#F3F4F6' },
-		{ text: formatCents(gesamtIst), alignment: 'right', fontSize: 9, bold: true, fillColor: '#F3F4F6' },
-		{ text: formatCents(restBudget), alignment: 'right', fontSize: 9, bold: true, color: restBudget < 0 ? '#EF4444' : '#10B981', fillColor: '#F3F4F6' },
-		{ text: `${verbrauchtProzent} %`, alignment: 'right', fontSize: 9, bold: true, fillColor: '#F3F4F6' },
+		{ text: formatCents(gesamtBudget), alignment: 'right' as const, fontSize: 9, bold: true, fillColor: '#F3F4F6' },
+		{ text: formatCents(gesamtIst), alignment: 'right' as const, fontSize: 9, bold: true, color: '#10B981', fillColor: '#F3F4F6' },
+		{ text: formatCents(finanz.gesamtOffen), alignment: 'right' as const, fontSize: 9, bold: true, color: '#F97316', fillColor: '#F3F4F6' },
+		{ text: formatCents(finanz.gesamtRestauftrag), alignment: 'right' as const, fontSize: 9, bold: true, color: '#8B5CF6', fillColor: '#F3F4F6' },
+		{ text: formatCents(finanz.gesamtPuffer), alignment: 'right' as const, fontSize: 9, bold: true, color: '#D97706', fillColor: '#F3F4F6' },
+		{ text: formatCents(finanz.freiVerfuegbar), alignment: 'right' as const, fontSize: 9, bold: true, color: finanz.freiVerfuegbar < 0 ? '#EF4444' : '#10B981', fillColor: '#F3F4F6' },
 		{ text: '', fillColor: '#F3F4F6' }
 	]);
 
 	content.push({
 		table: {
 			headerRows: 1,
-			widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto'],
+			widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
 			body: budgetBody
 		},
 		layout: TABLE_LAYOUT,
 		margin: [0, 0, 0, 0]
 	});
 
-	// --- Kategorien-Analyse ---
+	// Sammelgewerk-Aufschlüsselung
+	const sammelgewerke = gewerkFinanz.filter((g) => g.gewerk.pauschal && g.ist > 0);
+	for (const sg of sammelgewerke) {
+		const taetigkeiten = new Map<string, number>();
+		for (const b of buchungen.filter((b) => b.gewerk === sg.gewerk.id)) {
+			const key = b.taetigkeit || 'Ohne Zuordnung';
+			taetigkeiten.set(key, (taetigkeiten.get(key) ?? 0) + b.betrag);
+		}
+		if (taetigkeiten.size === 0) continue;
+
+		content.push({ text: `${sg.gewerk.name} — Aufschlüsselung nach Tätigkeit`, style: 'h3' });
+		const tBody: TableCell[][] = [
+			[headerZelle('Tätigkeit'), headerZelle('Betrag', 'right'), headerZelle('Anteil', 'right')]
+		];
+		const sorted = [...taetigkeiten.entries()].sort(([, a], [, b]) => b - a);
+		for (const [taetigkeit, betrag] of sorted) {
+			tBody.push([
+				{ text: taetigkeit, fontSize: 9 },
+				betragZelle(betrag),
+				{ text: sg.ist > 0 ? `${Math.round((betrag / sg.ist) * 100)} %` : '—', alignment: 'right' as const, fontSize: 9, color: '#6B7280' }
+			]);
+		}
+		content.push({
+			table: { headerRows: 1, widths: ['*', 'auto', 'auto'], body: tBody },
+			layout: TABLE_LAYOUT,
+			margin: [0, 0, 0, 8]
+		});
+	}
+
+	// ─── KATEGORIEN-ANALYSE ───
 	content.push(
 		{ text: 'Kategorien-Analyse', style: 'h2', fontSize: 20 }
 	);
@@ -383,10 +459,10 @@ export async function erstelleBauleiterbericht(
 	const gesamtSonstiges = gewerkSummaries.reduce((s, g) => s + g.sonstiges, 0);
 	katBody.push([
 		{ text: 'Gesamt', fontSize: 9, bold: true, fillColor: '#F3F4F6' },
-		{ text: formatCents(gesamtMaterial), alignment: 'right', fontSize: 9, bold: true, color: '#3B82F6', fillColor: '#F3F4F6' },
-		{ text: formatCents(gesamtArbeitslohn), alignment: 'right', fontSize: 9, bold: true, color: '#F97316', fillColor: '#F3F4F6' },
-		{ text: formatCents(gesamtSonstiges), alignment: 'right', fontSize: 9, bold: true, color: '#6B7280', fillColor: '#F3F4F6' },
-		{ text: formatCents(gesamtIst), alignment: 'right', fontSize: 9, bold: true, fillColor: '#F3F4F6' }
+		{ text: formatCents(gesamtMaterial), alignment: 'right' as const, fontSize: 9, bold: true, color: '#3B82F6', fillColor: '#F3F4F6' },
+		{ text: formatCents(gesamtArbeitslohn), alignment: 'right' as const, fontSize: 9, bold: true, color: '#F97316', fillColor: '#F3F4F6' },
+		{ text: formatCents(gesamtSonstiges), alignment: 'right' as const, fontSize: 9, bold: true, color: '#6B7280', fillColor: '#F3F4F6' },
+		{ text: formatCents(gesamtIst), alignment: 'right' as const, fontSize: 9, bold: true, fillColor: '#F3F4F6' }
 	]);
 
 	content.push({
@@ -395,7 +471,7 @@ export async function erstelleBauleiterbericht(
 		margin: [0, 0, 0, 0]
 	});
 
-	// --- Kosten nach Raum ---
+	// ─── KOSTEN NACH RAUM ───
 	const raeumeActive = raumSummaries.filter((r) => r.ist > 0);
 	if (raeumeActive.length > 0) {
 		content.push(
@@ -434,29 +510,35 @@ export async function erstelleBauleiterbericht(
 		}
 	}
 
-	// --- Auftragsstatus ---
+	// ─── AUFTRAGSSTATUS ───
 	if (rechnungen.length > 0) {
 		content.push(
 			{ text: '', pageBreak: 'after' },
 			{ text: 'Auftragsstatus', style: 'h2', fontSize: 20 }
 		);
 
+		// Erweiterte Tabelle mit Nachträge-Spalte
 		const aufBody: TableCell[][] = [
-			[headerZelle('Auftragnehmer'), headerZelle('Gewerk'), headerZelle('Auftrag', 'right'), headerZelle('Bezahlt', 'right'), headerZelle('Offen', 'right'), headerZelle('Status', 'center')]
+			[headerZelle('Auftragnehmer'), headerZelle('Gewerk'), headerZelle('Ursprüngl.', 'right'), headerZelle('Nachträge', 'right'), headerZelle('Gesamt', 'right'), headerZelle('Bezahlt', 'right'), headerZelle('Offen', 'right'), headerZelle('Status', 'center')]
 		];
 
-		let summeAuftrag = 0;
+		let summeUrspruenglich = 0;
+		let summeNachtraege = 0;
+		let summeGesamt = 0;
 		let summeBezahlt = 0;
 		let summeOffen = 0;
 
 		for (const r of rechnungen) {
 			const nachtraege = r.nachtraege.reduce((s, n) => s + n.betrag, 0);
-			const auftragGesamt = (r.auftragssumme ?? 0) + nachtraege;
+			const urspruenglich = r.auftragssumme ?? 0;
+			const auftragGesamt = urspruenglich + nachtraege;
 			const bezahlt = r.abschlaege.filter((a) => abschlagEffektivStatus(a) === 'bezahlt').reduce((s, a) => s + a.rechnungsbetrag, 0);
-			const offen = r.abschlaege.filter((a) => { const st = abschlagEffektivStatus(a); return st === 'offen' || st === 'ueberfaellig'; }).reduce((s, a) => s + a.rechnungsbetrag, 0);
+			const offen = r.abschlaege.filter((a) => { const st = abschlagEffektivStatus(a); return st === 'offen' || st === 'ueberfaellig' || st === 'bald_faellig'; }).reduce((s, a) => s + a.rechnungsbetrag, 0);
 			const hatUeberfaellig = r.abschlaege.some((a) => abschlagEffektivStatus(a) === 'ueberfaellig');
 
-			summeAuftrag += auftragGesamt;
+			summeUrspruenglich += urspruenglich;
+			summeNachtraege += nachtraege;
+			summeGesamt += auftragGesamt;
 			summeBezahlt += bezahlt;
 			summeOffen += offen;
 
@@ -477,31 +559,127 @@ export async function erstelleBauleiterbericht(
 			aufBody.push([
 				{ text: r.auftragnehmer, fontSize: 9, bold: true },
 				{ text: gewerkName, fontSize: 9 },
+				betragZelle(urspruenglich),
+				nachtraege > 0 ? betragZelle(nachtraege, '#D97706') : { text: '—', alignment: 'right' as const, fontSize: 9, color: '#D1D5DB' },
 				betragZelle(auftragGesamt),
 				betragZelle(bezahlt, '#10B981'),
 				betragZelle(offen, offen > 0 ? '#F97316' : '#6B7280'),
-				{ text: statusText, alignment: 'center', fontSize: 8, bold: true, color: statusFarbe }
+				{ text: statusText, alignment: 'center' as const, fontSize: 8, bold: true, color: statusFarbe }
 			]);
 		}
 
 		aufBody.push([
 			{ text: 'Gesamt', fontSize: 9, bold: true, fillColor: '#F3F4F6' },
 			{ text: '', fillColor: '#F3F4F6' },
-			{ text: formatCents(summeAuftrag), alignment: 'right', fontSize: 9, bold: true, fillColor: '#F3F4F6' },
-			{ text: formatCents(summeBezahlt), alignment: 'right', fontSize: 9, bold: true, color: '#10B981', fillColor: '#F3F4F6' },
-			{ text: formatCents(summeOffen), alignment: 'right', fontSize: 9, bold: true, color: '#F97316', fillColor: '#F3F4F6' },
+			{ text: formatCents(summeUrspruenglich), alignment: 'right' as const, fontSize: 9, bold: true, fillColor: '#F3F4F6' },
+			{ text: formatCents(summeNachtraege), alignment: 'right' as const, fontSize: 9, bold: true, color: '#D97706', fillColor: '#F3F4F6' },
+			{ text: formatCents(summeGesamt), alignment: 'right' as const, fontSize: 9, bold: true, fillColor: '#F3F4F6' },
+			{ text: formatCents(summeBezahlt), alignment: 'right' as const, fontSize: 9, bold: true, color: '#10B981', fillColor: '#F3F4F6' },
+			{ text: formatCents(summeOffen), alignment: 'right' as const, fontSize: 9, bold: true, color: '#F97316', fillColor: '#F3F4F6' },
 			{ text: '', fillColor: '#F3F4F6' }
 		]);
 
 		content.push({
-			table: { headerRows: 1, widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto'], body: aufBody },
+			table: { headerRows: 1, widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'], body: aufBody },
 			layout: TABLE_LAYOUT,
+			margin: [0, 0, 0, 0]
+		});
+
+		// Nächste Zahlungen
+		const relevanteZahlungen = naechsteZahlungen.slice(0, 10);
+		if (relevanteZahlungen.length > 0) {
+			content.push({ text: 'Nächste Zahlungen', style: 'h3' });
+			const nzBody: TableCell[][] = [
+				[headerZelle('Fälligkeit'), headerZelle('Auftragnehmer'), headerZelle('Gewerk'), headerZelle('Typ'), headerZelle('Betrag', 'right'), headerZelle('Status', 'center')]
+			];
+
+			for (const z of relevanteZahlungen) {
+				const istUeberfaellig = z.effektivStatus === 'ueberfaellig';
+				const istBaldFaellig = z.effektivStatus === 'bald_faellig';
+				const fillColor = istUeberfaellig ? '#FEF2F2' : istBaldFaellig ? '#FFFBEB' : undefined;
+
+				let statusText = z.effektivStatus === 'ueberfaellig' ? 'Überfällig'
+					: z.effektivStatus === 'bald_faellig' ? 'Bald fällig'
+					: 'Offen';
+				if (z.tageVerbleibend !== null) {
+					if (z.tageVerbleibend < 0) statusText += ` (${Math.abs(z.tageVerbleibend)} Tage)`;
+					else if (z.tageVerbleibend === 0) statusText = 'Heute fällig';
+					else statusText += ` (in ${z.tageVerbleibend} T.)`;
+				}
+
+				nzBody.push([
+					{ text: z.faelligkeitsdatum ? formatDatum(z.faelligkeitsdatum) : '—', fontSize: 9, fillColor },
+					{ text: z.auftragnehmer, fontSize: 9, fillColor },
+					{ text: z.gewerkName, fontSize: 9, fillColor },
+					{ text: `${z.typ} #${z.nummer}`, fontSize: 9, fillColor },
+					{ text: formatCents(z.betrag), alignment: 'right' as const, fontSize: 9, fillColor },
+					{ text: statusText, alignment: 'center' as const, fontSize: 8, bold: true,
+						color: istUeberfaellig ? '#EF4444' : istBaldFaellig ? '#D97706' : '#6B7280', fillColor }
+				]);
+			}
+
+			content.push({
+				table: { headerRows: 1, widths: ['auto', '*', 'auto', 'auto', 'auto', 'auto'], body: nzBody },
+				layout: TABLE_LAYOUT,
+				margin: [0, 0, 0, 0]
+			});
+		}
+	}
+
+	// ─── STEUER §35a ───
+	const steuerDaten = berechneSteuerDaten(buchungen);
+	if (steuerDaten.length > 0) {
+		content.push(
+			{ text: '', pageBreak: 'after' },
+			{ text: 'Steuerliche Auswertung — §35a EStG', style: 'h2', fontSize: 20 }
+		);
+
+		for (const sj of steuerDaten) {
+			content.push(
+				{ text: `Steuerjahr ${sj.jahr}`, style: 'h3' },
+				{
+					columns: [
+						kpiBlock('Handwerkerleistungen', formatCents(sj.summe)),
+						kpiBlock('Bemessungsgrundlage', formatCents(Math.min(sj.summe, 600000))),
+						kpiBlock('Steuererstattung (20%)', formatCents(sj.erstattung), '#10B981'),
+						kpiBlock('Limit-Ausschöpfung', `${sj.limitProzent} %`, sj.limitProzent >= 100 ? '#F59E0B' : '#6B7280')
+					],
+					margin: [0, 0, 0, 8]
+				}
+			);
+
+			const stBody: TableCell[][] = [
+				[headerZelle('Datum'), headerZelle('Beschreibung'), headerZelle('Gewerk'), headerZelle('Betrag', 'right'), headerZelle('Arbeitsanteil', 'right')]
+			];
+			for (const b of sj.buchungen) {
+				const gewerkName = projekt.gewerke.find((g) => g.id === b.gewerk)?.name ?? b.gewerk;
+				const anteil = b.arbeitsanteilCents ?? b.betrag;
+				stBody.push([
+					{ text: formatDatum(b.datum), fontSize: 9 },
+					{ text: b.beschreibung, fontSize: 9 },
+					{ text: gewerkName, fontSize: 9 },
+					betragZelle(b.betrag),
+					anteil !== b.betrag ? betragZelle(anteil, '#3B82F6') : { text: '= Betrag', alignment: 'right' as const, fontSize: 8, color: '#6B7280' }
+				]);
+			}
+			content.push({
+				table: { headerRows: 1, widths: ['auto', '*', 'auto', 'auto', 'auto'], body: stBody },
+				layout: TABLE_LAYOUT,
+				margin: [0, 0, 0, 12]
+			});
+		}
+
+		content.push({
+			text: 'Grundlage: bestätigte Handwerkerleistungen (Arbeitslohn). Maximal 6.000 € Bemessungsgrundlage pro Jahr, davon 20% = max. 1.200 € Steuererstattung.',
+			fontSize: 8,
+			italics: true,
+			color: '#9CA3AF',
 			margin: [0, 0, 0, 0]
 		});
 	}
 
-	// --- Monatsverlauf ---
-	if (monate.length > 0) {
+	// ─── MONATSVERLAUF ───
+	if (monatsDaten.length > 0) {
 		content.push(
 			{ text: '', pageBreak: 'after' },
 			{ text: 'Monatsverlauf', style: 'h2', fontSize: 20 }
@@ -523,8 +701,7 @@ export async function erstelleBauleiterbericht(
 		const monBody: TableCell[][] = [
 			[headerZelle('Monat'), headerZelle('Ausgaben', 'right'), headerZelle('Material', 'right'), headerZelle('Arbeitslohn', 'right'), headerZelle('Sonstiges', 'right'), headerZelle('Kumuliert', 'right')]
 		];
-		// Neueste zuerst
-		const monateAnzeige = [...monate].reverse();
+		const monateAnzeige = [...monatsDaten].reverse();
 		for (const m of monateAnzeige) {
 			monBody.push([
 				{ text: m.label, fontSize: 9 },
@@ -542,8 +719,8 @@ export async function erstelleBauleiterbericht(
 		});
 	}
 
-	// --- Prognose ---
-	if (monate.length > 0 && burnRate > 0) {
+	// ─── PROGNOSE ───
+	if (monatsDaten.length > 0 && burnRateResult.burnRateMonatlich > 0) {
 		content.push(
 			{ text: '', pageBreak: 'after' },
 			{ text: 'Prognose', style: 'h2', fontSize: 20 }
@@ -551,18 +728,10 @@ export async function erstelleBauleiterbericht(
 
 		content.push({
 			columns: [
-				{ width: '*', stack: [
-					{ text: 'Burn Rate', style: 'klein' },
-					{ text: `${formatCents(burnRate)} / Monat`, fontSize: 14, bold: true, margin: [0, 2, 0, 0] }
-				]},
-				{ width: '*', stack: [
-					{ text: 'Budget-Erschöpfung', style: 'klein' },
-					{ text: erschoepfungsDatum ?? 'Im Rahmen', fontSize: 14, bold: true, margin: [0, 2, 0, 0] }
-				]},
-				{ width: '*', stack: [
-					{ text: 'Restbudget', style: 'klein' },
-					{ text: formatCents(restBudget), fontSize: 14, bold: true, color: restBudget < 0 ? '#EF4444' : '#10B981', margin: [0, 2, 0, 0] }
-				]}
+				kpiBlock('Burn Rate (3 Mo. Ø)', `${formatCents(burnRateResult.burnRateMonatlich)} / Monat`),
+				kpiBlock('Budget-Erschöpfung', erschoepfungsDatum ?? 'Im Rahmen'),
+				kpiBlock('Frei verfügbar', formatCents(finanz.freiVerfuegbar), finanz.freiVerfuegbar < 0 ? '#EF4444' : '#10B981'),
+				kpiBlock('Gebundene Mittel', formatCents(finanz.gesamtOffen + finanz.gesamtRestauftrag), '#8B5CF6')
 			],
 			margin: [0, 0, 0, 16]
 		});
@@ -571,41 +740,79 @@ export async function erstelleBauleiterbericht(
 			content.push(
 				{ text: 'Ausgabenverlauf & Prognose', style: 'h3' },
 				{ image: chartPrognoseImg, width: 500, margin: [0, 0, 0, 8] },
-				{ text: 'Blau: Ist-Ausgaben | Orange gestrichelt: Prognose | Rot gestrichelt: Gesamtbudget', style: 'klein', margin: [0, 0, 0, 16] }
+				{ text: 'Blau: Ist-Ausgaben | Orange gestrichelt: Prognose (inkl. bekannte Zahlungen) | Rot gestrichelt: Gesamtbudget', style: 'klein', margin: [0, 0, 0, 16] }
 			);
+		}
+
+		// Gewerk-Prognose-Tabelle
+		const gewerkeMitBudget = gewerkFinanz.filter((g) => g.budget > 0 && g.ist > 0);
+		if (gewerkeMitBudget.length > 0) {
+			content.push({ text: 'Gewerk-Prognose', style: 'h3' });
+			const gpBody: TableCell[][] = [
+				[headerZelle('Gewerk'), headerZelle('Ist', 'right'), headerZelle('Budget', 'right'), headerZelle('Gebunden', 'right'), headerZelle('Frei', 'right'), headerZelle('Risiko', 'center')]
+			];
+			for (const g of gewerkeMitBudget) {
+				const gebunden = g.offen + g.restauftrag;
+				const risikoText = g.frei < 0 ? 'Kritisch'
+					: g.frei < g.budget * 0.2 ? 'Achtung'
+					: g.gewerk.pauschal ? 'Sammelgewerk'
+					: 'Im Rahmen';
+				const risikoFarbe = g.frei < 0 ? '#EF4444'
+					: g.frei < g.budget * 0.2 ? '#F59E0B'
+					: g.gewerk.pauschal ? '#6B7280'
+					: '#10B981';
+				gpBody.push([
+					{ text: g.gewerk.name, fontSize: 9, bold: true },
+					betragZelle(g.ist),
+					betragZelle(g.budget, '#6B7280'),
+					gebunden > 0 ? betragZelle(gebunden, '#8B5CF6') : { text: '—', alignment: 'right' as const, fontSize: 9, color: '#D1D5DB' },
+					betragZelle(g.frei, g.frei < 0 ? '#EF4444' : '#10B981'),
+					{ text: risikoText, alignment: 'center' as const, fontSize: 8, bold: true, color: risikoFarbe }
+				]);
+			}
+			content.push({
+				table: { headerRows: 1, widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto'], body: gpBody },
+				layout: TABLE_LAYOUT,
+				margin: [0, 0, 0, 0]
+			});
 		}
 	}
 
-	// --- Lieferanten ---
+	// ─── LIEFERANTEN ───
 	if (lieferantenData.lieferanten.length > 0) {
 		content.push(
 			{ text: 'Lieferanten-Übersicht', style: 'h2', fontSize: 20 }
 		);
 
 		const liefBody: TableCell[][] = [
-			[headerZelle('Lieferant'), headerZelle('Lieferungen', 'right'), headerZelle('Gesamtbetrag', 'right'), headerZelle('Gutschriften', 'right')]
+			[headerZelle('Lieferant'), headerZelle('Zahlungsart'), headerZelle('Lieferungen', 'right'), headerZelle('Gesamtbetrag', 'right'), headerZelle('Gutschriften', 'right')]
 		];
 
 		for (const l of lieferantenData.lieferanten) {
 			const lieferungen = lieferantenData.lieferungen.filter((li) => li.lieferantId === l.id);
+			if (lieferungen.length === 0) continue;
+
 			const positiv = lieferungen.filter((li) => (li.betrag ?? 0) > 0).reduce((s, li) => s + (li.betrag ?? 0), 0);
 			const gutschriften = lieferungen.filter((li) => (li.betrag ?? 0) < 0).reduce((s, li) => s + (li.betrag ?? 0), 0);
 			const gesamt = positiv + gutschriften;
 
-			if (lieferungen.length === 0) continue;
+			const zahlungsartText = l.zahlungsart === 'bankeinzug' ? 'Bankeinzug'
+				: l.zahlungsart === 'kartenzahlung' ? 'Kartenzahlung'
+				: '—';
 
 			liefBody.push([
 				{ text: l.name, fontSize: 9, bold: true },
-				{ text: String(lieferungen.length), alignment: 'right', fontSize: 9 },
+				{ text: zahlungsartText, fontSize: 9, color: '#6B7280' },
+				{ text: String(lieferungen.length), alignment: 'right' as const, fontSize: 9 },
 				betragZelle(gesamt),
 				gutschriften < 0
-					? { text: formatCents(gutschriften), alignment: 'right', fontSize: 9, color: '#EF4444' }
-					: { text: '—', alignment: 'right', fontSize: 9, color: '#6B7280' }
+					? { text: formatCents(gutschriften), alignment: 'right' as const, fontSize: 9, color: '#EF4444' }
+					: { text: '—', alignment: 'right' as const, fontSize: 9, color: '#6B7280' }
 			]);
 		}
 
 		content.push({
-			table: { headerRows: 1, widths: ['*', 'auto', 'auto', 'auto'], body: liefBody },
+			table: { headerRows: 1, widths: ['*', 'auto', 'auto', 'auto', 'auto'], body: liefBody },
 			layout: TABLE_LAYOUT,
 			margin: [0, 0, 0, 0]
 		});
