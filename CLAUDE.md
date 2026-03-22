@@ -55,7 +55,7 @@ lieferungId? / rechnungId? (gesetzt bei auto-erstellten Buchungen)
 ### projekt.json – Felder
 ```
 gewerke[]: id, name, farbe (#hex), sortierung, pauschal? (true = Sammelgewerk → kein Budget-Alarm)
-raeume[]:  id, name, geschoss (EG/OG/KG), sortierung
+raeume[]:  id, name, geschoss (EG/OG/KG/DG), sortierung, flaeche? (m², Dezimalzahl)
 budgets[]: gewerk (→ gewerke.id), geplant (cents), notiz
 ```
 Jedes Gewerk hat genau einen Budget-Eintrag.
@@ -157,10 +157,12 @@ src/routes/
   lieferanten/[id]/               # Lieferanten + Lieferungen + PDF-Extraktion
   prognose/                       # Burn Rate, Budget-Erschöpfung, Gewerk-Hochrechnung
   verlauf/                        # Monatsverlauf (auch direkt erreichbar)
-  budget/                         # Budget-Tabelle mit Ampel + Inline-Edit + Sammelgewerk-Aufschlüsselung
+  budget/                         # Budget-Cards mit Ampel-Rand, Inline-Edit, Sortierung nach Status
   bericht/                        # PDF-Bericht + KI-Analyse + Dokumenten-Vorbereitung
-  belege/                         # Übersicht aller Belege aus allen 3 Quellen
-  gewerke/, raeume/, einstellungen/
+  belege/                         # Belege-Übersicht mit Vorschau, Gruppierung, fehlende Belege
+  gewerke/                        # Gewerke-Cards mit Drag & Drop, Budget-Info, Seed-Logik
+  raeume/                         # Räume-Cards nach Geschoss, Drag & Drop, m², Kosten/m²
+  einstellungen/
   api/
     bericht/+server.ts            # GET: PDF-Bericht (?ai=true für KI-Analyse)
     export/+server.ts             # GET: ZIP-Download aller Daten
@@ -170,6 +172,8 @@ src/routes/
 ```
 
 **Architektur:** JSON auf Platte · synchrones I/O (readFileSync/writeFileSync) · SvelteKit Form Actions · Tailwind CSS v4 · Chart.js · pdfmake 0.3.x · Node v22 (nvm)
+
+**Erststart:** Bei fehlender `projekt.json` werden automatisch 10 Standard-Gewerke (Rohbau, Elektro, Sanitär, Heizung, Fenster & Türen, Trockenbau, Maler, Boden, Dach, Sonstiges) und 5 Standard-Räume (Küche, Wohnzimmer, Bad, Flur, Schlafzimmer EG) angelegt.
 
 **pdfmake 0.3.x Gotchas:**
 - Import: `import PdfPrinter from 'pdfmake/js/Printer'`
