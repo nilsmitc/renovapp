@@ -88,7 +88,47 @@
 		basisFuerFortschritt > 0 ? Math.min(100 - bezahltPct, (offenSumme / basisFuerFortschritt) * 100) : 0
 	);
 
+	const restauftragSumme = $derived(
+		rechnung.auftragssumme !== undefined
+			? Math.max(0, basisFuerFortschritt - gestelltSumme)
+			: 0
+	);
+
+	const restauftragPct = $derived(
+		basisFuerFortschritt > 0 ? Math.min(100 - bezahltPct - offenPct, (restauftragSumme / basisFuerFortschritt) * 100) : 0
+	);
+
+	const anzahlOffeneAbschlaege = $derived(
+		rechnung.abschlaege.filter(a => {
+			const s = abschlagEffektivStatus(a);
+			return s === 'offen' || s === 'ueberfaellig' || s === 'bald_faellig';
+		}).length
+	);
+
+	const hatUeberfaelligeAbschlaege = $derived(
+		rechnung.abschlaege.some(a => abschlagEffektivStatus(a) === 'ueberfaellig')
+	);
+
+	const hatBaldFaelligeAbschlaege = $derived(
+		rechnung.abschlaege.some(a => abschlagEffektivStatus(a) === 'bald_faellig')
+	);
+
+	// Dringendster offener Abschlag für Callout
+	const dringendsterAbschlag = $derived.by(() => {
+		const offene = rechnung.abschlaege
+			.filter(a => {
+				const s = abschlagEffektivStatus(a);
+				return s === 'offen' || s === 'ueberfaellig' || s === 'bald_faellig';
+			})
+			.sort((a, b) => (a.faelligkeitsdatum ?? '9999').localeCompare(b.faelligkeitsdatum ?? '9999'));
+		return offene[0] ?? null;
+	});
+
 	const heute = new Date().toISOString().slice(0, 10);
+
+	function tageVerbleibend(datum: string): number {
+		return Math.round((new Date(datum).getTime() - new Date(heute).getTime()) / (1000 * 60 * 60 * 24));
+	}
 
 	function statusBadge(a: Abschlag) {
 		const s = abschlagEffektivStatus(a);
@@ -104,6 +144,77 @@
 		if (typ === 'nachtragsrechnung') return 'Nachtrag';
 		return 'Abschlag';
 	}
+
+	// Timeline: alle Events chronologisch
+	interface TimelineEvent {
+		datum: string;
+		label: string;
+		betrag: number | null;
+		detail: string;
+		color: string; // tailwind color name
+		filled: boolean; // past=filled, future=ring
+	}
+
+	const timelineEvents = $derived.by(() => {
+		const events: TimelineEvent[] = [];
+
+		// Auftrag erteilt
+		if (rechnung.auftragsdatum) {
+			events.push({
+				datum: rechnung.auftragsdatum,
+				label: 'Auftrag erteilt',
+				betrag: rechnung.auftragssumme ?? null,
+				detail: '',
+				color: 'blue',
+				filled: rechnung.auftragsdatum <= heute
+			});
+		}
+
+		// Nachträge
+		for (const n of rechnung.nachtraege) {
+			const d = n.datum ?? n.erstellt.slice(0, 10);
+			events.push({
+				datum: d,
+				label: `Nachtrag: ${n.beschreibung}`,
+				betrag: n.betrag,
+				detail: '',
+				color: 'orange',
+				filled: d <= heute
+			});
+		}
+
+		// Abschläge
+		for (const a of rechnung.abschlaege) {
+			const effStatus = abschlagEffektivStatus(a);
+			if (effStatus === 'bezahlt' && a.bezahltam) {
+				events.push({
+					datum: a.bezahltam,
+					label: `${typLabel(a.typ)} ${a.nummer} bezahlt`,
+					betrag: a.rechnungsbetrag,
+					detail: a.rechnungsnummer ? `Rg. ${a.rechnungsnummer}` : '',
+					color: 'green',
+					filled: true
+				});
+			} else if (effStatus !== 'ausstehend') {
+				const d = a.faelligkeitsdatum ?? a.erstellt.slice(0, 10);
+				events.push({
+					datum: d,
+					label: `${typLabel(a.typ)} ${a.nummer} fällig`,
+					betrag: a.rechnungsbetrag,
+					detail: a.faelligkeitsdatum ? '' : 'Ohne Fälligkeit',
+					color: effStatus === 'ueberfaellig' ? 'red' : effStatus === 'bald_faellig' ? 'amber' : 'yellow',
+					filled: d <= heute
+				});
+			}
+		}
+
+		events.sort((a, b) => a.datum.localeCompare(b.datum));
+		return events;
+	});
+
+	const timelineHeuteIndex = $derived(
+		timelineEvents.findIndex(e => e.datum > heute)
+	);
 </script>
 
 <div class="space-y-6">
@@ -243,54 +354,113 @@
 			</button>
 		</div>
 
-			<!-- KPI-Zeile -->
-			<div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+			<!-- KPI-Karten -->
+			<div class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 stagger">
 				{#if rechnung.auftragssumme}
-					<div class="rounded-lg bg-gray-50 p-3">
-						<div class="text-xs text-gray-500">Auftrag</div>
-						<div class="mt-1 text-lg font-bold tabular-nums text-gray-900">{formatCents(rechnung.auftragssumme)}</div>
+					<div class="kpi-card animate-in">
+						<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>
+							Auftragssumme
+						</div>
+						<div class="text-xl font-bold font-mono mt-1">{formatCents(rechnung.auftragssumme)}</div>
+						{#if nachtraegeSumme > 0}
+							<div class="text-xs text-orange-500 mt-1">+{formatCents(nachtraegeSumme)} NT = {formatCents(basisFuerFortschritt)}</div>
+						{/if}
 					</div>
 				{/if}
-				{#if nachtraegeSumme > 0}
-					<div class="rounded-lg bg-orange-50 p-3">
-						<div class="text-xs text-orange-600">Nachträge</div>
-						<div class="mt-1 text-lg font-bold tabular-nums text-orange-700">+{formatCents(nachtraegeSumme)}</div>
+
+				<div class="kpi-card animate-in">
+					<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+						Gestellt
 					</div>
-				{/if}
-				<div class="rounded-lg bg-gray-50 p-3">
-					<div class="text-xs text-gray-500">Gestellt</div>
-					<div class="mt-1 text-lg font-bold tabular-nums text-gray-900">{formatCents(gestelltSumme)}</div>
+					<div class="text-xl font-bold font-mono mt-1">{formatCents(gestelltSumme)}</div>
+					<div class="text-xs text-gray-400 mt-1">{rechnung.abschlaege.length} {rechnung.abschlaege.length === 1 ? 'Abschlag' : 'Abschläge'}</div>
 				</div>
+
 				{#if bezahltSumme > 0}
-					<div class="rounded-lg bg-green-50 p-3">
-						<div class="text-xs text-green-600">Bezahlt</div>
-						<div class="mt-1 text-lg font-bold tabular-nums text-green-700">{formatCents(bezahltSumme)}</div>
+					<div class="kpi-card animate-in">
+						<div class="flex items-center gap-1.5 text-xs font-medium text-green-500 uppercase tracking-wide">
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+							Bezahlt
+						</div>
+						<div class="text-xl font-bold font-mono mt-1 text-green-600">{formatCents(bezahltSumme)}</div>
+						<div class="text-xs text-gray-400 mt-1">{basisFuerFortschritt > 0 ? Math.round(bezahltSumme / basisFuerFortschritt * 100) : 0}% {rechnung.auftragssumme ? 'des Auftrags' : 'der Rechnungen'}</div>
 					</div>
 				{/if}
+
 				{#if offenSumme > 0}
-					<div class="rounded-lg bg-yellow-50 p-3">
-						<div class="text-xs text-yellow-600">Offen</div>
-						<div class="mt-1 text-lg font-bold tabular-nums text-yellow-700">{formatCents(offenSumme)}</div>
+					<div class="kpi-card animate-in">
+						<div class="flex items-center gap-1.5 text-xs font-medium {hatUeberfaelligeAbschlaege ? 'text-red-500' : hatBaldFaelligeAbschlaege ? 'text-amber-500' : 'text-yellow-500'} uppercase tracking-wide">
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+							Offen
+						</div>
+						<div class="text-xl font-bold font-mono mt-1 {hatUeberfaelligeAbschlaege ? 'text-red-600' : hatBaldFaelligeAbschlaege ? 'text-amber-600' : 'text-yellow-600'}">{formatCents(offenSumme)}</div>
+						<div class="text-xs text-gray-400 mt-1">{anzahlOffeneAbschlaege} {anzahlOffeneAbschlaege === 1 ? 'Abschlag' : 'Abschläge'}</div>
+					</div>
+				{/if}
+
+				{#if restauftragSumme > 0}
+					<div class="kpi-card animate-in">
+						<div class="flex items-center gap-1.5 text-xs font-medium text-violet-500 uppercase tracking-wide">
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+							Restauftrag
+						</div>
+						<div class="text-xl font-bold font-mono mt-1 text-violet-600">{formatCents(restauftragSumme)}</div>
+						<div class="text-xs text-gray-400 mt-1">Noch nicht gestellt</div>
 					</div>
 				{/if}
 			</div>
 
-			<!-- Fortschrittsbalken -->
-			{#if gestelltSumme > 0}
-				<div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+			<!-- Fortschrittsbalken (3 Segmente) -->
+			{#if gestelltSumme > 0 || restauftragSumme > 0}
+				<div class="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
 					<div class="flex h-full">
-						<div class="bg-green-500 transition-all duration-500" style="width: {bezahltPct}%"></div>
-						<div class="bg-yellow-400 transition-all duration-500" style="width: {offenPct}%"></div>
+						{#if bezahltPct > 0}<div class="bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-700" style="width: {bezahltPct}%"></div>{/if}
+						{#if offenPct > 0}<div class="bg-gradient-to-r from-orange-400 to-orange-300 transition-all duration-700" style="width: {offenPct}%"></div>{/if}
+						{#if restauftragPct > 0}<div class="bg-gradient-to-r from-violet-500 to-violet-400 transition-all duration-700" style="width: {restauftragPct}%"></div>{/if}
 					</div>
 				</div>
-				<div class="mt-1 flex gap-4 text-xs text-gray-500">
-					<span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-green-500"></span>Bezahlt</span>
-					{#if offenSumme > 0}<span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-yellow-400"></span>Offen</span>{/if}
-					{#if ausstehendSumme > 0}<span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-gray-200"></span>Ausstehend</span>{/if}
+				<div class="mt-1.5 flex flex-wrap gap-4 text-xs text-gray-500">
+					{#if bezahltSumme > 0}<span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-blue-500"></span>Bezahlt {formatCents(bezahltSumme)}</span>{/if}
+					{#if offenSumme > 0}<span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-orange-400"></span>Offen {formatCents(offenSumme)}</span>{/if}
+					{#if restauftragSumme > 0}<span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-violet-500"></span>Nicht gestellt {formatCents(restauftragSumme)}</span>{/if}
 				</div>
 			{/if}
 		{/if}
 	</div>
+
+	<!-- Zahlungs-Callout -->
+	{#if dringendsterAbschlag}
+		{@const effStatus = abschlagEffektivStatus(dringendsterAbschlag)}
+		{@const isUeberfaellig = effStatus === 'ueberfaellig'}
+		{@const tage = dringendsterAbschlag.faelligkeitsdatum ? tageVerbleibend(dringendsterAbschlag.faelligkeitsdatum) : null}
+		<div class="flex items-center gap-3 rounded-lg px-4 py-3 animate-in {isUeberfaellig ? 'border-l-4 border-red-500 bg-red-50' : 'border-l-4 border-amber-400 bg-amber-50'}">
+			{#if isUeberfaellig}
+				<svg class="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+			{:else}
+				<svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+			{/if}
+			<div class="flex-1 text-sm {isUeberfaellig ? 'text-red-800' : 'text-amber-800'}">
+				<span class="font-semibold">{typLabel(dringendsterAbschlag.typ)} {dringendsterAbschlag.nummer}: {formatCents(dringendsterAbschlag.rechnungsbetrag)}</span>
+				{#if tage !== null}
+					<span> — </span>
+					{#if tage < 0}<span class="font-semibold">{Math.abs(tage)} {Math.abs(tage) === 1 ? 'Tag' : 'Tage'} überfällig</span>
+					{:else if tage === 0}<span class="font-semibold">Heute fällig</span>
+					{:else}<span>fällig in {tage} {tage === 1 ? 'Tag' : 'Tagen'}</span>{/if}
+					{#if dringendsterAbschlag.faelligkeitsdatum}
+						<span class="text-xs opacity-70"> ({formatDatum(dringendsterAbschlag.faelligkeitsdatum)})</span>
+					{/if}
+				{/if}
+			</div>
+			<button
+				onclick={() => { bezahlenAbschlagId = dringendsterAbschlag.id; bezahlenError = ''; }}
+				class="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium {isUeberfaellig ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-amber-600 text-white hover:bg-amber-700'}"
+			>
+				Bezahlen
+			</button>
+		</div>
+	{/if}
 
 	<!-- Verknüpfte Lieferungen -->
 	{#if data.verknuepfteLieferungen.length > 0}
@@ -554,27 +724,42 @@
 						{#each rechnung.abschlaege as abschlag}
 							{@const badge = statusBadge(abschlag)}
 							{@const effStatus = abschlagEffektivStatus(abschlag)}
-							<tr class="hover:bg-gray-50">
+							{@const borderCls = effStatus === 'bezahlt' ? 'border-l-4 border-green-400' : effStatus === 'ueberfaellig' ? 'border-l-4 border-red-500' : effStatus === 'bald_faellig' ? 'border-l-4 border-amber-400' : effStatus === 'offen' ? 'border-l-4 border-yellow-300' : 'border-l-4 border-gray-200'}
+							{@const betragCls = effStatus === 'bezahlt' ? 'text-green-700' : effStatus === 'ueberfaellig' ? 'text-red-700' : effStatus === 'bald_faellig' ? 'text-amber-700' : 'text-gray-900'}
+							<tr class="hover:bg-gray-50 {borderCls}">
 								<td class="px-3 py-3 text-sm text-gray-500">{abschlag.nummer}</td>
 								<td class="px-3 py-3 text-sm font-medium text-gray-800">{typLabel(abschlag.typ)}</td>
-								<td class="px-3 py-3 text-right text-sm font-semibold tabular-nums text-gray-900">{formatCents(abschlag.rechnungsbetrag)}</td>
+								<td class="px-3 py-3 text-right text-sm font-semibold tabular-nums {betragCls}">{formatCents(abschlag.rechnungsbetrag)}</td>
 								<td class="px-3 py-3 text-sm text-gray-500">{abschlag.rechnungsnummer ?? '—'}</td>
-								<td class="px-3 py-3 text-sm {effStatus === 'ueberfaellig' ? 'font-medium text-red-600' : effStatus === 'bald_faellig' ? 'font-medium text-amber-600' : 'text-gray-500'}">
+								<td class="px-3 py-3 text-sm {effStatus === 'ueberfaellig' ? 'font-semibold text-red-600' : effStatus === 'bald_faellig' ? 'font-semibold text-amber-600' : 'text-gray-500'}">
 									{abschlag.faelligkeitsdatum ? formatDatum(abschlag.faelligkeitsdatum) : '—'}
-									{#if abschlag.faelligkeitsdatum && (effStatus === 'offen' || effStatus === 'bald_faellig')}
-										{@const tage = Math.ceil((new Date(abschlag.faelligkeitsdatum).getTime() - Date.now()) / 86400000)}
-										<span class="block text-xs {effStatus === 'bald_faellig' ? 'text-amber-500 font-medium' : 'text-gray-400'}">
-											in {tage} {tage === 1 ? 'Tag' : 'Tagen'}
-										</span>
+									{#if abschlag.faelligkeitsdatum}
+										{@const tage = tageVerbleibend(abschlag.faelligkeitsdatum)}
+										{#if effStatus === 'ueberfaellig'}
+											<span class="block text-xs text-red-500 font-semibold">{Math.abs(tage)} {Math.abs(tage) === 1 ? 'Tag' : 'Tage'} überfällig</span>
+										{:else if tage === 0 && effStatus !== 'bezahlt'}
+											<span class="block text-xs text-red-500 font-semibold">Heute fällig</span>
+										{:else if effStatus === 'bald_faellig'}
+											<span class="block text-xs text-amber-500 font-semibold">in {tage} {tage === 1 ? 'Tag' : 'Tagen'}</span>
+										{:else if effStatus === 'offen' && tage > 0}
+											<span class="block text-xs text-gray-400">in {tage} {tage === 1 ? 'Tag' : 'Tagen'}</span>
+										{/if}
 									{/if}
 								</td>
 								<td class="px-3 py-3">
 									<span class="rounded-full px-2 py-0.5 text-xs font-medium {badge.cls}">{badge.label}</span>
 								</td>
 								<td class="px-3 py-3 text-sm text-gray-500">
-									{abschlag.bezahltam ? formatDatum(abschlag.bezahltam) : '—'}
-									{#if abschlag.buchungId}
-										<a href="/buchungen/{abschlag.buchungId}" class="ml-1 text-xs text-blue-500 hover:underline">Buchung</a>
+									{#if abschlag.bezahltam}
+										<span class="inline-flex items-center gap-1">
+											<svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+											{formatDatum(abschlag.bezahltam)}
+										</span>
+										{#if abschlag.buchungId}
+											<a href="/buchungen/{abschlag.buchungId}" class="ml-1 text-xs text-blue-500 hover:underline">Buchung</a>
+										{/if}
+									{:else}
+										—
 									{/if}
 								</td>
 								<td class="px-3 py-3">
@@ -584,10 +769,10 @@
 												href="/rechnungen/{rechnung.id}/{abschlag.id}/{abschlag.beleg}"
 												target="_blank"
 												rel="noopener noreferrer"
-												class="text-xs text-blue-500 hover:underline"
-												title="Beleg öffnen"
+												class="rounded p-1 text-gray-400 hover:bg-blue-50 hover:text-blue-600"
+												title="Beleg: {abschlag.beleg}"
 											>
-												<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+												<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 													<path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
 												</svg>
 											</a>
@@ -742,4 +927,93 @@
 			</div>
 		{/if}
 	</div>
+
+	<!-- Timeline / Verlauf -->
+	{#if timelineEvents.length > 0}
+		<div class="card animate-in">
+			<div class="px-4 py-3 border-b border-gray-100 bg-gray-50/60 rounded-t-xl">
+				<div class="flex items-center gap-2">
+					<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+					<span class="text-sm font-semibold text-gray-700">Verlauf</span>
+				</div>
+			</div>
+			<div class="px-4 py-4">
+				<div class="relative">
+					{#each timelineEvents as event, i}
+						{@const dotColor =
+							event.color === 'green' ? 'bg-green-500' :
+							event.color === 'blue' ? 'bg-blue-500' :
+							event.color === 'orange' ? 'bg-orange-500' :
+							event.color === 'red' ? 'bg-red-500' :
+							event.color === 'amber' ? 'bg-amber-500' :
+							'bg-yellow-400'}
+						{@const ringColor =
+							event.color === 'green' ? 'border-green-500' :
+							event.color === 'blue' ? 'border-blue-500' :
+							event.color === 'orange' ? 'border-orange-500' :
+							event.color === 'red' ? 'border-red-500' :
+							event.color === 'amber' ? 'border-amber-500' :
+							'border-yellow-400'}
+
+						<!-- Heute-Marker -->
+						{#if timelineHeuteIndex === i}
+							<div class="flex items-center gap-2 py-1.5 ml-1">
+								<div class="w-2 h-2 rounded-full bg-blue-600 ring-2 ring-blue-200"></div>
+								<div class="flex-1 h-px bg-blue-300"></div>
+								<span class="text-xs font-semibold text-blue-600 px-2">Heute</span>
+								<div class="flex-1 h-px bg-blue-300"></div>
+							</div>
+						{/if}
+
+						<div class="flex gap-3 {i < timelineEvents.length - 1 || (timelineHeuteIndex === -1 && i === timelineEvents.length - 1) ? '' : ''}">
+							<!-- Vertikale Linie + Dot -->
+							<div class="flex flex-col items-center">
+								{#if event.filled}
+									<div class="w-3 h-3 rounded-full {dotColor} shrink-0 mt-1"></div>
+								{:else}
+									<div class="w-3 h-3 rounded-full border-2 {ringColor} bg-white shrink-0 mt-1"></div>
+								{/if}
+								{#if i < timelineEvents.length - 1 || timelineHeuteIndex === -1}
+									<div class="w-px flex-1 bg-gray-200 min-h-4"></div>
+								{/if}
+							</div>
+
+							<!-- Event Content -->
+							<div class="pb-4 min-w-0">
+								<div class="flex items-baseline gap-2 flex-wrap">
+									<span class="text-xs font-mono text-gray-400 tabular-nums">{formatDatum(event.datum)}</span>
+									<span class="text-sm font-medium {event.filled ? 'text-gray-800' : 'text-gray-500'}">{event.label}</span>
+								</div>
+								<div class="flex items-center gap-2 mt-0.5">
+									{#if event.betrag !== null}
+										<span class="text-xs font-mono tabular-nums {
+											event.color === 'green' ? 'text-green-600' :
+											event.color === 'orange' ? 'text-orange-600' :
+											event.color === 'red' ? 'text-red-600' :
+											'text-gray-500'
+										}">
+											{event.color === 'orange' ? '+' : ''}{formatCents(event.betrag)}
+										</span>
+									{/if}
+									{#if event.detail}
+										<span class="text-xs text-gray-400">{event.detail}</span>
+									{/if}
+								</div>
+							</div>
+						</div>
+					{/each}
+
+					<!-- Heute-Marker am Ende (wenn alle Events in der Vergangenheit) -->
+					{#if timelineHeuteIndex === -1}
+						<div class="flex items-center gap-2 py-1.5 ml-1">
+							<div class="w-2 h-2 rounded-full bg-blue-600 ring-2 ring-blue-200"></div>
+							<div class="flex-1 h-px bg-blue-300"></div>
+							<span class="text-xs font-semibold text-blue-600 px-2">Heute</span>
+							<div class="flex-1 h-px bg-blue-300"></div>
+						</div>
+					{/if}
+				</div>
+			</div>
+		</div>
+	{/if}
 </div>

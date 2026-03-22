@@ -228,17 +228,6 @@
 			<div class="text-xs text-gray-400 mt-1">Vertraglich gebunden, nicht fakturiert</div>
 		</div>
 
-		<!-- Planungsreserve -->
-		<div class="kpi-card animate-in">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-500">
-				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-				</svg>
-				Planungsreserve
-			</div>
-			<div class="text-xl font-bold font-mono mt-1 kpi-value {data.gesamtPuffer > 0 ? 'text-amber-600' : ''}">{formatCents(data.gesamtPuffer)}</div>
-			<div class="text-xs text-gray-400 mt-1">Puffer aus Budget-Planung</div>
-		</div>
 	</div>
 
 	<!-- Chart: Ausgabenverlauf mit Prognose -->
@@ -324,7 +313,7 @@
 		<div class="card overflow-x-auto">
 			<div class="px-4 py-3 border-b bg-gray-50/80 rounded-t-lg">
 				<h2 class="text-sm font-semibold text-gray-700">Übersicht nach Gewerk</h2>
-				<p class="text-xs text-gray-400 mt-0.5">Budget · Bezahlt · Offene Rechnungen · Restauftrag · Puffer · Frei = was wirklich übrig ist</p>
+				<p class="text-xs text-gray-400 mt-0.5">Budget · Bezahlt · Offene Rechnungen · Restauftrag · Frei = was wirklich übrig ist</p>
 			</div>
 			<table class="w-full">
 				<thead>
@@ -334,14 +323,13 @@
 						<th class="px-4 py-3 text-right">Bezahlt</th>
 						<th class="px-4 py-3 text-right">Offen</th>
 						<th class="px-4 py-3 text-right">Restauftrag</th>
-						<th class="px-4 py-3 text-right">Puffer</th>
 						<th class="px-4 py-3 text-right">Frei</th>
 						<th class="px-4 py-3 text-center">Status</th>
 					</tr>
 				</thead>
 				<tbody>
 					{#each data.gewerkUebersicht as g (g.gewerk.id)}
-						{@const hatWerte = g.ist > 0 || g.offen > 0 || g.restauftrag > 0 || g.puffer > 0}
+						{@const hatWerte = g.ist > 0 || g.offen > 0 || g.restauftrag > 0}
 						<tr class="border-b last:border-b-0 hover:bg-gray-50/50 transition-colors {!hatWerte && g.budget === 0 ? 'opacity-40' : ''}">
 							<td class="px-4 py-3 text-sm">
 								<div class="flex items-center gap-2">
@@ -360,9 +348,6 @@
 							</td>
 							<td class="px-4 py-3 text-sm text-right font-mono tabular-nums {g.restauftrag > 0 ? 'text-violet-600 font-medium' : 'text-gray-300'}">
 								{g.restauftrag > 0 ? formatCents(g.restauftrag) : '—'}
-							</td>
-							<td class="px-4 py-3 text-sm text-right font-mono tabular-nums {g.puffer > 0 ? 'text-amber-600 font-medium' : 'text-gray-300'}">
-								{g.puffer > 0 ? formatCents(g.puffer) : '—'}
 							</td>
 							<td class="px-4 py-3 text-sm text-right font-mono tabular-nums">
 								{#if g.budget > 0 || hatWerte}

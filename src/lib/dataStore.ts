@@ -28,11 +28,43 @@ function lieferantenPath(): string {
 // === Read ===
 
 export function leseProjekt(): ProjektData {
-	try {
-		return JSON.parse(readFileSync(projektPath(), 'utf-8'));
-	} catch {
-		throw new Error(`projekt.json konnte nicht gelesen werden – Datei fehlt oder ist beschädigt`);
+	const path = projektPath();
+	if (!existsSync(path)) {
+		const seed = erstelleStandardProjekt();
+		schreibeProjekt(seed);
+		return seed;
 	}
+	try {
+		return JSON.parse(readFileSync(path, 'utf-8'));
+	} catch {
+		throw new Error(`projekt.json konnte nicht gelesen werden – Datei ist beschädigt`);
+	}
+}
+
+function erstelleStandardProjekt(): ProjektData {
+	const gewerke = [
+		{ id: 'rohbau', name: 'Rohbau', farbe: '#78716C', sortierung: 0 },
+		{ id: 'elektro', name: 'Elektro', farbe: '#EAB308', sortierung: 1 },
+		{ id: 'sanitaer', name: 'Sanitär', farbe: '#3B82F6', sortierung: 2 },
+		{ id: 'heizung', name: 'Heizung', farbe: '#EF4444', sortierung: 3 },
+		{ id: 'fenster-tueren', name: 'Fenster & Türen', farbe: '#8B5CF6', sortierung: 4 },
+		{ id: 'trockenbau', name: 'Trockenbau', farbe: '#F97316', sortierung: 5 },
+		{ id: 'maler', name: 'Maler & Lackierer', farbe: '#EC4899', sortierung: 6 },
+		{ id: 'boden', name: 'Boden & Fliesen', farbe: '#92400E', sortierung: 7 },
+		{ id: 'dach', name: 'Dach', farbe: '#059669', sortierung: 8 },
+		{ id: 'sonstiges', name: 'Sonstiges', farbe: '#6B7280', sortierung: 9 },
+	];
+	return {
+		gewerke,
+		raeume: [
+			{ id: 'kueche-eg', name: 'Küche', geschoss: 'EG', sortierung: 0 },
+			{ id: 'wohnzimmer-eg', name: 'Wohnzimmer', geschoss: 'EG', sortierung: 1 },
+			{ id: 'bad-eg', name: 'Bad', geschoss: 'EG', sortierung: 2 },
+			{ id: 'flur-eg', name: 'Flur', geschoss: 'EG', sortierung: 3 },
+			{ id: 'schlafzimmer-eg', name: 'Schlafzimmer', geschoss: 'EG', sortierung: 4 },
+		],
+		budgets: gewerke.map(g => ({ gewerk: g.id, geplant: 0, notiz: '' })),
+	};
 }
 
 export function leseBuchungen(): Buchung[] {

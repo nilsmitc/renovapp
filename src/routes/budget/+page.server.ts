@@ -13,8 +13,6 @@ export const load: PageServerLoad = () => {
 	const gesamtBudget = projekt.budgets.reduce((s, b) => s + b.geplant, 0);
 	const gesamtIst = buchungen.reduce((s, b) => s + b.betrag, 0);
 	const notizen = Object.fromEntries(projekt.budgets.map((b) => [b.gewerk, b.notiz]));
-	const pufferBetraege = Object.fromEntries(projekt.budgets.map((b) => [b.gewerk, b.puffer ?? 0]));
-	const pufferNotizen = Object.fromEntries(projekt.budgets.map((b) => [b.gewerk, b.pufferNotiz ?? '']));
 
 	// Tätigkeit-Aufschlüsselung für Sammelgewerke
 	const taetigkeitSummaries: Record<string, { taetigkeit: string; betrag: number }[]> = {};
@@ -85,7 +83,14 @@ export const load: PageServerLoad = () => {
 		});
 	}
 
-	return { summaries, gesamtBudget, gesamtIst, notizen, pufferBetraege, pufferNotizen, taetigkeitSummaries, verplantPerGewerk, rechnungenPerGewerk };
+	// Gesamt offene Beträge
+	let gesamtOffen = 0;
+	for (const v of Object.values(verplantPerGewerk)) {
+		gesamtOffen += v.offen;
+	}
+	const gesamtRestauftrag = Object.values(verplantPerGewerk).reduce((s, v) => s + v.restauftrag, 0);
+
+	return { summaries, gesamtBudget, gesamtIst, gesamtOffen, gesamtRestauftrag, notizen, taetigkeitSummaries, verplantPerGewerk, rechnungenPerGewerk };
 };
 
 export const actions: Actions = {
@@ -94,9 +99,6 @@ export const actions: Actions = {
 		const gewerk = form.get('gewerk') as string;
 		const geplant = parseCentsFromInput(form.get('geplant') as string);
 		const notiz = (form.get('notiz') as string)?.trim() || '';
-		const pufferRaw = (form.get('puffer') as string)?.trim();
-		const pufferNotiz = (form.get('pufferNotiz') as string)?.trim() || undefined;
-		const puffer = pufferRaw ? parseCentsFromInput(pufferRaw) : 0;
 
 		if (!gewerk) return fail(400, { error: 'Gewerk fehlt' });
 		if (isNaN(geplant) || geplant < 0) return fail(400, { error: 'Budget muss >= 0 sein' });
@@ -109,8 +111,6 @@ export const actions: Actions = {
 		if (budget) {
 			budget.geplant = geplant;
 			budget.notiz = notiz;
-			budget.puffer = (!isNaN(puffer) && puffer > 0) ? puffer : undefined;
-			budget.pufferNotiz = pufferNotiz;
 		} else {
 			projekt.budgets.push({ gewerk, geplant, notiz });
 		}

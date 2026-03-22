@@ -24,11 +24,9 @@ export interface NaechsteZahlung {
 export interface Finanzuebersicht {
 	gesamtOffen: number;
 	gesamtRestauftrag: number;
-	gesamtPuffer: number;
 	freiVerfuegbar: number;
 	offenPerGewerk: Record<string, number>;
 	restauftragPerGewerk: Record<string, number>;
-	pufferPerGewerk: Record<string, number>;
 	ausstehendRechnungen: number;
 	hatUeberfaellige: boolean;
 	hatBaldFaellige: boolean;
@@ -60,7 +58,6 @@ export function berechneFinanzuebersicht(
 ): Finanzuebersicht {
 	const gesamtIst = buchungen.reduce((s, b) => s + b.betrag, 0);
 	const gesamtBudget = projekt.budgets.reduce((s, b) => s + b.geplant, 0);
-	const gesamtPuffer = projekt.budgets.reduce((s, b) => s + (b.puffer ?? 0), 0);
 
 	let gesamtOffen = 0;
 	let gesamtRestauftrag = 0;
@@ -96,24 +93,14 @@ export function berechneFinanzuebersicht(
 		}
 	}
 
-	// Puffer pro Gewerk
-	const pufferPerGewerk: Record<string, number> = {};
-	for (const b of projekt.budgets) {
-		if (b.puffer && b.puffer > 0) {
-			pufferPerGewerk[b.gewerk] = b.puffer;
-		}
-	}
-
-	const freiVerfuegbar = gesamtBudget - gesamtIst - gesamtOffen - gesamtRestauftrag - gesamtPuffer;
+	const freiVerfuegbar = gesamtBudget - gesamtIst - gesamtOffen - gesamtRestauftrag;
 
 	return {
 		gesamtOffen,
 		gesamtRestauftrag,
-		gesamtPuffer,
 		freiVerfuegbar,
 		offenPerGewerk,
 		restauftragPerGewerk,
-		pufferPerGewerk,
 		ausstehendRechnungen,
 		hatUeberfaellige,
 		hatBaldFaellige

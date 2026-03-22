@@ -1,19 +1,111 @@
 import type { Actions, PageServerLoad } from './$types';
 import { leseRechnungen, schreibeRechnungen, leseProjekt } from '$lib/dataStore';
-import { createRechnung } from '$lib/domain';
+import { createRechnung, abschlagEffektivStatus } from '$lib/domain';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Kategorie } from '$lib/domain';
+import { berechneNaechsteZahlungen } from '$lib/reportData';
 
 export const load: PageServerLoad = ({ url }) => {
 	const rechnungen = leseRechnungen();
 	const projekt = leseProjekt();
 
+	// URL-Filter
 	const gewerkFilter = url.searchParams.get('gewerk');
-	const gefiltert = gewerkFilter
+	const statusFilter = url.searchParams.get('status') || 'alle';
+	const sucheFilter = url.searchParams.get('suche') || '';
+	const sortierung = url.searchParams.get('sortierung') || 'gewerk';
+
+	// Filtern
+	let gefiltert = gewerkFilter
 		? rechnungen.filter(r => r.gewerk === gewerkFilter)
 		: rechnungen;
 
-	return { rechnungen: gefiltert, gewerke: projekt.gewerke, gewerkFilter };
+	if (sucheFilter) {
+		const q = sucheFilter.toLowerCase();
+		gefiltert = gefiltert.filter(r =>
+			r.auftragnehmer.toLowerCase().includes(q) ||
+			(r.notiz?.toLowerCase().includes(q))
+		);
+	}
+
+	if (statusFilter !== 'alle') {
+		gefiltert = gefiltert.filter(r => {
+			const hatBezahlte = r.abschlaege.some(a => a.status === 'bezahlt');
+			const hatOffene = r.abschlaege.some(a => {
+				const s = abschlagEffektivStatus(a);
+				return s === 'offen' || s === 'ueberfaellig' || s === 'bald_faellig';
+			});
+			if (statusFilter === 'offen') return hatOffene;
+			if (statusFilter === 'bezahlt') return hatBezahlte && !hatOffene && r.abschlaege.length > 0;
+			if (statusFilter === 'ohne-abschlaege') return r.abschlaege.length === 0;
+			return true;
+		});
+	}
+
+	// Aggregate über ALLE Rechnungen (vor Filter, damit KPIs immer den Gesamtstand zeigen)
+	let gesamtVolumen = 0;
+	let gesamtBezahlt = 0;
+	let gesamtOffen = 0;
+	let gesamtGestellt = 0;
+	let hatUeberfaellige = false;
+	let hatBaldFaellige = false;
+	let anzahlOffeneAbschlaege = 0;
+	const gewerkAggregate: Record<string, { bezahlt: number; offen: number; gestellt: number; volumen: number }> = {};
+
+	for (const r of rechnungen) {
+		const nachtraegeSum = r.nachtraege.reduce((s, n) => s + n.betrag, 0);
+		const volumen = (r.auftragssumme ?? 0) + nachtraegeSum;
+		gesamtVolumen += volumen;
+
+		if (!gewerkAggregate[r.gewerk]) {
+			gewerkAggregate[r.gewerk] = { bezahlt: 0, offen: 0, gestellt: 0, volumen: 0 };
+		}
+		gewerkAggregate[r.gewerk].volumen += volumen;
+
+		for (const a of r.abschlaege) {
+			gesamtGestellt += a.rechnungsbetrag;
+			gewerkAggregate[r.gewerk].gestellt += a.rechnungsbetrag;
+
+			if (a.status === 'bezahlt') {
+				gesamtBezahlt += a.rechnungsbetrag;
+				gewerkAggregate[r.gewerk].bezahlt += a.rechnungsbetrag;
+			} else {
+				const effStatus = abschlagEffektivStatus(a);
+				if (effStatus === 'offen' || effStatus === 'ueberfaellig' || effStatus === 'bald_faellig') {
+					gesamtOffen += a.rechnungsbetrag;
+					gewerkAggregate[r.gewerk].offen += a.rechnungsbetrag;
+					anzahlOffeneAbschlaege++;
+				}
+				if (effStatus === 'ueberfaellig') hatUeberfaellige = true;
+				if (effStatus === 'bald_faellig') hatBaldFaellige = true;
+			}
+		}
+	}
+
+	const gesamtRestauftrag = Math.max(0, gesamtVolumen - gesamtGestellt);
+
+	// Nächste Zahlungen (über alle Rechnungen, nicht nur gefilterte)
+	const naechsteZahlungen = berechneNaechsteZahlungen(rechnungen, projekt.gewerke).slice(0, 5);
+
+	return {
+		rechnungen: gefiltert,
+		gewerke: projekt.gewerke,
+		gewerkeInAuftraegen: projekt.gewerke.filter(g => rechnungen.some(r => r.gewerk === g.id)),
+		gewerkFilter,
+		statusFilter,
+		sucheFilter,
+		sortierung,
+		gesamtVolumen,
+		gesamtBezahlt,
+		gesamtOffen,
+		gesamtRestauftrag,
+		hatUeberfaellige,
+		hatBaldFaellige,
+		anzahlOffeneAbschlaege,
+		naechsteZahlungen,
+		gewerkAggregate,
+		anzahlAuftraege: rechnungen.length
+	};
 };
 
 export const actions: Actions = {

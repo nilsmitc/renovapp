@@ -47,9 +47,9 @@ export async function renderKostenVerteilungChart(summaries: GewerkSummary[]): P
 	});
 }
 
-/** Stacked Bar: Budget vs. Bindung nach Gewerk (Bezahlt + Offen + Restauftrag + Puffer) */
+/** Stacked Bar: Budget vs. Bindung nach Gewerk (Bezahlt + Offen + Restauftrag) */
 export async function renderBudgetStackedChart(
-	data: Array<{ gewerk: { name: string }; budget: number; ist: number; offen: number; restauftrag: number; puffer: number }>
+	data: Array<{ gewerk: { name: string }; budget: number; ist: number; offen: number; restauftrag: number }>
 ): Promise<string> {
 	const active = data.filter((s) => s.ist > 0 || s.budget > 0);
 	return renderChart({
@@ -79,12 +79,6 @@ export async function renderBudgetStackedChart(
 					label: 'Restauftrag',
 					data: active.map((s) => s.restauftrag / 100),
 					backgroundColor: '#8B5CF6',
-					stack: 'bindung'
-				},
-				{
-					label: 'Puffer',
-					data: active.map((s) => s.puffer / 100),
-					backgroundColor: '#D97706',
 					stack: 'bindung'
 				}
 			]

@@ -8,7 +8,6 @@ export const load: PageServerLoad = () => {
 	const rechnungen = leseRechnungen();
 
 	const gesamtBudget = projekt.budgets.reduce((s, b) => s + b.geplant, 0);
-	const gesamtPuffer = projekt.budgets.reduce((s, b) => s + (b.puffer ?? 0), 0);
 
 	// Offene Abschläge und Restauftrag pro Gewerk
 	let gesamtOffen = 0;
@@ -85,10 +84,9 @@ export const load: PageServerLoad = () => {
 			const gb = buchungen.filter((b) => b.gewerk === gewerk.id);
 			const ist = gb.reduce((s, b) => s + b.betrag, 0);
 			const budget = projekt.budgets.find((b) => b.gewerk === gewerk.id)?.geplant ?? 0;
-			const puffer = projekt.budgets.find((b) => b.gewerk === gewerk.id)?.puffer ?? 0;
 			const offen = offenNachGewerk[gewerk.id] ?? 0;
 			const restauftrag = restauftragNachGewerk[gewerk.id] ?? 0;
-			const frei = budget - ist - offen - restauftrag - puffer;
+			const frei = budget - ist - offen - restauftrag;
 
 			let status: 'ok' | 'warnung' | 'kritisch' = 'ok';
 			if (budget > 0) {
@@ -98,7 +96,7 @@ export const load: PageServerLoad = () => {
 				status = 'warnung';
 			}
 
-			return { gewerk, budget, ist, offen, restauftrag, puffer, frei, status };
+			return { gewerk, budget, ist, offen, restauftrag, frei, status };
 		});
 
 	if (buchungen.length === 0) {
@@ -121,8 +119,7 @@ export const load: PageServerLoad = () => {
 			chartBudget: [] as number[],
 			gesamtOffen,
 			gesamtRestauftrag,
-			gesamtPuffer,
-			freiVerfuegbar: gesamtBudget - gesamtOffen - gesamtRestauftrag - gesamtPuffer,
+			freiVerfuegbar: gesamtBudget - gesamtOffen - gesamtRestauftrag,
 			naechsteZahlungen: naechsteZahlungen.slice(0, 10),
 			gewerkUebersicht: gewerkUebersichtRaw,
 			bekannteZahlungenGesamt: 0
@@ -173,7 +170,7 @@ export const load: PageServerLoad = () => {
 
 	// Restbudget + Frei verfügbar
 	const restBudget = gesamtBudget - gesamtIst;
-	const freiVerfuegbar = gesamtBudget - gesamtIst - gesamtOffen - gesamtRestauftrag - gesamtPuffer;
+	const freiVerfuegbar = gesamtBudget - gesamtIst - gesamtOffen - gesamtRestauftrag;
 
 	// Chart-Datenpunkte aufbauen
 	const letzterHistorisch = monate[monate.length - 1];
@@ -263,7 +260,6 @@ export const load: PageServerLoad = () => {
 		chartBudget,
 		gesamtOffen,
 		gesamtRestauftrag,
-		gesamtPuffer,
 		freiVerfuegbar,
 		naechsteZahlungen: naechsteZahlungen.slice(0, 10),
 		gewerkUebersicht: gewerkUebersichtRaw,
@@ -290,7 +286,6 @@ interface GewerkUebersicht {
 	ist: number;
 	offen: number;
 	restauftrag: number;
-	puffer: number;
 	frei: number;
 	status: 'ok' | 'warnung' | 'kritisch';
 }

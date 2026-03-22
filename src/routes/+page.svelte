@@ -58,7 +58,7 @@
 				Noch verfügbar
 			</div>
 			<div class="text-xl font-bold font-mono mt-1 kpi-value" class:text-red-600={data.freiVerfuegbar < 0}>{formatCents(data.freiVerfuegbar)}</div>
-			<div class="text-xs text-gray-400 mt-1">abzgl. offener Aufträge & Rücklagen</div>
+			<div class="text-xs text-gray-400 mt-1">abzgl. offener Aufträge</div>
 		</div>
 
 		<div class="kpi-card animate-in">
@@ -304,22 +304,16 @@
 						<span class="inline-block w-2.5 h-2.5 rounded-sm bg-violet-500"></span>
 						Restauftrag
 					</span>
-					<span class="flex items-center gap-1">
-						<span class="inline-block w-2.5 h-2.5 rounded-sm bg-amber-400"></span>
-						Puffer
-					</span>
-				</div>
+					</div>
 			</div>
 			<div class="divide-y">
 				{#each data.gewerkSummaries.filter((s) => s.ist > 0 || s.budget > 0 || (data.offenPerGewerk[s.gewerk.id] ?? 0) > 0 || (data.restauftragPerGewerk[s.gewerk.id] ?? 0) > 0) as s (s.gewerk.id)}
 					{@const offen = data.offenPerGewerk[s.gewerk.id] ?? 0}
 					{@const restauftrag = data.restauftragPerGewerk[s.gewerk.id] ?? 0}
-					{@const puffer = data.pufferPerGewerk[s.gewerk.id] ?? 0}
-					{@const frei = s.budget - s.ist - offen - restauftrag - puffer}
+					{@const frei = s.budget - s.ist - offen - restauftrag}
 					{@const pctIst = s.budget > 0 ? (s.ist / s.budget) * 100 : 0}
 					{@const pctOffen = s.budget > 0 ? (offen / s.budget) * 100 : 0}
 					{@const pctRestauftrag = s.budget > 0 ? (restauftrag / s.budget) * 100 : 0}
-					{@const pctPuffer = s.budget > 0 ? (puffer / s.budget) * 100 : 0}
 					<a href="/buchungen?gewerk={s.gewerk.id}" class="block px-4 py-3 hover:bg-gray-50/50 transition-colors">
 						<div class="flex items-center justify-between mb-1.5">
 							<div class="flex items-center gap-2 text-sm font-medium">
@@ -342,9 +336,6 @@
 									{/if}
 									{#if pctRestauftrag > 0}
 										<div class="h-2 transition-all duration-700 bg-gradient-to-r from-violet-500 to-violet-400" style="width: {pctRestauftrag}%"></div>
-									{/if}
-									{#if pctPuffer > 0}
-										<div class="h-2 transition-all duration-700 bg-gradient-to-r from-amber-400 to-amber-300" style="width: {pctPuffer}%"></div>
 									{/if}
 								</div>
 							</div>

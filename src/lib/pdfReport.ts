@@ -88,7 +88,7 @@ export async function erstelleBauleiterbericht(
 	const gesamtBudget = projekt.budgets.reduce((s, b) => s + b.geplant, 0);
 	const verbrauchtProzent = gesamtBudget > 0 ? Math.round((gesamtIst / gesamtBudget) * 100) : 0;
 
-	// Finanzübersicht (offen, restauftrag, puffer, frei verfügbar)
+	// Finanzübersicht (offen, restauftrag, frei verfügbar)
 	const finanz = berechneFinanzuebersicht(buchungen, projekt, rechnungen);
 	const naechsteZahlungen = berechneNaechsteZahlungen(rechnungen, projekt.gewerke);
 
@@ -161,9 +161,8 @@ export async function erstelleBauleiterbericht(
 	const gewerkFinanz = gewerkSummaries.map((s) => {
 		const offen = finanz.offenPerGewerk[s.gewerk.id] ?? 0;
 		const restauftrag = finanz.restauftragPerGewerk[s.gewerk.id] ?? 0;
-		const puffer = finanz.pufferPerGewerk[s.gewerk.id] ?? 0;
-		const frei = s.budget - s.ist - offen - restauftrag - puffer;
-		return { ...s, offen, restauftrag, puffer, frei };
+		const frei = s.budget - s.ist - offen - restauftrag;
+		return { ...s, offen, restauftrag, frei };
 	});
 
 	// Charts rendern
@@ -350,7 +349,7 @@ export async function erstelleBauleiterbericht(
 
 	// Budget-Tabelle (erweitert: 8 Spalten)
 	const budgetBody: TableCell[][] = [
-		[headerZelle('Gewerk'), headerZelle('Budget', 'right'), headerZelle('Bezahlt', 'right'), headerZelle('Offen', 'right'), headerZelle('Restauftrag', 'right'), headerZelle('Puffer', 'right'), headerZelle('Frei', 'right'), headerZelle('Status', 'center')]
+		[headerZelle('Gewerk'), headerZelle('Budget', 'right'), headerZelle('Bezahlt', 'right'), headerZelle('Offen', 'right'), headerZelle('Restauftrag', 'right'), headerZelle('Frei', 'right'), headerZelle('Status', 'center')]
 	];
 	for (const s of gewerkFinanz.filter((g) => g.ist > 0 || g.budget > 0)) {
 		const statusText = s.gewerk.pauschal ? 'Sammelgewerk'
@@ -367,7 +366,6 @@ export async function erstelleBauleiterbericht(
 			betragZelle(s.ist, '#10B981'),
 			s.offen > 0 ? betragZelle(s.offen, '#F97316') : { text: '—', alignment: 'right' as const, fontSize: 9, color: '#D1D5DB' },
 			s.restauftrag > 0 ? betragZelle(s.restauftrag, '#8B5CF6') : { text: '—', alignment: 'right' as const, fontSize: 9, color: '#D1D5DB' },
-			s.puffer > 0 ? betragZelle(s.puffer, '#D97706') : { text: '—', alignment: 'right' as const, fontSize: 9, color: '#D1D5DB' },
 			betragZelle(s.frei, s.frei < 0 ? '#EF4444' : '#10B981'),
 			{ text: statusText, alignment: 'center' as const, fontSize: 8, bold: true, color: statusFarbe }
 		]);
@@ -379,7 +377,6 @@ export async function erstelleBauleiterbericht(
 		{ text: formatCents(gesamtIst), alignment: 'right' as const, fontSize: 9, bold: true, color: '#10B981', fillColor: '#F3F4F6' },
 		{ text: formatCents(finanz.gesamtOffen), alignment: 'right' as const, fontSize: 9, bold: true, color: '#F97316', fillColor: '#F3F4F6' },
 		{ text: formatCents(finanz.gesamtRestauftrag), alignment: 'right' as const, fontSize: 9, bold: true, color: '#8B5CF6', fillColor: '#F3F4F6' },
-		{ text: formatCents(finanz.gesamtPuffer), alignment: 'right' as const, fontSize: 9, bold: true, color: '#D97706', fillColor: '#F3F4F6' },
 		{ text: formatCents(finanz.freiVerfuegbar), alignment: 'right' as const, fontSize: 9, bold: true, color: finanz.freiVerfuegbar < 0 ? '#EF4444' : '#10B981', fillColor: '#F3F4F6' },
 		{ text: '', fillColor: '#F3F4F6' }
 	]);
@@ -387,7 +384,7 @@ export async function erstelleBauleiterbericht(
 	content.push({
 		table: {
 			headerRows: 1,
-			widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+			widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
 			body: budgetBody
 		},
 		layout: TABLE_LAYOUT,

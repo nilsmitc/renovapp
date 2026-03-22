@@ -13,6 +13,7 @@ export interface Raum {
 	name: string;
 	geschoss: string;
 	sortierung: number;
+	flaeche?: number;
 }
 
 export type Kategorie = 'Material' | 'Arbeitslohn' | 'Sonstiges';
@@ -43,8 +44,6 @@ export interface Budget {
 	gewerk: string;
 	geplant: number; // cents
 	notiz: string;
-	puffer?: number;       // geplante, noch nicht beauftragte Kosten in Cents
-	pufferNotiz?: string;  // Erläuterung z.B. "~80m² Bodenfliesen OG"
 }
 
 export interface ProjektData {
