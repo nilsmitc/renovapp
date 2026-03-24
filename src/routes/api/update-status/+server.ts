@@ -95,7 +95,7 @@ async function updateViaGitHubApi(aktuellerCommit: string): Promise<Response> {
 		}
 
 		const neusterCommit = data[0].sha.substring(0, 7);
-		const updateVerfuegbar = !data.some(c => c.sha.startsWith(aktuellerCommit));
+		const updateVerfuegbar = !data[0].sha.startsWith(aktuellerCommit);
 
 		let commits: { hash: string; datum: string; nachricht: string }[] = [];
 		if (updateVerfuegbar) {
