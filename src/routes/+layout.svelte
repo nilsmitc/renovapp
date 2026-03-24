@@ -148,7 +148,7 @@
 					<div
 						bind:this={navScrollEl}
 						onscroll={updateScrollIndicators}
-						class="flex gap-0.5 overflow-x-auto nav-scrollbar-hide scroll-smooth justify-end"
+						class="flex gap-0.5 overflow-x-auto nav-scrollbar-hide scroll-smooth"
 					>
 						{#each nav as item}
 							<a href={item.href}
