@@ -9,6 +9,19 @@
 	const erfolg = $derived($page.url.searchParams.get('success') === '1');
 	let laeuft = $state(false);
 
+	// Minimaler Markdown→HTML-Parser für Changelog
+	const changelogHtml = $derived.by(() => {
+		if (!data.changelog) return '';
+		return data.changelog
+			.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+			.replace(/^## (.+)$/gm, '<h3 class="font-semibold text-gray-800 mt-3 first:mt-0">$1</h3>')
+			.replace(/^# .+\n?/gm, '')
+			.replace(/^- (.+)$/gm, '<li class="ml-4 list-disc text-gray-600">$1</li>')
+			.replace(/((?:<li[^>]*>.*<\/li>\n?)+)/g, '<ul class="space-y-0.5">$1</ul>')
+			.replace(/\n{2,}/g, '')
+			.trim();
+	});
+
 	// Update-Status
 	let updatePruefung = $state(false);
 	let updateStatus = $state<{
@@ -149,6 +162,18 @@
 						Nach Updates suchen
 					{/if}
 				</button>
+			{/if}
+
+			{#if data.changelog}
+				<details class="group">
+					<summary class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 cursor-pointer select-none transition-colors">
+						<svg class="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+						Changelog anzeigen
+					</summary>
+					<div class="mt-2 ml-5.5 text-sm text-gray-600 space-y-3 changelog-content">
+						{@html changelogHtml}
+					</div>
+				</details>
 			{/if}
 		</div>
 	{/if}

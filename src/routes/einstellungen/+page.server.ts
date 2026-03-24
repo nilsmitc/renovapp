@@ -49,10 +49,19 @@ function leseVersion(): string {
 	}
 }
 
+function leseChangelog(): string {
+	try {
+		return readFileSync(join(PROJECT_DIR, 'CHANGELOG.md'), 'utf-8');
+	} catch {
+		return '';
+	}
+}
+
 export const load: PageServerLoad = ({ url }) => {
 	return {
 		updating: url.searchParams.get('updating') === '1',
-		version: leseVersion()
+		version: leseVersion(),
+		changelog: leseChangelog()
 	};
 };
 
