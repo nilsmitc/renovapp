@@ -1,6 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { unzipSync } from 'fflate';
-import { writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { execSync } from 'node:child_process';
 import { schreibeBuchungen, schreibeProjekt, schreibeRechnungen, schreibeLieferanten } from '$lib/dataStore';
@@ -9,16 +9,49 @@ import { fail, redirect } from '@sveltejs/kit';
 const DATA_DIR = join(process.cwd(), 'data');
 const PROJECT_DIR = process.cwd();
 const MAX_GROESSE = 200 * 1024 * 1024; // 200 MB
+const GITHUB_REPO = 'nilsmitc/renovapp';
+const GITHUB_ZIP = `https://github.com/${GITHUB_REPO}/archive/refs/heads/master.zip`;
+
+// Ordner/Dateien, die beim ZIP-Update NICHT überschrieben werden
+const UPDATE_SCHUTZ = ['data', 'node_modules', '.serena', '.git', '.env'];
+
+function istGitRepo(): boolean {
+	try {
+		execSync('git rev-parse --git-dir', {
+			cwd: PROJECT_DIR,
+			encoding: 'utf-8',
+			timeout: 5000,
+			stdio: ['pipe', 'pipe', 'pipe']
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function leseVersion(): string {
+	// Erst Git, dann version.json
+	if (istGitRepo()) {
+		try {
+			return execSync('git rev-parse --short HEAD', {
+				cwd: PROJECT_DIR,
+				encoding: 'utf-8',
+				timeout: 5000
+			}).trim();
+		} catch { /* Fallback */ }
+	}
+	try {
+		const v = JSON.parse(readFileSync(join(PROJECT_DIR, 'version.json'), 'utf-8'));
+		return v.commit ?? '?';
+	} catch {
+		return '?';
+	}
+}
 
 export const load: PageServerLoad = ({ url }) => {
-	let version = '?';
-	try {
-		version = execSync('git rev-parse --short HEAD', { cwd: PROJECT_DIR, encoding: 'utf-8', timeout: 5000 }).trim();
-	} catch { /* git nicht verfügbar */ }
-
 	return {
 		updating: url.searchParams.get('updating') === '1',
-		version
+		version: leseVersion()
 	};
 };
 
@@ -143,28 +176,65 @@ export const actions: Actions = {
 	},
 
 	update: async () => {
-		// Git-Verfügbarkeit prüfen
-		try {
-			execSync('git --version', { encoding: 'utf-8', timeout: 5000 });
-		} catch {
-			return fail(500, { updateError: 'Git ist nicht installiert' });
+		// Variante 1: Git-Repo → git pull
+		if (istGitRepo()) {
+			try {
+				const opts = { cwd: PROJECT_DIR, encoding: 'utf-8' as const, timeout: 30000 };
+
+				try { execSync('git stash', opts); } catch { /* nichts zu stashen */ }
+				execSync('git pull origin master', opts);
+				try { execSync('git stash pop', opts); } catch { /* Konflikte ignorieren */ }
+
+				writeFileSync(join(PROJECT_DIR, '.restart-after-update'), '', 'utf-8');
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				return fail(500, { updateError: `Update fehlgeschlagen: ${msg}` });
+			}
+
+			throw redirect(303, '/einstellungen?updating=1');
 		}
 
+		// Variante 2: Kein Git-Repo → ZIP von GitHub herunterladen
 		try {
-			const opts = { cwd: PROJECT_DIR, encoding: 'utf-8' as const, timeout: 30000 };
+			const res = await fetch(GITHUB_ZIP, {
+				signal: AbortSignal.timeout(60000),
+				redirect: 'follow'
+			});
 
-			// Lokale Änderungen sichern (z.B. .serena/)
-			try { execSync('git stash', opts); } catch { /* nichts zu stashen */ }
+			if (!res.ok) {
+				return fail(500, { updateError: `Download fehlgeschlagen: ${res.status} ${res.statusText}` });
+			}
 
-			// Update ziehen
-			execSync('git pull origin master', opts);
+			const zipData = new Uint8Array(await res.arrayBuffer());
+			const eintraege = unzipSync(zipData);
 
-			// Lokale Änderungen wiederherstellen
-			try { execSync('git stash pop', opts); } catch { /* Konflikte ignorieren */ }
+			// GitHub-ZIP hat einen Wrapper-Ordner: "renovapp-master/"
+			// Finde den Prefix
+			const ersteDatei = Object.keys(eintraege)[0] ?? '';
+			const prefix = ersteDatei.includes('/') ? ersteDatei.split('/')[0] + '/' : '';
 
-			// Marker für Neustart schreiben — start.sh erkennt die Datei und startet den Server neu
+			for (const [zipPfad, inhalt] of Object.entries(eintraege)) {
+				// Wrapper-Ordner entfernen
+				const pfad = prefix ? zipPfad.slice(prefix.length) : zipPfad;
+				if (!pfad || pfad.endsWith('/')) continue;
+
+				// Geschützte Ordner nicht überschreiben
+				const topLevel = pfad.split('/')[0];
+				if (UPDATE_SCHUTZ.includes(topLevel)) continue;
+
+				// Pfad-Traversal-Schutz
+				if (/\.\./.test(pfad) || pfad.startsWith('/')) continue;
+
+				const ziel = join(PROJECT_DIR, pfad);
+				mkdirSync(dirname(ziel), { recursive: true });
+				writeFileSync(ziel, inhalt);
+
+			}
+
+			// Neustart auslösen
 			writeFileSync(join(PROJECT_DIR, '.restart-after-update'), '', 'utf-8');
 		} catch (err) {
+			if (err instanceof Response) throw err; // redirect durchlassen
 			const msg = err instanceof Error ? err.message : String(err);
 			return fail(500, { updateError: `Update fehlgeschlagen: ${msg}` });
 		}
