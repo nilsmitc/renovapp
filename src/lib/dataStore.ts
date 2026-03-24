@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync, unlinkSync, rmSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import type { ProjektData, Buchung, Rechnung, LieferantenData } from './domain.js';
+import type { EmailConfig } from './mailImport.js';
 import { berechneGewerkSummaries, berechneRaumSummaries, abschlagEffektivStatus } from './domain.js';
 
 const DATA_DIR = join(process.cwd(), 'data');
@@ -23,6 +24,10 @@ function rechnungenPath(): string {
 
 function lieferantenPath(): string {
 	return join(DATA_DIR, 'lieferanten.json');
+}
+
+function emailConfigPath(): string {
+	return join(DATA_DIR, 'email-config.json');
 }
 
 // === Read ===
@@ -120,6 +125,21 @@ export function schreibeRechnungen(rechnungen: Rechnung[]): void {
 export function schreibeLieferanten(data: LieferantenData): void {
 	writeFileSync(lieferantenPath(), JSON.stringify(data, null, 2) + '\n', 'utf-8');
 	aktualisiereSummary();
+}
+
+// === E-Mail-Config ===
+
+export function leseEmailConfig(): EmailConfig | null {
+	if (!existsSync(emailConfigPath())) return null;
+	try {
+		return JSON.parse(readFileSync(emailConfigPath(), 'utf-8'));
+	} catch {
+		return null;
+	}
+}
+
+export function schreibeEmailConfig(config: EmailConfig): void {
+	writeFileSync(emailConfigPath(), JSON.stringify(config, null, 2) + '\n', 'utf-8');
 }
 
 // === Belege ===

@@ -10,7 +10,7 @@ import {
 	readdirSync
 } from 'node:fs';
 import crypto from 'node:crypto';
-import { scanneMbox, type MailKandidat, type MailScanCache } from '$lib/mailImport';
+import { scanneMbox, erkenneThunderbird, baueMboxPfad, type MailKandidat, type MailScanCache } from '$lib/mailImport';
 import { extrahierePdfDaten } from '$lib/pdfExtract';
 import {
 	leseLieferanten,
@@ -18,7 +18,9 @@ import {
 	leseBuchungen,
 	schreibeBuchungen,
 	speicherBelegLieferung,
-	leseProjekt
+	leseProjekt,
+	leseEmailConfig,
+	schreibeEmailConfig
 } from '$lib/dataStore';
 import { createLieferung, createBuchung } from '$lib/domain';
 import { parseCentsFromInput } from '$lib/format';
@@ -45,11 +47,48 @@ export const load: PageServerLoad = () => {
 	const cache = leseCache();
 	const { lieferanten } = leseLieferanten();
 	const projekt = leseProjekt();
-	return { cache, lieferanten, gewerke: projekt.gewerke };
+	const erkennung = erkenneThunderbird();
+	const emailConfig = leseEmailConfig();
+	return { cache, lieferanten, gewerke: projekt.gewerke, erkennung, emailConfig };
 };
 
 export const actions: Actions = {
+	konfigurieren: async ({ request }) => {
+		const form = await request.formData();
+		const profil = (form.get('profil') as string)?.trim();
+		const konto = (form.get('konto') as string)?.trim();
+		const ordner = (form.get('ordner') as string)?.trim();
+
+		if (!profil || !konto || !ordner) {
+			return fail(400, { configFehler: 'Profil, Konto und Ordner sind Pflichtfelder.' });
+		}
+
+		const erkennung = erkenneThunderbird();
+		if (!erkennung) {
+			return fail(400, { configFehler: 'Thunderbird wurde nicht gefunden.' });
+		}
+
+		// Validierung: existiert die gewählte Kombination?
+		const mboxPfad = baueMboxPfad({ thunderbirdPfad: erkennung.pfad, profil, konto, ordner });
+		if (!existsSync(mboxPfad)) {
+			return fail(400, { configFehler: `Postfach nicht gefunden: ${konto}/${ordner}` });
+		}
+
+		schreibeEmailConfig({ thunderbirdPfad: erkennung.pfad, profil, konto, ordner });
+		return { configGespeichert: true };
+	},
+
 	scannen: async () => {
+		const config = leseEmailConfig();
+		if (!config) {
+			return fail(400, { scanFehler: 'Bitte zuerst ein Postfach auswählen.' });
+		}
+
+		const mboxPfad = baueMboxPfad(config);
+		if (!existsSync(mboxPfad)) {
+			return fail(400, { scanFehler: `Postfach nicht mehr verfügbar (${config.konto}/${config.ordner}). Bitte neu konfigurieren.` });
+		}
+
 		const { lieferanten } = leseLieferanten();
 
 		if (lieferanten.length === 0) {
@@ -83,7 +122,7 @@ export const actions: Actions = {
 
 		let rohErgebnis;
 		try {
-			rohErgebnis = await scanneMbox(lieferanten, 14);
+			rohErgebnis = await scanneMbox(mboxPfad, lieferanten, 14);
 		} catch (e: unknown) {
 			const msg = e instanceof Error ? e.message : String(e);
 			return fail(500, { scanFehler: `Thunderbird-Postfach konnte nicht gelesen werden: ${msg}` });

@@ -182,6 +182,16 @@ export const actions: Actions = {
 			} catch { /* beschädigter Eintrag – ignorieren */ }
 		}
 
+		// E-Mail-Config (optional)
+		if (eintraege['email-config.json']) {
+			try {
+				const emailConfig = JSON.parse(decoder.decode(eintraege['email-config.json']));
+				if (emailConfig && typeof emailConfig === 'object') {
+					writeFileSync(join(DATA_DIR, 'email-config.json'), JSON.stringify(emailConfig, null, 2));
+				}
+			} catch { /* beschädigter Eintrag – ignorieren */ }
+		}
+
 		throw redirect(303, '/einstellungen?success=1');
 	},
 

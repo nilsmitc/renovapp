@@ -57,6 +57,12 @@ export const GET: RequestHandler = () => {
 		files['email-scan-cache.json'] = readFileSync(emailCacheJson);
 	}
 
+	// E-Mail-Config (optional)
+	const emailConfigJson = join(DATA_DIR, 'email-config.json');
+	if (existsSync(emailConfigJson)) {
+		files['email-config.json'] = readFileSync(emailConfigJson);
+	}
+
 	// Rechnungs-Belege rekursiv (data/rechnungen/{rechnungId}/{abschlagId}/{datei})
 	const rechnungenBelegeDir = join(DATA_DIR, 'rechnungen');
 	if (existsSync(rechnungenBelegeDir)) {

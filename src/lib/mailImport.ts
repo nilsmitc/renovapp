@@ -1,41 +1,194 @@
-import { statSync, openSync, readSync, closeSync } from 'node:fs';
+import { statSync, openSync, readSync, closeSync, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { homedir, platform } from 'node:os';
 import { simpleParser } from 'mailparser';
 import type { Lieferant } from './domain.js';
 
-export const THUNDERBIRD_INBOX =
-	'/home/nils/.thunderbird/v5sejxwj.default-esr/ImapMail/imap.mailbox-1.org/INBOX';
+// ─── Typen ───────────────────────────────────────────────────────────────────
+
+export interface EmailConfig {
+	thunderbirdPfad: string;
+	profil: string;	// Profil-Verzeichnisname, z.B. "abc12345.default"
+	konto: string;		// IMAP-Server, z.B. "imap.example.com"
+	ordner: string;		// Ordnername, z.B. "INBOX"
+}
+
+export interface ThunderbirdProfil {
+	id: string;			// Verzeichnisname, z.B. "abc12345.default"
+	name: string;		// Anzeigename aus profiles.ini, z.B. "default"
+	isDefault: boolean;
+}
+
+export interface ThunderbirdKonto {
+	server: string;		// z.B. "imap.example.com"
+	ordner: string[];	// z.B. ["INBOX", "Sent", "Drafts"]
+}
+
+export interface ThunderbirdErkennung {
+	pfad: string;
+	profile: ThunderbirdProfil[];
+	konten: Record<string, ThunderbirdKonto[]>; // Key = Profil-ID
+}
 
 export interface MailKandidat {
 	id: string;
 	messageId: string;
-	datum: string; // YYYY-MM-DD aus Mail-Datum
+	datum: string;
 	absender: string;
 	betreff: string;
 	lieferantId: string;
 	lieferantName: string;
-	pdfDateiname: string; // Originaldateiname des Anhangs
-	pdfCacheDatei: string; // Dateiname in data/email-scan/
+	pdfDateiname: string;
+	pdfCacheDatei: string;
 	extraktion: {
 		betrag?: number;
 		rechnungsnummer?: string;
-		datum?: string; // aus PDF-Inhalt (kann vom Mail-Datum abweichen)
+		datum?: string;
 	};
 	uebernommen: boolean;
 	uebersprungen: boolean;
 }
 
 export interface MailScanCache {
-	gescannt: string; // ISO-Timestamp
+	gescannt: string;
 	kandidaten: MailKandidat[];
+}
+
+// ─── Thunderbird-Erkennung ───────────────────────────────────────────────────
+
+function parseIni(text: string): Record<string, Record<string, string>> {
+	const result: Record<string, Record<string, string>> = {};
+	let section = '';
+	for (const line of text.split('\n')) {
+		const trimmed = line.trim();
+		if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith(';')) continue;
+		const secMatch = trimmed.match(/^\[(.+)\]$/);
+		if (secMatch) {
+			section = secMatch[1];
+			result[section] = {};
+			continue;
+		}
+		const kvMatch = trimmed.match(/^([^=]+)=(.*)$/);
+		if (kvMatch && section) {
+			result[section][kvMatch[1].trim()] = kvMatch[2].trim();
+		}
+	}
+	return result;
+}
+
+export function findeThunderbirdPfad(): string | null {
+	const os = platform();
+	let pfad: string;
+	if (os === 'linux') {
+		pfad = join(homedir(), '.thunderbird');
+	} else if (os === 'darwin') {
+		pfad = join(homedir(), 'Library', 'Thunderbird');
+	} else if (os === 'win32') {
+		pfad = join(process.env.APPDATA ?? join(homedir(), 'AppData', 'Roaming'), 'Thunderbird');
+	} else {
+		return null;
+	}
+	return existsSync(pfad) ? pfad : null;
+}
+
+function parseProfile(tbPfad: string): ThunderbirdProfil[] {
+	const iniPfad = join(tbPfad, 'profiles.ini');
+	if (!existsSync(iniPfad)) return [];
+
+	const ini = parseIni(readFileSync(iniPfad, 'utf-8'));
+
+	// Default-Profil aus installs.ini ermitteln (falls vorhanden)
+	let installDefault = '';
+	const installsIniPfad = join(tbPfad, 'installs.ini');
+	if (existsSync(installsIniPfad)) {
+		const installsIni = parseIni(readFileSync(installsIniPfad, 'utf-8'));
+		for (const section of Object.values(installsIni)) {
+			if (section['Default']) {
+				installDefault = section['Default'];
+				break;
+			}
+		}
+	}
+
+	const profile: ThunderbirdProfil[] = [];
+	for (const [section, values] of Object.entries(ini)) {
+		if (!section.startsWith('Profile')) continue;
+		const name = values['Name'] ?? '';
+		const path = values['Path'] ?? '';
+		if (!path) continue;
+
+		const isRelative = values['IsRelative'] === '1';
+		const profilPfad = isRelative ? path : resolve(path);
+		const vollPfad = isRelative ? join(tbPfad, profilPfad) : profilPfad;
+
+		if (!existsSync(vollPfad)) continue;
+
+		const isDefault = installDefault
+			? profilPfad === installDefault
+			: values['Default'] === '1';
+
+		profile.push({ id: profilPfad, name, isDefault });
+	}
+
+	// Default-Profil zuerst
+	profile.sort((a, b) => (a.isDefault === b.isDefault ? 0 : a.isDefault ? -1 : 1));
+	return profile;
+}
+
+function findeKonten(tbPfad: string, profilId: string): ThunderbirdKonto[] {
+	const imapDir = join(tbPfad, profilId, 'ImapMail');
+	if (!existsSync(imapDir)) return [];
+
+	const konten: ThunderbirdKonto[] = [];
+	try {
+		const serverDirs = readdirSync(imapDir, { withFileTypes: true })
+			.filter(d => d.isDirectory());
+
+		for (const dir of serverDirs) {
+			const serverPfad = join(imapDir, dir.name);
+			try {
+				const dateien = readdirSync(serverPfad, { withFileTypes: true })
+					.filter(d => d.isFile() && !d.name.includes('.') && d.name !== 'msgFilterRules')
+					.map(d => d.name);
+
+				// INBOX zuerst, dann alphabetisch
+				dateien.sort((a, b) => {
+					if (a === 'INBOX') return -1;
+					if (b === 'INBOX') return 1;
+					return a.localeCompare(b);
+				});
+
+				if (dateien.length > 0) {
+					konten.push({ server: dir.name, ordner: dateien });
+				}
+			} catch { /* Lese-Fehler im Ordner — überspringen */ }
+		}
+	} catch { /* ImapMail nicht lesbar */ }
+
+	return konten;
+}
+
+export function erkenneThunderbird(): ThunderbirdErkennung | null {
+	const pfad = findeThunderbirdPfad();
+	if (!pfad) return null;
+
+	const profile = parseProfile(pfad);
+	if (profile.length === 0) return null;
+
+	const konten: Record<string, ThunderbirdKonto[]> = {};
+	for (const p of profile) {
+		konten[p.id] = findeKonten(pfad, p.id);
+	}
+
+	return { pfad, profile, konten };
+}
+
+export function baueMboxPfad(config: EmailConfig): string {
+	return join(config.thunderbirdPfad, config.profil, 'ImapMail', config.konto, config.ordner);
 }
 
 // ─── mbox-Leser ──────────────────────────────────────────────────────────────
 
-/**
- * Liest die letzten `bytesVomEnde` Bytes der mbox-Datei und gibt
- * rohe RFC-2822-Nachrichten-Strings zurück. Thunderbird schreibt INBOX
- * als Unix-mbox: Nachrichten getrennt durch Zeilen die mit "From " beginnen.
- */
 function leseMboxNachrichten(pfad: string, bytesVomEnde: number): string[] {
 	const stat = statSync(pfad);
 	const leseGroesse = Math.min(bytesVomEnde, stat.size);
@@ -46,13 +199,9 @@ function leseMboxNachrichten(pfad: string, bytesVomEnde: number): string[] {
 	readSync(fd, buf, 0, leseGroesse, startPos);
 	closeSync(fd);
 
-	// Latin-1 für verlustfreie byte→string Konvertierung (mbox kann non-UTF8 enthalten)
 	const text = buf.toString('latin1');
-
-	// Trenne auf mbox-Trenner: "From " am Zeilenanfang (ggf. nach \r\n oder \n)
 	const teile = text.split(/\r?\nFrom [^\r\n]+\r?\n/);
 
-	// Ersten Block verwerfen wenn wir nicht am Dateianfang starten (könnte Mitte einer Nachricht sein)
 	if (startPos > 0 && teile.length > 1) teile.shift();
 
 	return teile.filter((t) => t.trim().length > 100);
@@ -82,19 +231,20 @@ export interface ScanRohErgebnis {
 		pdfDateiname: string;
 	}>;
 	verarbeiteteNachrichten: number;
-	zuAlt: number; // Nachrichten außerhalb des Zeitfensters
+	zuAlt: number;
 }
 
 export async function scanneMbox(
+	mboxPfad: string,
 	lieferanten: Lieferant[],
 	tageRueckblick: number = 14,
-	bytesVomEnde: number = 40 * 1024 * 1024 // 40 MB sollten 2 Wochen locker abdecken
+	bytesVomEnde: number = 40 * 1024 * 1024
 ): Promise<ScanRohErgebnis> {
 	const fruehestDatum = new Date();
 	fruehestDatum.setDate(fruehestDatum.getDate() - tageRueckblick);
 	fruehestDatum.setHours(0, 0, 0, 0);
 
-	const nachrichten = leseMboxNachrichten(THUNDERBIRD_INBOX, bytesVomEnde);
+	const nachrichten = leseMboxNachrichten(mboxPfad, bytesVomEnde);
 	const kandidaten: ScanRohErgebnis['kandidaten'] = [];
 	let zuAlt = 0;
 
@@ -108,7 +258,6 @@ export async function scanneMbox(
 				continue;
 			}
 
-			// Nur Mails mit PDF-Anhang
 			const pdfAnhaenge = (parsed.attachments ?? []).filter(
 				(a) =>
 					a.contentType === 'application/pdf' ||
@@ -116,7 +265,6 @@ export async function scanneMbox(
 			);
 			if (pdfAnhaenge.length === 0) continue;
 
-			// Lieferant matchen (Name in Absender oder Betreff)
 			const from = parsed.from?.text ?? '';
 			const subject = parsed.subject ?? '';
 			const lieferant = matcheLieferant(from, subject, lieferanten);
