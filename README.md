@@ -35,9 +35,9 @@ Web-App zur Kostenverfolgung von Renovierungsprojekten. Lokale SvelteKit-Anwendu
 ## Voraussetzungen
 
 - [Node.js](https://nodejs.org/) – LTS-Version von [nodejs.org](https://nodejs.org) herunterladen und installieren
-- [Git](https://git-scm.com/) – [git-scm.com](https://git-scm.com/download/win) (Windows) bzw. über Paketmanager (Linux/Mac)
+- [Git](https://git-scm.com/) (optional) – [git-scm.com](https://git-scm.com/download/win) (Windows) bzw. über Paketmanager (Linux/Mac)
 
-> Git ist für automatische Updates nötig. Ohne Git startet die App trotzdem — nur Updates müssen manuell geholt werden.
+> Git ist nicht zwingend nötig. Ohne Git können Updates direkt über die App heruntergeladen werden (siehe Updates).
 
 ## Installation & Start
 
@@ -46,6 +46,8 @@ Web-App zur Kostenverfolgung von Renovierungsprojekten. Lokale SvelteKit-Anwendu
 ```bash
 git clone https://github.com/nilsmitc/renovapp.git
 ```
+
+Alternativ ohne Git: [ZIP herunterladen](https://github.com/nilsmitc/renovapp/archive/refs/heads/master.zip) und entpacken.
 
 **Schritt 2:** Starten — je nach Betriebssystem:
 
@@ -64,15 +66,16 @@ App läuft unter `http://localhost:5173`.
 
 ## Updates
 
-**Automatisch:** Beim nächsten Start via `start.bat` / `start.sh` — `git pull` läuft automatisch.
+Updates können direkt in der App unter **Einstellungen** geprüft und installiert werden.
 
-**Manuell** (falls kein Git):
-```bash
-# Neue Version herunterladen und entpacken, dann:
-npm install
-```
+| Installation | Update-Methode |
+|---|---|
+| **Mit Git** (`git clone`) | `git pull` — automatisch beim Start via `start.bat` / `start.sh` |
+| **Ohne Git** (ZIP-Download) | App lädt das Update als ZIP von GitHub und entpackt es automatisch |
 
-Persönliche Daten in `data/` werden nie überschrieben — nur der Quellcode wird aktualisiert.
+Beide Wege aktualisieren nur den Quellcode — persönliche Daten in `data/` werden nie überschrieben.
+
+Unter Einstellungen ist auch ein **Changelog** einsehbar.
 
 ## Datenstruktur
 
