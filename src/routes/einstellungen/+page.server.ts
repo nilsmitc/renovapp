@@ -11,6 +11,7 @@ const PROJECT_DIR = process.cwd();
 const MAX_GROESSE = 200 * 1024 * 1024; // 200 MB
 const GITHUB_REPO = 'nilsmitc/renovapp';
 const GITHUB_ZIP = `https://github.com/${GITHUB_REPO}/archive/refs/heads/master.zip`;
+const GITHUB_API = `https://api.github.com/repos/${GITHUB_REPO}/commits`;
 
 // Ordner/Dateien, die beim ZIP-Update NICHT überschrieben werden
 const UPDATE_SCHUTZ = ['data', 'node_modules', '.serena', '.git', '.env'];
@@ -230,6 +231,25 @@ export const actions: Actions = {
 				writeFileSync(ziel, inhalt);
 
 			}
+
+			// version.json mit dem tatsächlichen neuesten Commit aktualisieren
+			// (Die version.json im ZIP ist immer einen Commit hinter HEAD)
+			try {
+				const apiRes = await fetch(`${GITHUB_API}?sha=master&per_page=1`, {
+					headers: { 'Accept': 'application/vnd.github.v3+json' },
+					signal: AbortSignal.timeout(10000)
+				});
+				if (apiRes.ok) {
+					const commits = await apiRes.json() as { sha: string; commit: { committer: { date: string } } }[];
+					if (Array.isArray(commits) && commits.length > 0) {
+						const versionData = {
+							commit: commits[0].sha.substring(0, 7),
+							datum: commits[0].commit.committer.date.substring(0, 10)
+						};
+						writeFileSync(join(PROJECT_DIR, 'version.json'), JSON.stringify(versionData, null, '\t') + '\n');
+					}
+				}
+			} catch { /* Nicht kritisch — version.json aus ZIP reicht als Fallback */ }
 
 			// Neustart auslösen
 			writeFileSync(join(PROJECT_DIR, '.restart-after-update'), '', 'utf-8');
