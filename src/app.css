@@ -59,6 +59,15 @@
   .table-row-hover {
     @apply hover:bg-blue-50/40 transition-colors duration-150;
   }
+
+  /* Versteckte Scrollbar für Nav */
+  .nav-scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .nav-scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 /* ── Eingangs-Animationen ── */

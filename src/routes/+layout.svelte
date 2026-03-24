@@ -8,6 +8,9 @@
 
 	let menuOpen = $state(false);
 	let showOnboarding = $state(false);
+	let navScrollEl: HTMLElement | null = $state(null);
+	let canScrollLeft = $state(false);
+	let canScrollRight = $state(false);
 
 	onMount(() => {
 		if (!localStorage.getItem('onboarding_done')) {
@@ -19,6 +22,29 @@
 		showOnboarding = false;
 		localStorage.setItem('onboarding_done', '1');
 	}
+
+	function updateScrollIndicators() {
+		if (!navScrollEl) return;
+		canScrollLeft = navScrollEl.scrollLeft > 0;
+		canScrollRight = navScrollEl.scrollLeft < navScrollEl.scrollWidth - navScrollEl.clientWidth - 1;
+	}
+
+	function handleNavWheel(e: WheelEvent) {
+		if (!navScrollEl) return;
+		if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+			e.preventDefault();
+			navScrollEl.scrollLeft += e.deltaY;
+			updateScrollIndicators();
+		}
+	}
+
+	$effect(() => {
+		if (!navScrollEl) return;
+		updateScrollIndicators();
+		const ro = new ResizeObserver(updateScrollIndicators);
+		ro.observe(navScrollEl);
+		return () => ro.disconnect();
+	});
 
 	const nav = [
 		{
@@ -102,7 +128,7 @@
 	<nav class="bg-white/80 backdrop-blur-lg border-b border-gray-200/60 shadow-sm sticky top-0 z-30">
 		<div class="max-w-screen-2xl mx-auto px-4 sm:px-6">
 			<div class="flex items-center justify-between h-14">
-				<a href="/" class="flex items-center gap-2.5 font-bold text-lg text-gray-900 hover:text-blue-600 transition-colors">
+				<a href="/" class="flex items-center gap-2.5 font-bold text-lg text-gray-900 hover:text-blue-600 transition-colors shrink-0">
 					<div class="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
 						<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
@@ -112,17 +138,34 @@
 				</a>
 
 				<!-- Desktop nav -->
-				<div class="hidden lg:flex gap-0.5 overflow-x-auto">
-					{#each nav as item}
-						<a href={item.href}
-							class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200
-								{isActive(item.href)
-									? 'bg-blue-600 text-white shadow-md'
-									: 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}">
-							<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">{@html item.icon}</svg>
-							{item.label}
-						</a>
-					{/each}
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div class="hidden lg:block relative flex-1 min-w-0 ml-4"
+					onwheel={handleNavWheel}>
+					{#if canScrollLeft}
+						<div class="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
+					{/if}
+
+					<div
+						bind:this={navScrollEl}
+						onscroll={updateScrollIndicators}
+						class="flex gap-0.5 overflow-x-auto nav-scrollbar-hide scroll-smooth justify-end"
+					>
+						{#each nav as item}
+							<a href={item.href}
+								title={item.label}
+								class="flex items-center gap-1.5 px-2 xl:px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200
+									{isActive(item.href)
+										? 'bg-blue-600 text-white shadow-md'
+										: 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}">
+								<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">{@html item.icon}</svg>
+								<span class="hidden xl:inline">{item.label}</span>
+							</a>
+						{/each}
+					</div>
+
+					{#if canScrollRight}
+						<div class="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
+					{/if}
 				</div>
 
 				<!-- Mobile hamburger -->

@@ -33,11 +33,23 @@ export const GET: RequestHandler = () => {
 		return json({ fehler: 'Git ist nicht installiert' });
 	}
 
+	// Prüfe ob Remote 'origin' existiert
+	try {
+		const remotes = git('remote');
+		if (!remotes.split('\n').includes('origin')) {
+			return json({ fehler: 'Kein Remote "origin" konfiguriert. Bitte mit "git remote add origin <URL>" einrichten.' });
+		}
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		return json({ fehler: `Remote-Prüfung fehlgeschlagen: ${msg}` });
+	}
+
 	try {
 		// Remote aktualisieren
 		git('fetch origin master', 15000);
-	} catch {
-		return json({ fehler: 'Keine Verbindung zum Update-Server. Internetverbindung prüfen.' });
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		return json({ fehler: `Keine Verbindung zum Update-Server: ${msg}` });
 	}
 
 	try {
