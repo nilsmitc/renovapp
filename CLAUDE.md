@@ -19,6 +19,7 @@ Starten: `cd ~/Altbau && ./start.sh`
 | `lieferanten.json` | Lieferanten + Lieferungen | Bei Lieferanten-/Materialfragen |
 | `ai-analyse.json` | KI-Analyse für PDF-Bericht | Bei "erstelle Analyse" / Bericht-Fragen |
 | `dokumente-texte.json` | Extrahierte PDF-Texte | Bei Dokumenten-Analyse |
+| `email-config.json` | Thunderbird-Postfach-Konfiguration | Bei E-Mail-Import-Fragen |
 
 `summary.json` wird bei jedem Webapp-Schreibvorgang neu generiert, **nicht** bei direktem File-Write durch Claude Code.
 
@@ -168,18 +169,27 @@ src/routes/
     export/+server.ts             # GET: ZIP-Download aller Daten
     pdf-analyse/+server.ts        # POST: PDF → Datum/Betrag/Rg-Nr./Positionen
     dokumente-extrakt/+server.ts  # GET: PDF-Texte extrahieren → dokumente-texte.json
-    update-status/+server.ts      # GET: git fetch + Update-Verfügbarkeit prüfen
+    update-status/+server.ts      # GET: Update-Verfügbarkeit prüfen (Git oder GitHub API)
 ```
 
 **Architektur:** JSON auf Platte · synchrones I/O (readFileSync/writeFileSync) · SvelteKit Form Actions · Tailwind CSS v4 · Chart.js · pdfmake 0.3.x · Node v22 (nvm)
 
-**Erststart:** Bei fehlender `projekt.json` werden automatisch 10 Standard-Gewerke (Rohbau, Elektro, Sanitär, Heizung, Fenster & Türen, Trockenbau, Maler, Boden, Dach, Sonstiges) und 5 Standard-Räume (Küche, Wohnzimmer, Bad, Flur, Schlafzimmer EG) angelegt.
+**Erststart:** Bei fehlender oder leerer `projekt.json` werden automatisch 10 Standard-Gewerke und 5 Standard-Räume angelegt. Bei jedem Lesen wird geprüft, ob jedes Gewerk einen Budget-Eintrag hat — fehlende werden mit `geplant: 0` ergänzt.
 
 **pdfmake 0.3.x Gotchas:**
 - Import: `import PdfPrinter from 'pdfmake/js/Printer'`
 - Konstruktor: `new PdfPrinter.default(fonts)` (nicht `new PdfPrinter(fonts)`)
 - Fonts: `Buffer.from(vfsFonts['Roboto-Regular.ttf'], 'base64')`
 - `createPdfKitDocument()` ist async → `await` nötig
+
+**Update-Mechanismus:**
+Das Update-System funktioniert auf zwei Wegen — je nach Installation:
+- **Git-Repo (Entwicklung):** `git fetch origin master` + `git pull` wie üblich.
+- **Ohne Git (ZIP-Installation):** Nutzt die GitHub API (`api.github.com/repos/nilsmitc/renovapp/commits`) zum Prüfen und lädt bei Updates das ZIP von GitHub herunter. Die aktuelle Version steht in `version.json` (Commit-Hash). Nach dem ZIP-Update wird `version.json` mit dem neuesten Hash von der API überschrieben.
+
+Beim Committen `version.json` aktualisieren: Hash des vorherigen Commits eintragen (Henne-Ei-Problem — der eigene Commit-Hash ist erst nach dem Commit bekannt). Die GitHub-API-Prüfung vergleicht nur gegen den neuesten Commit, daher ist eine Abweichung von einem Commit akzeptabel.
+
+`CHANGELOG.md` pflegen: wird auf der Einstellungen-Seite im Update-Bereich angezeigt.
 
 **URL-Filter:** `/buchungen?gewerk=elektro&raum=bad-eg&kategorie=Material&suche=Text&monat=2026-02&geschoss=EG`
 `/buchungen?raum=@EG` (nur Stockwerk) · `/buchungen?geschoss=EG` (Einzelräume + @EG kombiniert)
