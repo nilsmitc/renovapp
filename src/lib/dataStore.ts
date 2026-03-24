@@ -39,11 +39,39 @@ export function leseProjekt(): ProjektData {
 		schreibeProjekt(seed);
 		return seed;
 	}
+	let projekt: ProjektData;
 	try {
-		return JSON.parse(readFileSync(path, 'utf-8'));
+		projekt = JSON.parse(readFileSync(path, 'utf-8'));
 	} catch {
 		throw new Error(`projekt.json konnte nicht gelesen werden – Datei ist beschädigt`);
 	}
+
+	let geaendert = false;
+
+	// Standard-Gewerke und -Räume ergänzen wenn keine vorhanden
+	if (!projekt.gewerke || projekt.gewerke.length === 0) {
+		const seed = erstelleStandardProjekt();
+		projekt.gewerke = seed.gewerke;
+		geaendert = true;
+	}
+	if (!projekt.raeume || projekt.raeume.length === 0) {
+		const seed = erstelleStandardProjekt();
+		projekt.raeume = seed.raeume;
+		geaendert = true;
+	}
+
+	// Budget-Integrität: jedes Gewerk braucht einen Budget-Eintrag
+	if (!projekt.budgets) projekt.budgets = [];
+	const vorhandeneBudgets = new Set(projekt.budgets.map(b => b.gewerk));
+	for (const g of projekt.gewerke) {
+		if (!vorhandeneBudgets.has(g.id)) {
+			projekt.budgets.push({ gewerk: g.id, geplant: 0, notiz: '' });
+			geaendert = true;
+		}
+	}
+
+	if (geaendert) schreibeProjekt(projekt);
+	return projekt;
 }
 
 function erstelleStandardProjekt(): ProjektData {
