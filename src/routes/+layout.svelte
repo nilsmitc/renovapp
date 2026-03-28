@@ -12,11 +12,39 @@
 	let canScrollLeft = $state(false);
 	let canScrollRight = $state(false);
 
+	// Update-Banner (modul-level: bleibt über Navigationen hinweg erhalten)
+	let updateChecked = false;
+	let updateVerfuegbar = $state(false);
+	let bannerDismissed = $state(false);
+
 	onMount(() => {
 		if (!localStorage.getItem('onboarding_done')) {
 			showOnboarding = true;
 		}
+
+		// Dismiss-Status aus sessionStorage lesen
+		if (sessionStorage.getItem('update_banner_dismissed') === '1') {
+			bannerDismissed = true;
+		}
+
+		// Einmalig beim Start prüfen, nicht-blockierend
+		if (!updateChecked) {
+			updateChecked = true;
+			setTimeout(async () => {
+				try {
+					const res = await fetch('/api/update-status');
+					if (!res.ok) return;
+					const json = await res.json() as { updateVerfuegbar?: boolean };
+					if (json.updateVerfuegbar) updateVerfuegbar = true;
+				} catch { /* kein Netz o.ä. – still ignorieren */ }
+			}, 1000);
+		}
 	});
+
+	function dismissUpdateBanner() {
+		bannerDismissed = true;
+		sessionStorage.setItem('update_banner_dismissed', '1');
+	}
 
 	function closeOnboarding() {
 		showOnboarding = false;
@@ -197,6 +225,18 @@
 			{/if}
 		</div>
 	</nav>
+
+	<!-- Update-Banner -->
+	{#if updateVerfuegbar && !bannerDismissed && !$page.url.pathname.startsWith('/einstellungen')}
+		<div class="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-3 text-sm text-amber-800">
+			<svg class="w-4 h-4 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" /></svg>
+			<span class="flex-1">Update verfügbar – eine neue Version ist bereit.</span>
+			<a href="/einstellungen" class="font-medium underline hover:text-amber-900 transition-colors">Jetzt installieren</a>
+			<button onclick={dismissUpdateBanner} class="ml-1 text-amber-500 hover:text-amber-800 transition-colors" aria-label="Banner schließen">
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+			</button>
+		</div>
+	{/if}
 
 	<main class="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
 		{@render children()}
