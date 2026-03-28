@@ -312,6 +312,34 @@ export async function erstelleBauleiterbericht(
 			);
 		}
 
+		if (aiAnalyse.cashflowPrognose) {
+			content.push(
+				{ text: 'Cashflow-Prognose', style: 'h3' },
+				{ text: aiAnalyse.cashflowPrognose, fontSize: 10, lineHeight: 1.5, margin: [0, 0, 0, 12] }
+			);
+		}
+
+		if (aiAnalyse.szenarioAnalyse) {
+			content.push(
+				{ text: 'Szenario-Analyse', style: 'h3' },
+				{ text: aiAnalyse.szenarioAnalyse, fontSize: 10, lineHeight: 1.5, margin: [0, 0, 0, 12] }
+			);
+		}
+
+		if (aiAnalyse.belegeUndFoerderung) {
+			content.push(
+				{ text: 'Belege & Förderung', style: 'h3' },
+				{ text: aiAnalyse.belegeUndFoerderung, fontSize: 10, lineHeight: 1.5, margin: [0, 0, 0, 12] }
+			);
+		}
+
+		if (aiAnalyse.auftragsfortschritt) {
+			content.push(
+				{ text: 'Auftrags-Fortschritt', style: 'h3' },
+				{ text: aiAnalyse.auftragsfortschritt, fontSize: 10, lineHeight: 1.5, margin: [0, 0, 0, 12] }
+			);
+		}
+
 		if (aiAnalyse.dokumentenAnalyse) {
 			content.push(
 				{ text: 'Dokumentenanalyse', style: 'h3' },

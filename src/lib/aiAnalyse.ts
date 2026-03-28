@@ -6,7 +6,11 @@ export interface BauAnalyse {
 	risikobewertung: string;
 	cashflowBewertung: string;
 	empfehlungen: string[];
-	dokumentenAnalyse?: string;  // Erkenntnisse aus Angeboten/Rechnungsbelegen
+	cashflowPrognose?: string;       // Monat-für-Monat Liquiditätsprognose
+	szenarioAnalyse?: string;        // Best/Expected/Worst Case Gesamtkosten
+	belegeUndFoerderung?: string;    // BAFA-Readiness, KfW, §35a
+	auftragsfortschritt?: string;    // Pro Auftrag: % bezahlt, Restbetrag, Status
+	dokumentenAnalyse?: string;      // Erkenntnisse aus Angeboten/Rechnungsbelegen
 }
 
 export interface BauAnalyseDatei {

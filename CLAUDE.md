@@ -231,11 +231,25 @@ Falls `dokumente-texte.json` vorhanden, zusätzlich prüfen:
     "risikobewertung": "Kritische Gewerke mit % und €, große unbezahlte Aufträge",
     "cashflowBewertung": "Offene Rechnungen €, gebundene Mittel, Burn Rate, Restbudget-Reichweite",
     "empfehlungen": ["Konkrete Empfehlung 1 mit Zahlen", "Empfehlung 2", "..."],
+    "cashflowPrognose": "Monat-für-Monat Liquiditätsprognose (mind. 4 Monate voraus)",
+    "szenarioAnalyse": "Best/Expected/Worst Case mit konkreten €-Beträgen",
+    "belegeUndFoerderung": "BAFA-Readiness + KfW-Erstattung + §35a-Berechnung",
+    "auftragsfortschritt": "Pro Auftrag: % bezahlt, Restbetrag, nächste Fälligkeit",
     "dokumentenAnalyse": "Optional: Erkenntnisse aus Angeboten/Belegen (nur wenn dokumente-texte.json gelesen)"
   }
 }
 ```
-Alle Felder außer `dokumentenAnalyse` sind Pflicht und dürfen nicht leer sein. Die Webapp zeigt diese Daten 1:1 im PDF an.
+Pflichtfelder: `zusammenfassung`, `risikobewertung`, `cashflowBewertung`, `empfehlungen`. Alle anderen optional. Die Webapp zeigt diese Daten 1:1 im PDF an.
+
+**Neue Felder — Berechnungslogik:**
+
+**cashflowPrognose:** Feste Fälligkeiten (Abschläge mit `faelligkeitsdatum`, Status `offen`/`ausstehend`) + geschätzte laufende Kosten (Burn Rate aus den letzten 3 Monaten) → Monat-für-Monat-Aufstellung. Format: "April 2026: ~15.200 € (10.000 € Küche Abschlag + ~5.200 € laufend)". Liquiditätsspitzen hervorheben.
+
+**szenarioAnalyse:** Drei Szenarien mit konkreten €-Gesamtkosten berechnen. Best Case: alle Skonto genutzt, KfW bewilligt, keine Nachträge, keine optionalen Positionen. Expected: teilweise Optionen, moderate Nachträge (~5-10%). Worst Case: alle Optionen (aus Dokumentenanalyse), 10-15% Nachträge, KfW abgelehnt.
+
+**belegeUndFoerderung:** BAFA-relevante Gewerke (Kälte, Heizung, PV) → Beleg-Status pro Abschlag auflisten. KfW-Erstattung berechnen (Fördersatz × förderfähige Kosten). §35a: alle `kategorie="Arbeitslohn"` Buchungen summieren, Erstattung berechnen (20%, Cap 6.000 € Bemessungsgrundlage/Jahr → max 1.200 €/Jahr). Fehlende Belege konkret benennen.
+
+**auftragsfortschritt:** Pro Rechnung aus `rechnungen.json`: Auftragnehmer, Auftragssumme, Σ bezahlte Abschläge, % bezahlt, Restbetrag, Datum letzte Zahlung, nächste Fälligkeit. Abgeschlossene Aufträge (Schlussrechnung bezahlt) markieren. Aufträge ohne Zahlungsplan hervorheben.
 
 ### Schritt 4
 > "Analyse geschrieben. PDF unter `/bericht` herunterladen — die KI-Checkbox ist jetzt automatisch aktiv."

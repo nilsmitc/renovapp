@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-03-28
+- KI-Analyse erweitert: 4 neue Dimensionen — Cashflow-Prognose, Szenario-Analyse (Best/Expected/Worst Case), Belege & Förderung (BAFA/KfW/§35a), Auftrags-Fortschritt
 - Automatischer Update-Check beim App-Start: Banner unter der Navigation wenn eine neue Version bereit ist
 - Belege-Export für BAFA / Energieberater: Multi-Select auf der Belege-Seite, Smart-Auswahl (Energie-Gewerke, Abschläge, noch nicht exportiert), ZIP-Download oder direkt in Thunderbird öffnen
 - Exportierte Belege werden geloggt und mit grünem Badge markiert
