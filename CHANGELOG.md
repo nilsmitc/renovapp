@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-03-28
+- Belege-Export für BAFA / Energieberater: Multi-Select auf der Belege-Seite, Smart-Auswahl (Energie-Gewerke, Abschläge, noch nicht exportiert), ZIP-Download oder direkt in Thunderbird öffnen
+- Exportierte Belege werden geloggt und mit grünem Badge markiert
+- Einstellungen: E-Mail-Adresse, Thunderbird-Pfad und Betreff für den Belege-Export konfigurierbar
+
 ## 2026-03-24
 - E-Mail-Import generisch: Thunderbird-Erkennung statt hardcodiertem Pfad, Postfach-Auswahl per UI
 - Update-System funktioniert jetzt ohne Git (ZIP-Download von GitHub)
