@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { goto } from '$app/navigation';
+	import type { ExportRef } from './+page.server';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { formatCents, formatDatum } from '$lib/format';
 
 	let { data }: { data: PageData } = $props();
@@ -8,6 +9,31 @@
 	let suche = $state('');
 	let typFilter = $state<'alle' | 'buchung' | 'abschlag' | 'lieferung' | 'angebot'>('alle');
 	let gruppierung = $state<'monat' | 'gewerk' | 'typ'>('monat');
+
+	// Auswahl-Modus
+	let auswahlModus = $state(false);
+	let ausgewaehlt = $state(new Set<string>());
+	let exportLaeuft = $state(false);
+	let exportMeldung = $state<{ typ: 'success' | 'error'; text: string } | null>(null);
+	let smartDropdownOffen = $state(false);
+
+	// BAFA-relevante Gewerke (Energie-Effizienz)
+	const BAFA_GEWERKE = ['kaelte', 'heizung', 'pv-anlage'];
+
+	function toggleAuswahlModus() {
+		auswahlModus = !auswahlModus;
+		if (!auswahlModus) {
+			ausgewaehlt = new Set();
+			exportMeldung = null;
+		}
+	}
+
+	function toggleEintrag(key: string) {
+		const next = new Set(ausgewaehlt);
+		if (next.has(key)) next.delete(key);
+		else next.add(key);
+		ausgewaehlt = next;
+	}
 
 	function isPdf(name: string): boolean {
 		return name.toLowerCase().endsWith('.pdf');
@@ -100,13 +126,116 @@
 	}
 
 	const totalBelege = $derived(gefilterteEintraege.reduce((s, e) => s + e.belege.length, 0));
+
+	// Anzahl Dateien in Auswahl
+	const ausgewaehlteDateien = $derived(
+		[...ausgewaehlt].reduce((s, key) => {
+			const e = data.eintraege.find(x => x.key === key);
+			return s + (e?.belege.length ?? 0);
+		}, 0)
+	);
+
+	// Smart-Auswahl Funktionen
+	function smartAlleEintraege(wahl: 'sichtbar' | 'energie' | 'abschlaege' | 'nichtExportiert') {
+		smartDropdownOffen = false;
+		let kandidaten = gefilterteEintraege;
+		if (wahl === 'energie') {
+			kandidaten = data.eintraege.filter(e => BAFA_GEWERKE.includes(e.gewerkId));
+		} else if (wahl === 'abschlaege') {
+			kandidaten = gefilterteEintraege.filter(e => e.typ === 'abschlag');
+		} else if (wahl === 'nichtExportiert') {
+			kandidaten = gefilterteEintraege.filter(e => !e.exportiert);
+		}
+		ausgewaehlt = new Set(kandidaten.map(e => e.key));
+	}
+
+	function alleAbwaehlen() {
+		ausgewaehlt = new Set();
+	}
+
+	// Export-Refs aus Auswahl bauen
+	function gewaehleRefs(): ExportRef[] {
+		return [...ausgewaehlt]
+			.map(key => data.eintraege.find(x => x.key === key)?.exportRef)
+			.filter((r): r is ExportRef => !!r);
+	}
+
+	async function exportiereZip() {
+		const refs = gewaehleRefs();
+		if (refs.length === 0) return;
+		exportLaeuft = true;
+		exportMeldung = null;
+		try {
+			const res = await fetch('/api/belege-export', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ belege: refs, mode: 'zip' })
+			});
+			if (!res.ok) {
+				const json = await res.json().catch(() => ({})) as { error?: string };
+				throw new Error(json.error ?? `HTTP ${res.status}`);
+			}
+			const blob = await res.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `BAFA-Belege-${new Date().toISOString().slice(0, 10)}.zip`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+			exportMeldung = { typ: 'success', text: `${refs.length} Einträge als ZIP heruntergeladen.` };
+			await invalidateAll();
+		} catch (e) {
+			exportMeldung = { typ: 'error', text: `Fehler: ${e instanceof Error ? e.message : String(e)}` };
+		} finally {
+			exportLaeuft = false;
+		}
+	}
+
+	async function exportiereEmail() {
+		const refs = gewaehleRefs();
+		if (refs.length === 0) return;
+		exportLaeuft = true;
+		exportMeldung = null;
+		try {
+			const res = await fetch('/api/belege-export', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ belege: refs, mode: 'email' })
+			});
+			const json = await res.json() as { ok?: boolean; anzahl?: number; error?: string };
+			if (!res.ok || !json.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+			exportMeldung = { typ: 'success', text: `Thunderbird geöffnet – ${json.anzahl} Dateien angehängt.` };
+			await invalidateAll();
+		} catch (e) {
+			exportMeldung = { typ: 'error', text: `Fehler: ${e instanceof Error ? e.message : String(e)}` };
+		} finally {
+			exportLaeuft = false;
+		}
+	}
 </script>
 
-<div class="space-y-6">
+<div class="space-y-6" style="padding-bottom: {auswahlModus ? '6rem' : '0'}">
 	<!-- Header -->
 	<div class="flex items-center gap-3">
 		<svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
 		<h1 class="text-2xl font-bold text-gray-900">Belege</h1>
+		<div class="ml-auto">
+			<button
+				onclick={toggleAuswahlModus}
+				class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
+					{auswahlModus ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}"
+			>
+				{#if auswahlModus}
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+					Abbrechen
+				{:else}
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+					Auswählen
+				{/if}
+			</button>
+		</div>
 	</div>
 
 	<!-- KPI-Karten -->
@@ -226,29 +355,56 @@
 					<div class="space-y-2">
 						{#each eintraege as eintrag (eintrag.key)}
 							{@const gFarbe = gewerkFarben.get(eintrag.gewerkId)}
-							<div class="card p-4 hover:shadow-md hover:border-gray-300 transition-all">
+							{@const gewaehlt = ausgewaehlt.has(eintrag.key)}
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
+							<div
+								class="card p-4 transition-all
+									{auswahlModus ? 'cursor-pointer select-none' : 'hover:shadow-md hover:border-gray-300'}
+									{gewaehlt ? 'border-blue-400 bg-blue-50 shadow-sm' : ''}"
+								onclick={auswahlModus ? () => toggleEintrag(eintrag.key) : undefined}
+							>
 								<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-									<div class="flex-1 min-w-0">
-										<div class="flex items-center gap-2 flex-wrap">
-											{#if gFarbe}
-												<div class="w-3 h-3 rounded-sm shrink-0" style="background-color: {gFarbe}"></div>
-											{/if}
-											<span class="font-medium text-gray-900">{eintrag.beschreibung}</span>
-											<span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium {typBadgeCls[eintrag.typ]}">
-												{typLabel[eintrag.typ]}
-											</span>
-										</div>
-										<div class="text-sm text-gray-500 mt-0.5">
-											{eintrag.datum ? formatDatum(eintrag.datum) : '—'} · {eintrag.gewerkName} · <span class="font-mono tabular-nums">{formatCents(eintrag.betrag)}</span>
+									<!-- Checkbox + Inhalt -->
+									<div class="flex items-start gap-3 flex-1 min-w-0">
+										{#if auswahlModus}
+											<div class="shrink-0 mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors
+												{gewaehlt ? 'bg-blue-600 border-blue-600' : 'border-gray-400 bg-white'}">
+												{#if gewaehlt}
+													<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
+												{/if}
+											</div>
+										{/if}
+										<div class="flex-1 min-w-0">
+											<div class="flex items-center gap-2 flex-wrap">
+												{#if gFarbe}
+													<div class="w-3 h-3 rounded-sm shrink-0" style="background-color: {gFarbe}"></div>
+												{/if}
+												<span class="font-medium text-gray-900">{eintrag.beschreibung}</span>
+												<span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium {typBadgeCls[eintrag.typ]}">
+													{typLabel[eintrag.typ]}
+												</span>
+												{#if eintrag.exportiert}
+													<span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700">
+														<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+														Exportiert
+													</span>
+												{/if}
+											</div>
+											<div class="text-sm text-gray-500 mt-0.5">
+												{eintrag.datum ? formatDatum(eintrag.datum) : '—'} · {eintrag.gewerkName} · <span class="font-mono tabular-nums">{formatCents(eintrag.betrag)}</span>
+											</div>
 										</div>
 									</div>
-									<a href={eintrag.editHref} class="text-sm text-blue-500 hover:underline shrink-0">
-										{eintrag.typ === 'buchung' ? 'Bearbeiten' : 'Öffnen'}
-									</a>
+									{#if !auswahlModus}
+										<a href={eintrag.editHref} class="text-sm text-blue-500 hover:underline shrink-0">
+											{eintrag.typ === 'buchung' ? 'Bearbeiten' : 'Öffnen'}
+										</a>
+									{/if}
 								</div>
 
 								<!-- Belege mit Vorschau -->
-								<div class="flex flex-wrap gap-2 mt-3">
+								<div class="flex flex-wrap gap-2 mt-3 {auswahlModus ? 'pointer-events-none' : ''}">
 									{#each eintrag.belege as beleg}
 										<a href={beleg.href} target="_blank" rel="noopener noreferrer"
 											class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm hover:bg-gray-100 hover:border-gray-300 transition-all">
@@ -280,3 +436,110 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Sticky Aktionsleiste (Auswahl-Modus) -->
+{#if auswahlModus}
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<div
+		class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg px-4 py-3"
+		onclick={(e) => e.stopPropagation()}
+	>
+		<div class="max-w-5xl mx-auto space-y-2">
+			<!-- Meldung -->
+			{#if exportMeldung}
+				<div class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm
+					{exportMeldung.typ === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}">
+					{#if exportMeldung.typ === 'success'}
+						<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+					{:else}
+						<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+					{/if}
+					{exportMeldung.text}
+				</div>
+			{/if}
+
+			<div class="flex flex-wrap items-center gap-2">
+				<!-- Zähler -->
+				<div class="text-sm text-gray-700 font-medium mr-1">
+					{#if ausgewaehlt.size === 0}
+						Nichts gewählt
+					{:else}
+						<span class="text-blue-700">{ausgewaehlt.size} {ausgewaehlt.size === 1 ? 'Eintrag' : 'Einträge'}</span>
+						<span class="text-gray-400"> · {ausgewaehlteDateien} {ausgewaehlteDateien === 1 ? 'Datei' : 'Dateien'}</span>
+					{/if}
+				</div>
+
+				<!-- Smart Auswahl Dropdown -->
+				<div class="relative">
+					<button
+						onclick={() => (smartDropdownOffen = !smartDropdownOffen)}
+						class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+						Smart
+						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+					</button>
+					{#if smartDropdownOffen}
+						<div class="absolute bottom-full mb-1 left-0 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-56 z-10">
+							<button onclick={() => smartAlleEintraege('sichtbar')} class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+								Alle sichtbaren ({gefilterteEintraege.length})
+							</button>
+							<button onclick={() => smartAlleEintraege('energie')} class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+								Energie-Gewerke (BAFA)
+								<span class="text-xs text-gray-400 block">Kälte · Heizung · PV</span>
+							</button>
+							<button onclick={() => smartAlleEintraege('abschlaege')} class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+								Alle Abschläge & Rechnungen
+							</button>
+							<button onclick={() => smartAlleEintraege('nichtExportiert')} class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+								Noch nicht exportiert
+							</button>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Keine abwählen -->
+				{#if ausgewaehlt.size > 0}
+					<button onclick={alleAbwaehlen} class="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+						Keine
+					</button>
+				{/if}
+
+				<div class="flex-1"></div>
+
+				<!-- Export-Buttons -->
+				<button
+					onclick={exportiereZip}
+					disabled={ausgewaehlt.size === 0 || exportLaeuft}
+					class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
+						{ausgewaehlt.size === 0 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60'}"
+				>
+					{#if exportLaeuft}
+						<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+					{:else}
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+					{/if}
+					ZIP
+				</button>
+
+				<button
+					onclick={exportiereEmail}
+					disabled={ausgewaehlt.size === 0 || exportLaeuft}
+					class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
+						{ausgewaehlt.size === 0 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60'}"
+				>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+					Thunderbird öffnen
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Klick außerhalb schließt Smart-Dropdown -->
+	{#if smartDropdownOffen}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<div class="fixed inset-0 z-40" onclick={() => (smartDropdownOffen = false)}></div>
+	{/if}
+{/if}

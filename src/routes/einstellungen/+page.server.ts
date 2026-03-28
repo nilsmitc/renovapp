@@ -3,7 +3,7 @@ import { unzipSync } from 'fflate';
 import { writeFileSync, readFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { execSync } from 'node:child_process';
-import { schreibeBuchungen, schreibeProjekt, schreibeRechnungen, schreibeLieferanten } from '$lib/dataStore';
+import { schreibeBuchungen, schreibeProjekt, schreibeRechnungen, schreibeLieferanten, leseEmailConfig } from '$lib/dataStore';
 import { fail, redirect } from '@sveltejs/kit';
 
 const DATA_DIR = join(process.cwd(), 'data');
@@ -58,10 +58,16 @@ function leseChangelog(): string {
 }
 
 export const load: PageServerLoad = ({ url }) => {
+	const config = leseEmailConfig();
 	return {
 		updating: url.searchParams.get('updating') === '1',
 		version: leseVersion(),
-		changelog: leseChangelog()
+		changelog: leseChangelog(),
+		exportConfig: config ? {
+			energieberaterEmail: config.energieberaterEmail ?? '',
+			thunderbirdBin: config.thunderbirdBin ?? '',
+			exportBetreff: config.exportBetreff ?? ''
+		} : null
 	};
 };
 

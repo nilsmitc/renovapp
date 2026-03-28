@@ -3,11 +3,45 @@
 	import { page } from '$app/stores';
 	import type { ActionData, PageData } from './$types';
 	import { onMount } from 'svelte';
+	import { invalidateAll } from '$app/navigation';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const erfolg = $derived($page.url.searchParams.get('success') === '1');
 	let laeuft = $state(false);
+
+	// Export-Konfiguration
+	let exportEmail = $state(data.exportConfig?.energieberaterEmail ?? '');
+	let exportThunderbirdBin = $state(data.exportConfig?.thunderbirdBin ?? '');
+	let exportBetreff = $state(data.exportConfig?.exportBetreff ?? '');
+	let exportConfigGespeichert = $state(false);
+	let exportConfigFehler = $state('');
+	let exportConfigLaeuft = $state(false);
+
+	async function speichereExportConfig() {
+		exportConfigLaeuft = true;
+		exportConfigGespeichert = false;
+		exportConfigFehler = '';
+		try {
+			const res = await fetch('/api/export-config', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					energieberaterEmail: exportEmail,
+					thunderbirdBin: exportThunderbirdBin,
+					exportBetreff
+				})
+			});
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			exportConfigGespeichert = true;
+			await invalidateAll();
+			setTimeout(() => (exportConfigGespeichert = false), 3000);
+		} catch (e) {
+			exportConfigFehler = e instanceof Error ? e.message : String(e);
+		} finally {
+			exportConfigLaeuft = false;
+		}
+	}
 
 	// Minimaler Markdown→HTML-Parser für Changelog
 	const changelogHtml = $derived.by(() => {
@@ -193,6 +227,76 @@
 			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
 			Backup herunterladen
 		</a>
+	</div>
+
+	<!-- Belege-Export Konfiguration -->
+	<div class="card p-6 space-y-4">
+		<h2 class="flex items-center gap-2 text-lg font-semibold text-gray-800">
+			<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+			Belege-Export (BAFA / Energieberater)
+		</h2>
+		<p class="text-sm text-gray-600">
+			Konfiguration für den Belege-Export auf der <a href="/belege" class="text-blue-600 hover:underline">Belege-Seite</a>.
+			Belege werden als ZIP verpackt und direkt in Thunderbird geöffnet.
+		</p>
+
+		{#if exportConfigFehler}
+			<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200 text-sm">
+				<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+				{exportConfigFehler}
+			</div>
+		{/if}
+		{#if exportConfigGespeichert}
+			<div class="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-3 rounded-lg border border-green-200 text-sm">
+				<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+				Gespeichert.
+			</div>
+		{/if}
+
+		<div class="space-y-3">
+			<div>
+				<label class="block text-sm font-medium text-gray-700 mb-1">E-Mail Energieberater</label>
+				<input
+					type="email"
+					bind:value={exportEmail}
+					placeholder="berater@example.com"
+					class="input-base w-full max-w-sm"
+				/>
+			</div>
+			<div>
+				<label class="block text-sm font-medium text-gray-700 mb-1">Thunderbird-Pfad</label>
+				<input
+					type="text"
+					bind:value={exportThunderbirdBin}
+					placeholder="thunderbird"
+					class="input-base w-full max-w-sm font-mono text-sm"
+				/>
+				<p class="text-xs text-gray-400 mt-1">Leer lassen für Standardpfad ("thunderbird")</p>
+			</div>
+			<div>
+				<label class="block text-sm font-medium text-gray-700 mb-1">E-Mail Betreff</label>
+				<input
+					type="text"
+					bind:value={exportBetreff}
+					placeholder="BAFA Belege – Altbau"
+					class="input-base w-full max-w-sm"
+				/>
+				<p class="text-xs text-gray-400 mt-1">Leer lassen für Standardbetreff</p>
+			</div>
+			<button
+				onclick={speichereExportConfig}
+				disabled={exportConfigLaeuft}
+				class="btn-primary inline-flex items-center gap-1.5"
+			>
+				{#if exportConfigLaeuft}
+					<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+					Speichere...
+				{:else}
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+					Speichern
+				{/if}
+			</button>
+		</div>
 	</div>
 
 	<!-- Import -->

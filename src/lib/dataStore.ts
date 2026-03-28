@@ -294,6 +294,37 @@ export function loescheBelegeOrdnerLieferung(lieferungId: string): void {
 	if (existsSync(dir)) rmSync(dir, { recursive: true });
 }
 
+// === Belege Export Log ===
+
+export interface BelegeExportEintrag {
+	id: string;
+	datum: string;
+	empfaenger: string;
+	anzahl: number;
+	eintraege: string[]; // z.B. "buchung:uuid", "abschlag:rId:aId", "lieferung:lId", "angebot:rId"
+}
+
+export interface BelegeExportLog {
+	exports: BelegeExportEintrag[];
+}
+
+function belegeExportLogPath(): string {
+	return join(DATA_DIR, 'belege-export-log.json');
+}
+
+export function leseBelegeExportLog(): BelegeExportLog {
+	if (!existsSync(belegeExportLogPath())) return { exports: [] };
+	try {
+		return JSON.parse(readFileSync(belegeExportLogPath(), 'utf-8'));
+	} catch {
+		return { exports: [] };
+	}
+}
+
+export function schreibeBelegeExportLog(log: BelegeExportLog): void {
+	writeFileSync(belegeExportLogPath(), JSON.stringify(log, null, 2) + '\n', 'utf-8');
+}
+
 export function contentType(dateiname: string): string {
 	const ext = extname(dateiname).toLowerCase();
 	const types: Record<string, string> = {

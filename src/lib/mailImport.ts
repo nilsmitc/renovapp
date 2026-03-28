@@ -11,6 +11,9 @@ export interface EmailConfig {
 	profil: string;	// Profil-Verzeichnisname, z.B. "abc12345.default"
 	konto: string;		// IMAP-Server, z.B. "imap.example.com"
 	ordner: string;		// Ordnername, z.B. "INBOX"
+	energieberaterEmail?: string;
+	thunderbirdBin?: string;	// Pfad zum thunderbird-Binary, Standard: "thunderbird"
+	exportBetreff?: string;		// Betreff für Belege-Export-E-Mails
 }
 
 export interface ThunderbirdProfil {
