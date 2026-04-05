@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-04-05
+- Angebote-Funktion: Aufträge können jetzt als "Angebot" (noch nicht beauftragt) angelegt werden, mit eigenem Tab in der Aufträge-Liste
+- Angebote per "Als Auftrag annehmen" in Aufträge umwandeln
+- Nachträge: Rechnungsbeleg direkt am Nachtrag hinterlegen
+- Nachträge: "Abrechnen →" erstellt automatisch einen Abschlag vom Typ Nachtragsrechnung und verknüpft ihn
+- Auftragsdetail: Alle Dokumente (Angebot + Abschlag-Belegs) werden prominent im Header angezeigt
+- Auftragsdetail: Abschlag-Zeile vom Typ Nachtrag zeigt den Nachtrag-Beleg wenn kein eigener Abschlag-Beleg hinterlegt ist
+
 ## 2026-03-28
 - KI-Analyse erweitert: 4 neue Dimensionen — Cashflow-Prognose, Szenario-Analyse (Best/Expected/Worst Case), Belege & Förderung (BAFA/KfW/§35a), Auftrags-Fortschritt
 - Automatischer Update-Check beim App-Start: Banner unter der Navigation wenn eine neue Version bereit ist

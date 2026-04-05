@@ -6,8 +6,12 @@ import type { Kategorie } from '$lib/domain';
 import { berechneNaechsteZahlungen } from '$lib/reportData';
 
 export const load: PageServerLoad = ({ url }) => {
-	const rechnungen = leseRechnungen();
+	const alleRechnungen = leseRechnungen();
 	const projekt = leseProjekt();
+
+	// Ansicht: 'auftraege' (default) oder 'angebote'
+	const ansicht = url.searchParams.get('ansicht') === 'angebote' ? 'angebote' : 'auftraege';
+	const rechnungen = alleRechnungen.filter(r => r.status === (ansicht === 'angebote' ? 'angebot' : 'auftrag'));
 
 	// URL-Filter
 	const gewerkFilter = url.searchParams.get('gewerk');
@@ -42,7 +46,12 @@ export const load: PageServerLoad = ({ url }) => {
 		});
 	}
 
-	// Aggregate über ALLE Rechnungen (vor Filter, damit KPIs immer den Gesamtstand zeigen)
+	// Angebote-Aggregate
+	const angebote = alleRechnungen.filter(r => r.status === 'angebot');
+	const angeboteVolumen = angebote.reduce((s, r) => s + (r.auftragssumme ?? 0), 0);
+
+	// Aggregate über alle Aufträge (vor Filter, damit KPIs immer den Gesamtstand zeigen)
+	const auftraege = alleRechnungen.filter(r => r.status === 'auftrag');
 	let gesamtVolumen = 0;
 	let gesamtBezahlt = 0;
 	let gesamtOffen = 0;
@@ -52,7 +61,7 @@ export const load: PageServerLoad = ({ url }) => {
 	let anzahlOffeneAbschlaege = 0;
 	const gewerkAggregate: Record<string, { bezahlt: number; offen: number; gestellt: number; volumen: number }> = {};
 
-	for (const r of rechnungen) {
+	for (const r of auftraege) {
 		const nachtraegeSum = r.nachtraege.reduce((s, n) => s + n.betrag, 0);
 		const volumen = (r.auftragssumme ?? 0) + nachtraegeSum;
 		gesamtVolumen += volumen;
@@ -84,11 +93,14 @@ export const load: PageServerLoad = ({ url }) => {
 
 	const gesamtRestauftrag = Math.max(0, gesamtVolumen - gesamtGestellt);
 
-	// Nächste Zahlungen (über alle Rechnungen, nicht nur gefilterte)
-	const naechsteZahlungen = berechneNaechsteZahlungen(rechnungen, projekt.gewerke).slice(0, 5);
+	// Nächste Zahlungen (nur über Aufträge, nicht Angebote)
+	const naechsteZahlungen = berechneNaechsteZahlungen(auftraege, projekt.gewerke).slice(0, 5);
 
 	return {
+		ansicht,
 		rechnungen: gefiltert,
+		angebote,
+		angeboteVolumen,
 		gewerke: projekt.gewerke,
 		gewerkeInAuftraegen: projekt.gewerke.filter(g => rechnungen.some(r => r.gewerk === g.id)),
 		gewerkFilter,
@@ -104,7 +116,7 @@ export const load: PageServerLoad = ({ url }) => {
 		anzahlOffeneAbschlaege,
 		naechsteZahlungen,
 		gewerkAggregate,
-		anzahlAuftraege: rechnungen.length
+		anzahlAuftraege: auftraege.length
 	};
 };
 
@@ -117,6 +129,8 @@ export const actions: Actions = {
 		const auftragssummeRaw = (form.get('auftragssumme') as string)?.trim();
 		const auftragsdatum = (form.get('auftragsdatum') as string)?.trim() || undefined;
 		const notiz = (form.get('notiz') as string)?.trim() || undefined;
+		const statusRaw = (form.get('status') as string)?.trim();
+		const status = statusRaw === 'angebot' ? 'angebot' : 'auftrag';
 
 		if (!gewerk) return fail(400, { error: 'Gewerk ist erforderlich' });
 		if (!auftragnehmer) return fail(400, { error: 'Auftragnehmer ist erforderlich' });
@@ -136,7 +150,7 @@ export const actions: Actions = {
 			if (!isNaN(num) && num > 0) auftragssumme = Math.round(num * 100);
 		}
 
-		const rechnung = createRechnung(gewerk, auftragnehmer, kategorie);
+		const rechnung = createRechnung(gewerk, auftragnehmer, kategorie, status);
 		if (auftragssumme !== undefined) rechnung.auftragssumme = auftragssumme;
 		if (auftragsdatum) rechnung.auftragsdatum = auftragsdatum;
 		if (notiz) rechnung.notiz = notiz;
@@ -164,5 +178,21 @@ export const actions: Actions = {
 
 		schreibeRechnungen(rechnungen.filter((r) => r.id !== id));
 		return { success: true };
+	},
+
+	zuAuftragMachen: async ({ request }) => {
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		if (!id) return fail(400, { error: 'ID fehlt' });
+
+		const rechnungen = leseRechnungen();
+		const rechnung = rechnungen.find((r) => r.id === id);
+		if (!rechnung) return fail(404, { error: 'Angebot nicht gefunden' });
+
+		rechnung.status = 'auftrag';
+		if (!rechnung.auftragsdatum) rechnung.auftragsdatum = new Date().toISOString().slice(0, 10);
+		rechnung.geaendert = new Date().toISOString();
+		schreibeRechnungen(rechnungen);
+		throw redirect(303, `/rechnungen/${id}`);
 	}
 };

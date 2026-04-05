@@ -10,7 +10,9 @@ import {
 	speicherBelegRechnung,
 	loescheBelegRechnung,
 	speicherAngebotRechnung,
-	loescheAngebotRechnung
+	loescheAngebotRechnung,
+	speicherBelegNachtrag,
+	loescheBelegNachtrag
 } from '$lib/dataStore';
 import {
 	createAbschlag,
@@ -218,6 +220,9 @@ export const actions: Actions = {
 		rechnung.abschlaege = rechnung.abschlaege.filter((a) => a.id !== abschlagId);
 		// Nummern neu vergeben
 		rechnung.abschlaege.forEach((a, i) => (a.nummer = i + 1));
+		// Verknüpfung im Nachtrag entfernen, falls vorhanden
+		const verknuepfterNachtrag = rechnung.nachtraege.find((n) => n.abschlagId === abschlagId);
+		if (verknuepfterNachtrag) verknuepfterNachtrag.abschlagId = undefined;
 		rechnung.geaendert = new Date().toISOString();
 		schreibeRechnungen(rechnungen);
 		return { success: true };
@@ -229,6 +234,7 @@ export const actions: Actions = {
 		const betragRaw = (form.get('betrag') as string)?.trim();
 		const datum = (form.get('datum') as string)?.trim() || undefined;
 		const notiz = (form.get('notiz') as string)?.trim() || undefined;
+		const belegFile = form.get('beleg') as File | null;
 
 		if (!beschreibung) return fail(400, { nachtragError: 'Beschreibung ist erforderlich' });
 		if (!betragRaw) return fail(400, { nachtragError: 'Betrag ist erforderlich' });
@@ -245,6 +251,16 @@ export const actions: Actions = {
 		if (datum) nachtrag.datum = datum;
 		if (notiz) nachtrag.notiz = notiz;
 
+		if (belegFile && belegFile.size > 0) {
+			const erlaubteTypen = ['application/pdf', 'image/jpeg', 'image/png'];
+			if (!erlaubteTypen.includes(belegFile.type))
+				return fail(400, { nachtragError: 'Beleg: Nur PDF, JPG und PNG erlaubt' });
+			if (belegFile.size > 10 * 1024 * 1024)
+				return fail(400, { nachtragError: 'Beleg: Datei zu groß (max. 10 MB)' });
+			const buffer = Buffer.from(await belegFile.arrayBuffer());
+			nachtrag.beleg = speicherBelegNachtrag(rechnung.id, nachtrag.id, belegFile.name, buffer);
+		}
+
 		rechnung.nachtraege.push(nachtrag);
 		rechnung.geaendert = new Date().toISOString();
 		schreibeRechnungen(rechnungen);
@@ -260,7 +276,69 @@ export const actions: Actions = {
 		const rechnung = rechnungen.find((r) => r.id === params.id);
 		if (!rechnung) return fail(404, { error: 'Rechnung nicht gefunden' });
 
+		const nachtrag = rechnung.nachtraege.find((n) => n.id === nachtragId);
+		if (nachtrag?.beleg) loescheBelegNachtrag(rechnung.id, nachtragId, nachtrag.beleg);
+
 		rechnung.nachtraege = rechnung.nachtraege.filter((n) => n.id !== nachtragId);
+		rechnung.geaendert = new Date().toISOString();
+		schreibeRechnungen(rechnungen);
+		return { success: true };
+	},
+
+	nachtragBelegHochladen: async ({ params, request }) => {
+		const form = await request.formData();
+		const nachtragId = form.get('nachtragId') as string;
+		const belegFile = form.get('beleg') as File | null;
+		const loeschenFlag = form.get('belegLoeschen') === 'on';
+
+		if (!nachtragId) return fail(400, { error: 'Nachtrag-ID fehlt' });
+
+		const rechnungen = leseRechnungen();
+		const rechnung = rechnungen.find((r) => r.id === params.id);
+		if (!rechnung) return fail(404, { error: 'Rechnung nicht gefunden' });
+		const nachtrag = rechnung.nachtraege.find((n) => n.id === nachtragId);
+		if (!nachtrag) return fail(404, { error: 'Nachtrag nicht gefunden' });
+
+		if (loeschenFlag && nachtrag.beleg) {
+			loescheBelegNachtrag(rechnung.id, nachtragId, nachtrag.beleg);
+			nachtrag.beleg = undefined;
+		}
+
+		if (belegFile && belegFile.size > 0) {
+			const erlaubteTypen = ['application/pdf', 'image/jpeg', 'image/png'];
+			if (!erlaubteTypen.includes(belegFile.type))
+				return fail(400, { error: 'Nur PDF, JPG und PNG erlaubt' });
+			if (belegFile.size > 10 * 1024 * 1024)
+				return fail(400, { error: 'Datei zu groß (max. 10 MB)' });
+			if (nachtrag.beleg) loescheBelegNachtrag(rechnung.id, nachtragId, nachtrag.beleg);
+			const buffer = Buffer.from(await belegFile.arrayBuffer());
+			nachtrag.beleg = speicherBelegNachtrag(rechnung.id, nachtragId, belegFile.name, buffer);
+		}
+
+		rechnung.geaendert = new Date().toISOString();
+		schreibeRechnungen(rechnungen);
+		return { success: true };
+	},
+
+	nachtragAbrechnen: async ({ params, request }) => {
+		const form = await request.formData();
+		const nachtragId = form.get('nachtragId') as string;
+		if (!nachtragId) return fail(400, { error: 'Nachtrag-ID fehlt' });
+
+		const rechnungen = leseRechnungen();
+		const rechnung = rechnungen.find((r) => r.id === params.id);
+		if (!rechnung) return fail(404, { error: 'Rechnung nicht gefunden' });
+
+		const nachtrag = rechnung.nachtraege.find((n) => n.id === nachtragId);
+		if (!nachtrag) return fail(404, { error: 'Nachtrag nicht gefunden' });
+		if (nachtrag.abschlagId) return fail(400, { error: 'Für diesen Nachtrag existiert bereits ein Abschlag' });
+
+		const nummer = rechnung.abschlaege.length + 1;
+		const abschlag = createAbschlag('nachtragsrechnung', nachtrag.betrag, nummer);
+		abschlag.notiz = nachtrag.beschreibung;
+
+		nachtrag.abschlagId = abschlag.id;
+		rechnung.abschlaege.push(abschlag);
 		rechnung.geaendert = new Date().toISOString();
 		schreibeRechnungen(rechnungen);
 		return { success: true };
@@ -332,6 +410,7 @@ export const actions: Actions = {
 		const notiz = (form.get('notiz') as string)?.trim() || undefined;
 		const angebotFile = form.get('angebot') as File | null;
 		const angebotLoeschenFlag = form.get('angebotLoeschen') === 'on';
+		const statusRaw = (form.get('status') as string)?.trim();
 
 		if (!auftragnehmer) return fail(400, { editError: 'Auftragnehmer ist erforderlich' });
 
@@ -357,6 +436,7 @@ export const actions: Actions = {
 		}
 		rechnung.auftragsdatum = auftragsdatum;
 		rechnung.notiz = notiz;
+		if (statusRaw === 'angebot' || statusRaw === 'auftrag') rechnung.status = statusRaw;
 
 		// Angebot löschen
 		if (angebotLoeschenFlag && rechnung.angebot) {
@@ -376,6 +456,18 @@ export const actions: Actions = {
 			rechnung.angebot = speicherAngebotRechnung(rechnung.id, angebotFile.name, buffer);
 		}
 
+		rechnung.geaendert = new Date().toISOString();
+		schreibeRechnungen(rechnungen);
+		return { success: true };
+	},
+
+	zuAuftragMachen: async ({ params }) => {
+		const rechnungen = leseRechnungen();
+		const rechnung = rechnungen.find((r) => r.id === params.id);
+		if (!rechnung) return fail(404, { error: 'Angebot nicht gefunden' });
+
+		rechnung.status = 'auftrag';
+		if (!rechnung.auftragsdatum) rechnung.auftragsdatum = new Date().toISOString().slice(0, 10);
 		rechnung.geaendert = new Date().toISOString();
 		schreibeRechnungen(rechnungen);
 		return { success: true };

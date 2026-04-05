@@ -114,7 +114,7 @@ export function leseRechnungen(): Rechnung[] {
 	if (!existsSync(rechnungenPath())) return [];
 	try {
 		const raw = JSON.parse(readFileSync(rechnungenPath(), 'utf-8'));
-		return raw.map((r: any) => ({ abschlaege: [], nachtraege: [], ...r }));
+		return raw.map((r: any) => ({ abschlaege: [], nachtraege: [], status: 'auftrag', ...r }));
 	} catch {
 		throw new Error(`rechnungen.json konnte nicht gelesen werden – Datei fehlt oder ist beschädigt`);
 	}
@@ -257,6 +257,27 @@ export function leseAngebotRechnung(rechnungId: string, dateiname: string): Buff
 
 export function loescheAngebotRechnung(rechnungId: string, dateiname: string): void {
 	const pfad = join(DATA_DIR, 'rechnungen', rechnungId, 'angebot', dateiname);
+	if (existsSync(pfad)) unlinkSync(pfad);
+}
+
+// === Belege für Nachträge ===
+
+export function speicherBelegNachtrag(rechnungId: string, nachtragId: string, dateiname: string, buffer: Buffer): string {
+	const dir = join(DATA_DIR, 'rechnungen', rechnungId, 'nachtrag', nachtragId);
+	mkdirSync(dir, { recursive: true });
+	const safe = dateiname.replace(/[^a-zA-Z0-9._-]/g, '_');
+	writeFileSync(join(dir, safe), buffer);
+	return safe;
+}
+
+export function leseBelegNachtrag(rechnungId: string, nachtragId: string, dateiname: string): Buffer | null {
+	const pfad = join(DATA_DIR, 'rechnungen', rechnungId, 'nachtrag', nachtragId, dateiname);
+	if (!existsSync(pfad)) return null;
+	return readFileSync(pfad);
+}
+
+export function loescheBelegNachtrag(rechnungId: string, nachtragId: string, dateiname: string): void {
+	const pfad = join(DATA_DIR, 'rechnungen', rechnungId, 'nachtrag', nachtragId, dateiname);
 	if (existsSync(pfad)) unlinkSync(pfad);
 }
 

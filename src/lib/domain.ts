@@ -100,8 +100,10 @@ export interface Nachtrag {
 	id: string;
 	beschreibung: string;
 	betrag: number; // cents
-	datum?: string; // YYYY-MM-DD
+	datum?: string;    // YYYY-MM-DD
 	notiz?: string;
+	beleg?: string;      // Dateiname in data/rechnungen/{rechnungId}/nachtrag/{nachtragId}/
+	abschlagId?: string; // gesetzt wenn bereits ein Abschlag (nachtragsrechnung) erstellt wurde
 	erstellt: string;
 }
 
@@ -126,11 +128,14 @@ export interface Abschlag {
 	geaendert: string;
 }
 
+export type RechnungStatus = 'angebot' | 'auftrag';
+
 export interface Rechnung {
 	id: string;
 	gewerk: string;          // Gewerk-ID
 	auftragnehmer: string;
 	kategorie: Kategorie;    // wird für auto-erstellte Buchungen verwendet
+	status: RechnungStatus;  // 'angebot' = noch nicht angenommen, 'auftrag' = beauftragt
 	auftragssumme?: number;  // Cents, optional
 	auftragsdatum?: string;  // YYYY-MM-DD
 	notiz?: string;
@@ -194,7 +199,8 @@ export function createBuchung(
 export function createRechnung(
 	gewerk: string,
 	auftragnehmer: string,
-	kategorie: Kategorie
+	kategorie: Kategorie,
+	status: RechnungStatus = 'auftrag'
 ): Rechnung {
 	const now = new Date().toISOString();
 	return {
@@ -202,6 +208,7 @@ export function createRechnung(
 		gewerk,
 		auftragnehmer,
 		kategorie,
+		status,
 		nachtraege: [],
 		abschlaege: [],
 		erstellt: now,

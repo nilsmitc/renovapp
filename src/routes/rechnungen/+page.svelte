@@ -10,6 +10,10 @@
 
 	let zeigeFormular = $state(false);
 	let formError = $state('');
+	let formStatus = $state<'auftrag' | 'angebot'>('auftrag');
+
+	// Ansicht aus URL
+	const ansicht = $derived(data.ansicht);
 
 	// Filter-State (synchronisiert mit URL-Params)
 	let suche = $state(data.sucheFilter);
@@ -17,8 +21,10 @@
 	let gewerkFilterLocal = $state(data.gewerkFilter || '');
 	let sortierung = $state(data.sortierung);
 
-	function applyFilters() {
+	function applyFilters(ansichtOverride?: string) {
 		const params = new URLSearchParams();
+		const a = ansichtOverride ?? ansicht;
+		if (a === 'angebote') params.set('ansicht', 'angebote');
 		if (suche) params.set('suche', suche);
 		if (statusFilter && statusFilter !== 'alle') params.set('status', statusFilter);
 		if (gewerkFilterLocal) params.set('gewerk', gewerkFilterLocal);
@@ -134,21 +140,64 @@
 			<svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
 			</svg>
-			<h1 class="text-2xl font-bold text-gray-900">Aufträge</h1>
+			<h1 class="text-2xl font-bold text-gray-900">{ansicht === 'angebote' ? 'Angebote' : 'Aufträge'}</h1>
 		</div>
 		<button
-			onclick={() => (zeigeFormular = !zeigeFormular)}
+			onclick={() => { formStatus = ansicht === 'angebote' ? 'angebot' : 'auftrag'; zeigeFormular = !zeigeFormular; }}
 			class="btn-primary flex items-center gap-2"
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 			</svg>
-			Neuer Auftrag
+			{ansicht === 'angebote' ? 'Neues Angebot' : 'Neuer Auftrag'}
+		</button>
+	</div>
+
+	<!-- Tabs: Aufträge / Angebote -->
+	<div class="flex gap-1 rounded-lg bg-gray-100 p-1 w-fit">
+		<button
+			onclick={() => { zeigeFormular = false; applyFilters('auftraege'); }}
+			class="px-4 py-1.5 rounded-md text-sm font-medium transition {ansicht === 'auftraege' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}"
+		>
+			Aufträge
+			{#if data.anzahlAuftraege > 0}
+				<span class="ml-1 rounded-full px-1.5 py-0.5 text-xs {ansicht === 'auftraege' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-500'}">{data.anzahlAuftraege}</span>
+			{/if}
+		</button>
+		<button
+			onclick={() => { zeigeFormular = false; applyFilters('angebote'); }}
+			class="px-4 py-1.5 rounded-md text-sm font-medium transition {ansicht === 'angebote' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}"
+		>
+			Angebote
+			{#if data.angebote.length > 0}
+				<span class="ml-1 rounded-full px-1.5 py-0.5 text-xs {ansicht === 'angebote' ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-500'}">{data.angebote.length}</span>
+			{/if}
 		</button>
 	</div>
 
 	<!-- KPI-Karten -->
-	{#if data.anzahlAuftraege > 0}
+	{#if ansicht === 'angebote' && data.angebote.length > 0}
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+			<div class="kpi-card animate-in">
+				<div class="flex items-center gap-1.5 text-xs font-medium text-amber-500 uppercase tracking-wide">
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>
+					Offene Angebote
+				</div>
+				<div class="text-xl font-bold font-mono mt-1">{data.angebote.length}</div>
+				<div class="text-xs text-gray-400 mt-1">Noch nicht beauftragt</div>
+			</div>
+			{#if data.angeboteVolumen > 0}
+				<div class="kpi-card animate-in">
+					<div class="flex items-center gap-1.5 text-xs font-medium text-amber-500 uppercase tracking-wide">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>
+						Angebotssumme
+					</div>
+					<div class="text-xl font-bold font-mono mt-1 text-amber-600">{formatCents(data.angeboteVolumen)}</div>
+					<div class="text-xs text-gray-400 mt-1">Potenzielle Kosten</div>
+				</div>
+			{/if}
+		</div>
+	{:else if ansicht === 'auftraege' && data.anzahlAuftraege > 0}
 		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger">
 			<div class="kpi-card animate-in">
 				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
@@ -188,8 +237,8 @@
 		</div>
 	{/if}
 
-	<!-- Nächste Zahlungen -->
-	{#if data.naechsteZahlungen.length > 0}
+	<!-- Nächste Zahlungen (nur Aufträge) -->
+	{#if ansicht === 'auftraege' && data.naechsteZahlungen.length > 0}
 		<div class="card animate-in">
 			<div class="px-4 py-3 border-b border-gray-100 bg-gray-50/80 rounded-t-xl flex items-center justify-between">
 				<div class="flex items-center gap-2">
@@ -250,8 +299,8 @@
 		</div>
 	{/if}
 
-	<!-- Such- und Filterleiste -->
-	{#if data.anzahlAuftraege > 0}
+	<!-- Such- und Filterleiste (nur Aufträge-Tab) -->
+	{#if ansicht === 'auftraege' && data.anzahlAuftraege > 0}
 		<div class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 flex flex-wrap gap-3 items-end animate-in">
 			<div class="flex-1 min-w-48 relative">
 				<svg class="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
@@ -286,10 +335,25 @@
 		</div>
 	{/if}
 
-	<!-- Neuer Auftrag Formular -->
+	<!-- Formular: Neuer Auftrag / Neues Angebot -->
 	{#if zeigeFormular}
 		<div class="card animate-fade">
-			<h2 class="mb-4 text-lg font-semibold text-gray-800">Neuen Auftrag anlegen</h2>
+			<div class="mb-4 flex items-center justify-between">
+				<h2 class="text-lg font-semibold text-gray-800">{formStatus === 'angebot' ? 'Neues Angebot anlegen' : 'Neuen Auftrag anlegen'}</h2>
+				<!-- Art-Toggle -->
+				<div class="flex gap-1 rounded-lg bg-gray-100 p-1">
+					<button
+						type="button"
+						onclick={() => (formStatus = 'auftrag')}
+						class="px-3 py-1 rounded-md text-sm font-medium transition {formStatus === 'auftrag' ? 'bg-white shadow text-blue-700' : 'text-gray-500 hover:text-gray-700'}"
+					>Auftrag</button>
+					<button
+						type="button"
+						onclick={() => (formStatus = 'angebot')}
+						class="px-3 py-1 rounded-md text-sm font-medium transition {formStatus === 'angebot' ? 'bg-white shadow text-amber-700' : 'text-gray-500 hover:text-gray-700'}"
+					>Angebot</button>
+				</div>
+			</div>
 			{#if formError}
 				<div class="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{formError}</div>
 			{/if}
@@ -310,6 +374,8 @@
 				}}
 				class="grid grid-cols-1 gap-4 md:grid-cols-2"
 			>
+				<input type="hidden" name="status" value={formStatus} />
+
 				<div>
 					<label class="mb-1 block text-sm font-medium text-gray-700" for="gewerk">Gewerk *</label>
 					<select name="gewerk" id="gewerk" required class="input-base">
@@ -321,7 +387,7 @@
 				</div>
 
 				<div>
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="auftragnehmer">Auftragnehmer *</label>
+					<label class="mb-1 block text-sm font-medium text-gray-700" for="auftragnehmer">Auftragnehmer / Anbieter *</label>
 					<input
 						type="text"
 						name="auftragnehmer"
@@ -343,7 +409,7 @@
 				</div>
 
 				<div>
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="auftragssumme">Auftragssumme (€)</label>
+					<label class="mb-1 block text-sm font-medium text-gray-700" for="auftragssumme">{formStatus === 'angebot' ? 'Angebotssumme (€)' : 'Auftragssumme (€)'}</label>
 					<input
 						type="text"
 						name="auftragssumme"
@@ -354,7 +420,7 @@
 				</div>
 
 				<div>
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="auftragsdatum">Auftragsdatum</label>
+					<label class="mb-1 block text-sm font-medium text-gray-700" for="auftragsdatum">{formStatus === 'angebot' ? 'Angebotsdatum' : 'Auftragsdatum'}</label>
 					<input type="date" name="auftragsdatum" id="auftragsdatum" class="input-base" />
 				</div>
 
@@ -364,13 +430,13 @@
 						type="text"
 						name="notiz"
 						id="notiz"
-						placeholder="Optional"
+						placeholder="z.B. Angebots-Nr., Gültig bis…"
 						class="input-base"
 					/>
 				</div>
 
 				<div class="flex gap-3 md:col-span-2">
-					<button type="submit" class="btn-primary">Auftrag anlegen</button>
+					<button type="submit" class="{formStatus === 'angebot' ? 'rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600' : 'btn-primary'}">{formStatus === 'angebot' ? 'Angebot speichern' : 'Auftrag anlegen'}</button>
 					<button
 						type="button"
 						onclick={() => (zeigeFormular = false)}
@@ -383,6 +449,83 @@
 		</div>
 	{/if}
 
+	<!-- Angebote-Liste -->
+	{#if ansicht === 'angebote'}
+		{#if data.angebote.length === 0}
+			<div class="card py-12 text-center">
+				<svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+				</svg>
+				<p class="mt-3 text-gray-500">Noch keine Angebote hinterlegt</p>
+				<button onclick={() => { formStatus = 'angebot'; zeigeFormular = true; }} class="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 mt-4">Erstes Angebot anlegen</button>
+			</div>
+		{:else}
+			<div class="card animate-in">
+				<div class="divide-y divide-gray-50">
+					{#each data.angebote as angebot}
+						{@const gewerk = data.gewerke.find(g => g.id === angebot.gewerk)}
+						<div class="p-4">
+							<div class="flex items-start justify-between gap-4">
+								<a href="/rechnungen/{angebot.id}" class="min-w-0 flex-1 hover:text-blue-700">
+									<div class="flex items-center gap-2 flex-wrap">
+										{#if gewerk}
+											<span class="inline-flex items-center gap-1.5">
+												<span class="w-2.5 h-2.5 rounded-full" style="background-color: {gewerk.farbe}"></span>
+												<span class="text-xs text-gray-500">{gewerk.name}</span>
+											</span>
+										{/if}
+										<span class="font-medium text-gray-900">{angebot.auftragnehmer}</span>
+										<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Angebot</span>
+									</div>
+									<div class="mt-1 flex flex-wrap gap-3 text-sm text-gray-500">
+										{#if angebot.auftragssumme}
+											<span class="font-mono">{formatCents(angebot.auftragssumme)}</span>
+										{/if}
+										{#if angebot.auftragsdatum}
+											<span>vom {formatDatum(angebot.auftragsdatum)}</span>
+										{/if}
+										{#if angebot.notiz}
+											<span>{angebot.notiz}</span>
+										{/if}
+										{#if angebot.angebot}
+											<a
+												href="/rechnungen/{angebot.id}/angebot/{angebot.angebot}"
+												target="_blank"
+												rel="noopener noreferrer"
+												class="inline-flex items-center gap-1 text-blue-600 hover:underline"
+												onclick={(e) => e.stopPropagation()}
+											>
+												<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+													<path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+												</svg>
+												{angebot.angebot}
+											</a>
+										{/if}
+									</div>
+								</a>
+								<form
+									method="POST"
+									action="?/zuAuftragMachen"
+									use:enhance={() => {
+										return async ({ update }) => { await update(); };
+									}}
+								>
+									<input type="hidden" name="id" value={angebot.id} />
+									<button
+										type="submit"
+										onclick={(e) => { if (!confirm(`Angebot von "${angebot.auftragnehmer}" als Auftrag annehmen?`)) e.preventDefault(); }}
+										class="whitespace-nowrap rounded-lg bg-green-50 border border-green-200 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition"
+									>
+										Als Auftrag annehmen →
+									</button>
+								</form>
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+	{:else}
 	<!-- Aufträge-Liste -->
 	{#if data.rechnungen.length === 0 && data.anzahlAuftraege === 0}
 		<div class="card py-12 text-center">
@@ -578,5 +721,6 @@
 				{/each}
 			</div>
 		</div>
+	{/if}
 	{/if}
 </div>

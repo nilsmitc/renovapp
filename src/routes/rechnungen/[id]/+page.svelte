@@ -51,6 +51,8 @@
 	let loeschenError = $state('');
 	let zeigeNachtragFormular = $state(false);
 	let nachtragError = $state('');
+	let nachtragBelegUploadId = $state<string | null>(null);
+	let zuAuftragFehler = $state('');
 
 	const rechnung = $derived(data.rechnung);
 
@@ -220,7 +222,11 @@
 <div class="space-y-6">
 	<!-- Breadcrumb -->
 	<div class="flex items-center gap-2 text-sm text-gray-500">
-		<a href="/rechnungen" class="hover:text-blue-600">Aufträge</a>
+		{#if rechnung.status === 'angebot'}
+			<a href="/rechnungen?ansicht=angebote" class="hover:text-blue-600">Angebote</a>
+		{:else}
+			<a href="/rechnungen" class="hover:text-blue-600">Aufträge</a>
+		{/if}
 		<span>/</span>
 		<span class="text-gray-900">{rechnung.auftragnehmer}</span>
 	</div>
@@ -271,12 +277,22 @@
 					<label class="mb-1 block text-sm font-medium text-gray-700">Notiz</label>
 					<input type="text" name="notiz" value={rechnung.notiz ?? ''} class="input-base" />
 				</div>
+				<div>
+					<label class="mb-1 block text-sm font-medium text-gray-700">Status</label>
+					<select name="status" class="input-base" value={rechnung.status}>
+						<option value="angebot">Angebot (noch nicht beauftragt)</option>
+						<option value="auftrag">Auftrag (beauftragt)</option>
+					</select>
+				</div>
 				<div class="md:col-span-2">
-					<label class="mb-1 block text-sm font-medium text-gray-700">Angebot (PDF/JPG/PNG)</label>
+					<label class="mb-1 block text-sm font-medium text-gray-700">{rechnung.status === 'angebot' ? 'Angebots-Dokument' : 'Angebot'} (PDF/JPG/PNG)</label>
 					{#if rechnung.angebot}
-						<div class="mb-2 flex items-center gap-3 text-sm">
-							<a href="/rechnungen/{rechnung.id}/angebot/{rechnung.angebot}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">{rechnung.angebot}</a>
-							<label class="flex cursor-pointer items-center gap-1.5 text-red-600">
+						<div class="mb-2 flex items-center gap-3">
+							<a href="/rechnungen/{rechnung.id}/angebot/{rechnung.angebot}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100">
+								<svg class="h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+								{rechnung.angebot}
+							</a>
+							<label class="flex cursor-pointer items-center gap-1.5 text-sm text-red-600">
 								<input type="checkbox" name="angebotLoeschen" class="rounded" />
 								<span>Löschen</span>
 							</label>
@@ -307,17 +323,17 @@
 				>
 					<button
 						type="submit"
-						onclick={(e) => { if (!confirm(`Auftrag "${rechnung.auftragnehmer}" wirklich löschen? Alle zugehörigen Buchungen werden ebenfalls gelöscht.`)) e.preventDefault(); }}
+						onclick={(e) => { if (!confirm(`${rechnung.status === 'angebot' ? 'Angebot' : 'Auftrag'} "${rechnung.auftragnehmer}" wirklich löschen? Alle zugehörigen Buchungen werden ebenfalls gelöscht.`)) e.preventDefault(); }}
 						class="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
 					>
-						Auftrag löschen
+						{rechnung.status === 'angebot' ? 'Angebot löschen' : 'Auftrag löschen'}
 					</button>
 				</form>
 			</div>
 		{:else}
 			<div class="flex items-start justify-between gap-4">
 				<div>
-					<div class="flex items-center gap-3">
+					<div class="flex items-center gap-3 flex-wrap">
 						{#if data.gewerk}
 							<div class="h-3 w-3 rounded-full flex-shrink-0" style="background-color: {data.gewerk.farbe}"></div>
 							<span class="text-sm text-gray-500">{data.gewerk.name}</span>
@@ -326,26 +342,60 @@
 						<span class="text-sm text-gray-500">{rechnung.kategorie}</span>
 						{#if rechnung.auftragsdatum}
 							<span class="text-gray-300">·</span>
-							<span class="text-sm text-gray-500">Auftrag vom {formatDatum(rechnung.auftragsdatum)}</span>
+							<span class="text-sm text-gray-500">{rechnung.status === 'angebot' ? 'Angebot vom' : 'Auftrag vom'} {formatDatum(rechnung.auftragsdatum)}</span>
+						{/if}
+						{#if rechnung.status === 'angebot'}
+							<span class="rounded-full bg-amber-100 border border-amber-200 px-2.5 py-0.5 text-xs font-semibold text-amber-700 uppercase tracking-wide">Angebot</span>
 						{/if}
 					</div>
 					<h1 class="mt-1 text-2xl font-bold text-gray-900">{rechnung.auftragnehmer}</h1>
 					{#if rechnung.notiz}
 						<p class="mt-1 text-sm text-gray-500">{rechnung.notiz}</p>
 					{/if}
-					{#if rechnung.angebot}
-						<div class="mt-2">
-							<a
-								href="/rechnungen/{rechnung.id}/angebot/{rechnung.angebot}"
-								target="_blank"
-								rel="noopener noreferrer"
-								class="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline"
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
-								</svg>
-								Angebot: {rechnung.angebot}
-							</a>
+					{#if rechnung.angebot || rechnung.abschlaege.some(a => a.beleg)}
+						<div class="mt-3 flex flex-wrap gap-2">
+							{#if rechnung.angebot}
+								<a
+									href="/rechnungen/{rechnung.id}/angebot/{rechnung.angebot}"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="inline-flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 hover:bg-gray-100 transition group"
+								>
+									<div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-red-100">
+										<svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+										</svg>
+									</div>
+									<div class="min-w-0">
+										<div class="text-xs font-medium uppercase tracking-wide text-gray-400">{rechnung.status === 'angebot' ? 'Angebots-Dokument' : 'Angebot'}</div>
+										<div class="truncate text-sm font-medium text-gray-800 group-hover:text-blue-600 max-w-[240px]">{rechnung.angebot}</div>
+									</div>
+									<svg class="ml-1 h-4 w-4 flex-shrink-0 text-gray-300 group-hover:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+										<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+									</svg>
+								</a>
+							{/if}
+							{#each rechnung.abschlaege.filter(a => a.beleg) as a}
+								<a
+									href="/rechnungen/{rechnung.id}/{a.id}/{a.beleg}"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="inline-flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 hover:bg-gray-100 transition group"
+								>
+									<div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-red-100">
+										<svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+										</svg>
+									</div>
+									<div class="min-w-0">
+										<div class="text-xs font-medium uppercase tracking-wide text-gray-400">{typLabel(a.typ)} #{a.nummer}</div>
+										<div class="truncate text-sm font-medium text-gray-800 group-hover:text-blue-600 max-w-[240px]">{a.beleg}</div>
+									</div>
+									<svg class="ml-1 h-4 w-4 flex-shrink-0 text-gray-300 group-hover:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+										<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+									</svg>
+								</a>
+							{/each}
 						</div>
 					{/if}
 				</div>
@@ -353,6 +403,44 @@
 				Bearbeiten
 			</button>
 		</div>
+
+		<!-- Banner: Als Auftrag annehmen -->
+		{#if rechnung.status === 'angebot'}
+			<div class="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-4 flex items-center justify-between gap-4 flex-wrap">
+				<div class="flex items-center gap-3">
+					<svg class="w-5 h-5 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+					</svg>
+					<div>
+						<p class="text-sm font-medium text-amber-800">Dieses Angebot wurde noch nicht beauftragt.</p>
+						<p class="text-xs text-amber-600 mt-0.5">Abschläge und Zahlungen können erst nach Auftragsannahme erfasst werden.</p>
+					</div>
+				</div>
+				<form
+					method="POST"
+					action="?/zuAuftragMachen"
+					use:enhance={() => {
+						zuAuftragFehler = '';
+						return async ({ result, update }) => {
+							if (result.type === 'failure') {
+								zuAuftragFehler = (result.data?.error as string) ?? 'Fehler';
+							}
+							await update();
+						};
+					}}
+				>
+					<button
+						type="submit"
+						class="whitespace-nowrap rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition"
+					>
+						Als Auftrag annehmen →
+					</button>
+				</form>
+			</div>
+			{#if zuAuftragFehler}
+				<p class="mt-2 text-sm text-red-600">{zuAuftragFehler}</p>
+			{/if}
+		{/if}
 
 			<!-- KPI-Karten -->
 			<div class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 stagger">
@@ -531,6 +619,7 @@
 				<form
 					method="POST"
 					action="?/nachtragHinzufuegen"
+					enctype="multipart/form-data"
 					use:enhance={({ formElement }) => {
 						nachtragError = '';
 						return async ({ result, update }) => {
@@ -561,6 +650,10 @@
 						<label class="mb-1 block text-sm font-medium text-gray-700" for="nachtrag-notiz">Notiz</label>
 						<input type="text" id="nachtrag-notiz" name="notiz" placeholder="Optional" class="input-base" />
 					</div>
+					<div class="md:col-span-2">
+						<label class="mb-1 block text-sm font-medium text-gray-700" for="nachtrag-beleg">Rechnung / Beleg (PDF/JPG/PNG)</label>
+						<input type="file" id="nachtrag-beleg" name="beleg" accept=".pdf,.jpg,.jpeg,.png" class="input-base" />
+					</div>
 					<div class="flex gap-3 md:col-span-2">
 						<button type="submit" class="rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700">Nachtrag hinzufügen</button>
 						<button type="button" onclick={() => (zeigeNachtragFormular = false)} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Abbrechen</button>
@@ -579,31 +672,119 @@
 							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Beschreibung</th>
 							<th class="px-3 py-2 text-right text-xs font-medium text-gray-500">Betrag</th>
 							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Datum</th>
-							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Notiz</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Dokument</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Status / Abrechnung</th>
 							<th class="px-3 py-2"></th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-gray-100">
 						{#each rechnung.nachtraege as nachtrag (nachtrag.id)}
+							{@const verknuepfterAbschlag = nachtrag.abschlagId ? rechnung.abschlaege.find(a => a.id === nachtrag.abschlagId) : null}
+							{@const abschlagStatus = verknuepfterAbschlag ? abschlagEffektivStatus(verknuepfterAbschlag) : null}
 							<tr class="hover:bg-gray-50">
 								<td class="px-3 py-3 text-sm font-medium text-gray-800">{nachtrag.beschreibung}</td>
 								<td class="px-3 py-3 text-right text-sm font-semibold tabular-nums text-orange-700">+{formatCents(nachtrag.betrag)}</td>
 								<td class="px-3 py-3 text-sm text-gray-500">{nachtrag.datum ? formatDatum(nachtrag.datum) : '—'}</td>
-								<td class="px-3 py-3 text-sm text-gray-500">{nachtrag.notiz ?? '—'}</td>
 								<td class="px-3 py-3">
-									<form method="POST" action="?/nachtragLoeschen" use:enhance>
-										<input type="hidden" name="nachtragId" value={nachtrag.id} />
-										<button
-											type="submit"
-											onclick={(e) => { if (!confirm('Nachtrag löschen?')) e.preventDefault(); }}
-											class="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
-											title="Löschen"
+									{#if nachtrag.beleg}
+										<div class="flex items-center gap-1.5">
+											<a
+												href="/rechnungen/{rechnung.id}/nachtrag/{nachtrag.id}/{nachtrag.beleg}"
+												target="_blank"
+												rel="noopener noreferrer"
+												class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 transition"
+											>
+												<svg class="h-4 w-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+													<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+												</svg>
+												<span class="max-w-[120px] truncate" title={nachtrag.beleg}>{nachtrag.beleg}</span>
+											</a>
+											<form method="POST" action="?/nachtragBelegHochladen" use:enhance={() => ({ async update() { await update(); } })}>
+												<input type="hidden" name="nachtragId" value={nachtrag.id} />
+												<input type="hidden" name="belegLoeschen" value="on" />
+												<button type="submit" class="rounded p-1 text-gray-400 hover:text-red-600 hover:bg-red-50" title="Dokument entfernen">
+													<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+												</button>
+											</form>
+										</div>
+									{:else if nachtragBelegUploadId === nachtrag.id}
+										<form
+											method="POST"
+											action="?/nachtragBelegHochladen"
+											enctype="multipart/form-data"
+											class="flex items-center gap-1.5"
+											use:enhance={() => {
+												return async ({ update }) => { nachtragBelegUploadId = null; await update(); };
+											}}
 										>
-											<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-												<path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-											</svg>
+											<input type="hidden" name="nachtragId" value={nachtrag.id} />
+											<input type="file" name="beleg" accept=".pdf,.jpg,.jpeg,.png" required class="text-xs w-36 file:mr-2 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-1 file:text-xs" />
+											<button type="submit" class="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700">OK</button>
+											<button type="button" onclick={() => (nachtragBelegUploadId = null)} class="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">✕</button>
+										</form>
+									{:else}
+										<button
+											onclick={() => (nachtragBelegUploadId = nachtrag.id)}
+											class="inline-flex items-center gap-1 rounded-lg border border-dashed border-gray-300 px-2.5 py-1.5 text-xs text-gray-400 hover:border-gray-400 hover:text-gray-600 transition"
+										>
+											<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+											Rechnung hochladen
 										</button>
-									</form>
+									{/if}
+								</td>
+								<td class="px-3 py-3">
+									{#if verknuepfterAbschlag}
+										{#if abschlagStatus === 'bezahlt'}
+											<span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+												<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+												Bezahlt
+											</span>
+										{:else if abschlagStatus === 'ueberfaellig'}
+											<span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Überfällig</span>
+										{:else if abschlagStatus === 'bald_faellig'}
+											<span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Bald fällig</span>
+										{:else if abschlagStatus === 'offen'}
+											<span class="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">Offen</span>
+										{:else}
+											<span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">Ausstehend</span>
+										{/if}
+										<span class="ml-1 text-xs text-gray-400">→ Abschlag {verknuepfterAbschlag.nummer}</span>
+									{:else}
+										<form
+											method="POST"
+											action="?/nachtragAbrechnen"
+											use:enhance={() => {
+												return async ({ update }) => { await update(); };
+											}}
+										>
+											<input type="hidden" name="nachtragId" value={nachtrag.id} />
+											<button
+												type="submit"
+												class="inline-flex items-center gap-1 rounded-lg bg-blue-50 border border-blue-200 px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 transition"
+												title="Abschlag vom Typ 'Nachtrag-Rechnung' erstellen"
+											>
+												<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+												Abrechnen →
+											</button>
+										</form>
+									{/if}
+								</td>
+								<td class="px-3 py-3">
+									{#if !verknuepfterAbschlag}
+										<form method="POST" action="?/nachtragLoeschen" use:enhance>
+											<input type="hidden" name="nachtragId" value={nachtrag.id} />
+											<button
+												type="submit"
+												onclick={(e) => { if (!confirm('Nachtrag löschen?')) e.preventDefault(); }}
+												class="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
+												title="Löschen"
+											>
+												<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+													<path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+												</svg>
+											</button>
+										</form>
+									{/if}
 								</td>
 							</tr>
 						{/each}
@@ -614,9 +795,12 @@
 	</div>
 
 	<!-- Abschläge -->
-	<div class="card">
+	<div class="card {rechnung.status === 'angebot' ? 'opacity-50 pointer-events-none' : ''}">
 		<div class="mb-4 flex items-center justify-between">
 			<h2 class="text-base font-semibold text-gray-800">Abschläge</h2>
+			{#if rechnung.status === 'angebot'}
+				<span class="text-xs text-gray-400 italic">Erst nach Auftragsannahme verfügbar</span>
+			{:else}
 			<button
 				onclick={() => (zeigeAbschlagFormular = !zeigeAbschlagFormular)}
 				class="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100"
@@ -626,6 +810,7 @@
 				</svg>
 				Hinzufügen
 			</button>
+			{/if}
 		</div>
 
 		{#if zeigeAbschlagFormular}
@@ -726,6 +911,7 @@
 							{@const effStatus = abschlagEffektivStatus(abschlag)}
 							{@const borderCls = effStatus === 'bezahlt' ? 'border-l-4 border-green-400' : effStatus === 'ueberfaellig' ? 'border-l-4 border-red-500' : effStatus === 'bald_faellig' ? 'border-l-4 border-amber-400' : effStatus === 'offen' ? 'border-l-4 border-yellow-300' : 'border-l-4 border-gray-200'}
 							{@const betragCls = effStatus === 'bezahlt' ? 'text-green-700' : effStatus === 'ueberfaellig' ? 'text-red-700' : effStatus === 'bald_faellig' ? 'text-amber-700' : 'text-gray-900'}
+							{@const linkedNachtrag = abschlag.typ === 'nachtragsrechnung' ? rechnung.nachtraege.find(n => n.abschlagId === abschlag.id && n.beleg) : null}
 							<tr class="hover:bg-gray-50 {borderCls}">
 								<td class="px-3 py-3 text-sm text-gray-500">{abschlag.nummer}</td>
 								<td class="px-3 py-3 text-sm font-medium text-gray-800">{typLabel(abschlag.typ)}</td>
@@ -769,12 +955,26 @@
 												href="/rechnungen/{rechnung.id}/{abschlag.id}/{abschlag.beleg}"
 												target="_blank"
 												rel="noopener noreferrer"
-												class="rounded p-1 text-gray-400 hover:bg-blue-50 hover:text-blue-600"
-												title="Beleg: {abschlag.beleg}"
+												class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 transition"
+												title="{abschlag.beleg}"
 											>
-												<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-													<path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+												<svg class="h-3.5 w-3.5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+													<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
 												</svg>
+												PDF
+											</a>
+										{:else if linkedNachtrag}
+											<a
+												href="/rechnungen/{rechnung.id}/nachtrag/{linkedNachtrag.id}/{linkedNachtrag.beleg}"
+												target="_blank"
+												rel="noopener noreferrer"
+												class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 transition"
+												title="{linkedNachtrag.beleg} (Nachtrag-Beleg)"
+											>
+												<svg class="h-3.5 w-3.5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+													<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+												</svg>
+												PDF
 											</a>
 										{/if}
 										<button
