@@ -294,12 +294,15 @@ export const actions: Actions = {
 		const lieferant = lieferanten.find((l) => l.id === params.id);
 		if (!lieferant) return fail(404, { editError: 'Lieferant nicht gefunden' });
 
-		const isBankeinzug = form.get('zahlungsart') === 'bankeinzug';
+		const zahlungsartRaw = form.get('zahlungsart') as string;
+		const zahlungsart = zahlungsartRaw === 'bankeinzug' || zahlungsartRaw === 'kartenzahlung'
+			? zahlungsartRaw
+			: undefined;
 		const bankeinzugTageRaw = parseInt(form.get('bankeinzugTage') as string);
 		lieferant.name = name;
 		lieferant.notiz = notiz;
-		lieferant.zahlungsart = isBankeinzug ? 'bankeinzug' : undefined;
-		lieferant.bankeinzugTage = isBankeinzug && !isNaN(bankeinzugTageRaw) ? bankeinzugTageRaw : undefined;
+		lieferant.zahlungsart = zahlungsart;
+		lieferant.bankeinzugTage = zahlungsart === 'bankeinzug' && !isNaN(bankeinzugTageRaw) ? bankeinzugTageRaw : undefined;
 		lieferant.geaendert = new Date().toISOString();
 		schreibeLieferanten({ lieferanten, lieferungen });
 		return { editErfolg: true };
