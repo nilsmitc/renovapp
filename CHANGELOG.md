@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-04-15
+- Lieferanten: Zahlungsart "Kartenzahlung" wird beim Speichern nicht mehr zurückgesetzt
+- Lieferanten-PDF-Erkennung: Bau&Leben-Rechnungen werden jetzt korrekt mit dem Brutto-Rechnungsbetrag erkannt (statt dem Nettowarenwert)
+
 ## 2026-04-05
 - Angebote-Funktion: Aufträge können jetzt als "Angebot" (noch nicht beauftragt) angelegt werden, mit eigenem Tab in der Aufträge-Liste
 - Angebote per "Als Auftrag annehmen" in Aufträge umwandeln

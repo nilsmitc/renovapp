@@ -102,6 +102,12 @@ function extrahiereLieferscheinnummer(text: string): string | undefined {
 // ─── Gesamtbetrag ─────────────────────────────────────────────────────────────
 
 function extrahiereGesamtbetrag(text: string): number | undefined {
+	const lines = text.split('\n');
+
+	// Stufe 0: Tabellenkopf-Erkennung (z.B. Bau&Leben mit Header-Zeile und Wertezeile)
+	const ausTabelle = extrahiereAusTabellenkopf(lines);
+	if (ausTabelle !== undefined) return ausTabelle;
+
 	// Stufe 1: Keyword-Patterns mit optionalem Whitespace/Zeilenumbruch zwischen Keyword und Betrag
 	// Die \s* erlaubt Zeilenumbrüche (flag 's' nicht nötig bei \s)
 	const keywordPatterns = [
@@ -129,13 +135,12 @@ function extrahiereGesamtbetrag(text: string): number | undefined {
 
 	// Stufe 2: Letzten Betrag in einer Zeile mit €/EUR nehmen
 	// (Gesamtbeträge stehen typischerweise am Ende der Rechnung)
-	const lines = text.split('\n');
 	for (let i = lines.length - 1; i >= 0; i--) {
 		const line = lines[i];
 		if (!line.includes('€') && !/EUR/i.test(line)) continue;
 
-		// Zeilen mit Netto/MwSt/Steuer überspringen (das sind Teilbeträge)
-		if (/(?:netto|mwst|ust|steuer|%|zwischensumme)/i.test(line)) continue;
+		// Zeilen mit Netto/MwSt/Steuer/Skonto/Übertrag überspringen (das sind Teilbeträge)
+		if (/(?:netto|mwst|ust|steuer|%|zwischensumme|übertrag|nettowarenwert|skontierfähig|skontozahlbetrag|skonto)/i.test(line)) continue;
 
 		const m = line.match(/([\d]{1,3}(?:[.,]\d{3})*[.,]\d{2})/);
 		if (m) {
@@ -158,6 +163,37 @@ function extrahiereGesamtbetrag(text: string): number | undefined {
 		return alleBetraege[0];
 	}
 
+	return undefined;
+}
+
+// Erkennt Tabellenkopf-Strukturen wie bei Bau&Leben, wo mehrere Spalten-Header
+// (inkl. "Rechnungsbetrag EUR") auf einer Zeile stehen und die Werte auf der
+// nächsten — das Standard-Regex greift dort fälschlich die erste Zahl (Netto)
+// statt der letzten Spalte (Brutto).
+function extrahiereAusTabellenkopf(lines: string[]): number | undefined {
+	const bruttoKeyword = /\b(Rechnungsbetrag|Gesamtbetrag|Bruttobetrag|Endbetrag|Gesamtsumme|Rechnungssumme)\b/i;
+	const tabellenTokens = /\b(Nettowarenwert|Netto|MwSt|USt|Steuer|Zahlungstermin|Skontierf[aä]hig|Skontozahlbetrag|Skonto|Brutto)\b|%/gi;
+	const betragRe = /\d{1,3}(?:\.\d{3})*,\d{2}/g;
+
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
+		if (!bruttoKeyword.test(line)) continue;
+
+		const weitereTokens = (line.match(tabellenTokens) || []).length;
+		if (weitereTokens < 2) continue;
+
+		// Nächste nicht-leere Zeile als Wertezeile
+		let j = i + 1;
+		while (j < lines.length && !lines[j].trim()) j++;
+		if (j >= lines.length) return undefined;
+
+		const betraege = (lines[j].match(betragRe) || [])
+			.map((b) => parseBetragZuCents(b))
+			.filter((c) => c > 0);
+		if (betraege.length < 2) return undefined;
+
+		return Math.max(...betraege);
+	}
 	return undefined;
 }
 
