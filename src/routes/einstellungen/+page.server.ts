@@ -1,7 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { unzipSync } from 'fflate';
 import { writeFileSync, readFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { schreibeBuchungen, schreibeProjekt, schreibeRechnungen, schreibeLieferanten, leseEmailConfig } from '$lib/dataStore';
 import { fail, redirect } from '@sveltejs/kit';
@@ -128,10 +128,10 @@ export const actions: Actions = {
 		// Belege und Dateien aus ZIP extrahieren
 		for (const [pfad, inhalt] of Object.entries(eintraege)) {
 			if (!pfad.startsWith('belege/') && !pfad.startsWith('rechnungen/') && !pfad.startsWith('lieferungen/') && !pfad.startsWith('email-scan/')) continue;
-			// Pfad-Traversal-Schutz: nur erlaubte Zeichen
-			if (/\.\./.test(pfad)) continue;
-			if (pfad.startsWith('/')) continue;
-			const ziel = join(DATA_DIR, pfad);
+			// Pfad-Traversal-Schutz
+			if (/\.\./.test(pfad) || pfad.startsWith('/')) continue;
+			const ziel = resolve(DATA_DIR, pfad);
+			if (!ziel.startsWith(DATA_DIR + '/')) continue;
 			mkdirSync(dirname(ziel), { recursive: true });
 			writeFileSync(ziel, inhalt);
 		}
@@ -250,8 +250,8 @@ export const actions: Actions = {
 
 				// Pfad-Traversal-Schutz
 				if (/\.\./.test(pfad) || pfad.startsWith('/')) continue;
-
-				const ziel = join(PROJECT_DIR, pfad);
+				const ziel = resolve(PROJECT_DIR, pfad);
+				if (!ziel.startsWith(PROJECT_DIR + '/')) continue;
 				mkdirSync(dirname(ziel), { recursive: true });
 				writeFileSync(ziel, inhalt);
 

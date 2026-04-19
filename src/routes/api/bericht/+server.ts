@@ -13,10 +13,20 @@ export const GET: RequestHandler = async ({ url }) => {
 
 	const analyseDatei = mitAi ? leseAnalyse() : null;
 
-	const pdfBuffer = await erstelleBauleiterbericht(
-		projekt, buchungen, rechnungen, lieferantenData,
-		analyseDatei?.analyse ?? null, mitAi
-	);
+	let pdfBuffer: Uint8Array;
+	try {
+		pdfBuffer = await erstelleBauleiterbericht(
+			projekt, buchungen, rechnungen, lieferantenData,
+			analyseDatei?.analyse ?? null, mitAi
+		);
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		console.error('PDF-Generierung fehlgeschlagen:', message);
+		return new Response(
+			JSON.stringify({ error: 'PDF-Generierung fehlgeschlagen', detail: message }),
+			{ status: 500, headers: { 'Content-Type': 'application/json' } }
+		);
+	}
 
 	const datum = new Date().toISOString().slice(0, 10);
 	return new Response(pdfBuffer as unknown as BodyInit, {

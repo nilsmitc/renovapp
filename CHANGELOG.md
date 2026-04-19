@@ -2,6 +2,11 @@
 
 ## 2026-04-19
 - Rechnungen: Duplizierte Cent-Parsing-Logik durch zentrale `parseCentsFromInput()` ersetzt (Abschläge, Nachträge, Auftragssumme)
+- Sicherheit: ZIP-Import mit `resolve()`-basiertem Path-Traversal-Schutz gehärtet
+- PDF-Bericht: Fehlerbehandlung mit aussagekräftiger 500-Meldung statt unbehandeltem Crash
+- PDF-Bericht: Leerer-Monatsdaten-Guard verhindert Null-Referenz bei Erststart
+- Buchungen: Kategorie-Validierung vor dem Speichern (nur Material/Arbeitslohn/Sonstiges)
+- Logging: Fehler beim Lesen von dokumente-texte.json werden jetzt geloggt statt verschluckt
 
 ## 2026-04-15
 - Lieferanten: Zahlungsart "Kartenzahlung" wird beim Speichern nicht mehr zurückgesetzt

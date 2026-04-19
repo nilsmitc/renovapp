@@ -33,12 +33,16 @@ export const actions: Actions = {
 		const taetigkeit = (form.get('taetigkeit') as string)?.trim() || undefined;
 		const lieferungId = (form.get('lieferungId') as string)?.trim() || undefined;
 		const bezahltam = (form.get('bezahltam') as string)?.trim() || undefined;
+		const kategorieRaw = form.get('kategorie') as string;
+		if (!KATEGORIEN.includes(kategorieRaw as Kategorie)) {
+			return fail(400, { error: `Ungültige Kategorie: "${kategorieRaw}"` });
+		}
 		const data = {
 			datum: form.get('datum') as string,
 			betrag,
 			gewerk: form.get('gewerk') as string,
 			raum: (form.get('raum') as string) || null,
-			kategorie: form.get('kategorie') as Kategorie,
+			kategorie: kategorieRaw as Kategorie,
 			beschreibung: (form.get('beschreibung') as string)?.trim(),
 			rechnungsreferenz: (form.get('rechnungsreferenz') as string)?.trim() || '',
 			bezahltam,

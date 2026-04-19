@@ -100,13 +100,14 @@ export async function erstelleBauleiterbericht(
 	let erschoepfungsDatum: string | null = null;
 	const chartLabels = monatsDaten.map((m) => m.label);
 	const chartIst: (number | null)[] = monatsDaten.map((m) => m.kumuliert);
+	const letzterMonat = monatsDaten.length > 0 ? monatsDaten[monatsDaten.length - 1] : null;
 	const chartPrognose: (number | null)[] = monatsDaten.map((_, i) =>
-		i === monatsDaten.length - 1 ? monatsDaten[monatsDaten.length - 1].kumuliert : null
+		i === monatsDaten.length - 1 && letzterMonat ? letzterMonat.kumuliert : null
 	);
 	const chartBudget: number[] = monatsDaten.map(() => gesamtBudget);
 
-	if (monatsDaten.length > 0 && burnRateResult.burnRateMonatlich > 0) {
-		const letzterHistorisch = monatsDaten[monatsDaten.length - 1];
+	if (letzterMonat && burnRateResult.burnRateMonatlich > 0) {
+		const letzterHistorisch = letzterMonat;
 		const [lastYear, lastMonth] = letzterHistorisch.monat.split('-').map(Number);
 
 		// Bekannte zukünftige Zahlungen aus offenen Abschlägen

@@ -26,7 +26,9 @@ export const load: PageServerLoad = async () => {
 			dokumenteVorhanden = true;
 			dokumenteExtrahiert = daten.extrahiert ?? null;
 			dokumenteAnzahl = daten.anzahlDokumente ?? 0;
-		} catch { /* ignorieren */ }
+		} catch (err) {
+			console.warn('dokumente-texte.json konnte nicht gelesen werden:', err instanceof Error ? err.message : String(err));
+		}
 	}
 
 	// Anzahl PDFs die extrahiert werden könnten
