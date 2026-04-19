@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-04-19
+- Rechnungen: Duplizierte Cent-Parsing-Logik durch zentrale `parseCentsFromInput()` ersetzt (Abschläge, Nachträge, Auftragssumme)
+
 ## 2026-04-15
 - Lieferanten: Zahlungsart "Kartenzahlung" wird beim Speichern nicht mehr zurückgesetzt
 - Lieferanten-PDF-Erkennung: Bau&Leben-Rechnungen werden jetzt korrekt mit dem Brutto-Rechnungsbetrag erkannt (statt dem Nettowarenwert)

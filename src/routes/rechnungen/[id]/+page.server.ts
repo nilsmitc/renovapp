@@ -22,6 +22,7 @@ import {
 } from '$lib/domain';
 import type { AbschlagTyp } from '$lib/domain';
 import { fail, error, redirect } from '@sveltejs/kit';
+import { parseCentsFromInput } from '$lib/format';
 
 export const load: PageServerLoad = ({ params }) => {
 	const rechnungen = leseRechnungen();
@@ -69,9 +70,8 @@ export const actions: Actions = {
 		}
 		if (!betragRaw) return fail(400, { abschlagError: 'Betrag ist erforderlich' });
 
-		const cleaned = betragRaw.replace(/\s/g, '').replaceAll('.', '').replace(',', '.');
-		const betrag = Math.round(parseFloat(cleaned) * 100);
-		if (isNaN(betrag) || betrag <= 0) return fail(400, { abschlagError: 'Ungültiger Betrag' });
+		const betrag = parseCentsFromInput(betragRaw);
+		if (betrag <= 0) return fail(400, { abschlagError: 'Ungültiger Betrag' });
 
 		const rechnungen = leseRechnungen();
 		const rechnung = rechnungen.find((r) => r.id === params.id);
@@ -239,9 +239,8 @@ export const actions: Actions = {
 		if (!beschreibung) return fail(400, { nachtragError: 'Beschreibung ist erforderlich' });
 		if (!betragRaw) return fail(400, { nachtragError: 'Betrag ist erforderlich' });
 
-		const cleaned = betragRaw.replace(/\s/g, '').replaceAll('.', '').replace(',', '.');
-		const betrag = Math.round(parseFloat(cleaned) * 100);
-		if (isNaN(betrag) || betrag <= 0) return fail(400, { nachtragError: 'Ungültiger Betrag' });
+		const betrag = parseCentsFromInput(betragRaw);
+		if (betrag <= 0) return fail(400, { nachtragError: 'Ungültiger Betrag' });
 
 		const rechnungen = leseRechnungen();
 		const rechnung = rechnungen.find((r) => r.id === params.id);
@@ -420,9 +419,8 @@ export const actions: Actions = {
 
 		let auftragssumme: number | undefined;
 		if (auftragssummeRaw) {
-			const cleaned = auftragssummeRaw.replace(/\s/g, '').replaceAll('.', '').replace(',', '.');
-			const num = parseFloat(cleaned);
-			if (!isNaN(num) && num > 0) auftragssumme = Math.round(num * 100);
+			const parsed = parseCentsFromInput(auftragssummeRaw);
+			if (parsed > 0) auftragssumme = parsed;
 		}
 
 		rechnung.auftragnehmer = auftragnehmer;

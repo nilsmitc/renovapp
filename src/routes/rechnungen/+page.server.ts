@@ -2,6 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { leseRechnungen, schreibeRechnungen, leseProjekt } from '$lib/dataStore';
 import { createRechnung, abschlagEffektivStatus } from '$lib/domain';
 import { fail, redirect } from '@sveltejs/kit';
+import { parseCentsFromInput } from '$lib/format';
 import type { Kategorie } from '$lib/domain';
 import { berechneNaechsteZahlungen } from '$lib/reportData';
 
@@ -145,9 +146,8 @@ export const actions: Actions = {
 
 		let auftragssumme: number | undefined;
 		if (auftragssummeRaw) {
-			const cleaned = auftragssummeRaw.replace(/\s/g, '').replaceAll('.', '').replace(',', '.');
-			const num = parseFloat(cleaned);
-			if (!isNaN(num) && num > 0) auftragssumme = Math.round(num * 100);
+			const parsed = parseCentsFromInput(auftragssummeRaw);
+			if (parsed > 0) auftragssumme = parsed;
 		}
 
 		const rechnung = createRechnung(gewerk, auftragnehmer, kategorie, status);
