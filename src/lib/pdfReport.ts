@@ -115,6 +115,7 @@ export async function erstelleBauleiterbericht(
 		const ersteFutureMonat = `${ersteFutureDatum.getFullYear()}-${String(ersteFutureDatum.getMonth() + 1).padStart(2, '0')}`;
 		const bekannteZahlungenProMonat: Record<string, number> = {};
 		for (const r of rechnungen) {
+			if (r.status === 'angebot') continue;
 			for (const a of r.abschlaege) {
 				if (a.status === 'bezahlt') continue;
 				if (!a.faelligkeitsdatum) continue;

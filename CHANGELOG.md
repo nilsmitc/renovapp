@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-04-25
+- Dashboard / Prognose / Budget / PDF-Bericht: Angebote (noch nicht beauftragt) fließen nicht mehr in "Fest eingeplant", offene Beträge, Restauftrag, nächste Zahlungen oder Cashflow-Prognose ein — nur noch tatsächliche Aufträge zählen als gebundene Mittel
+
 ## 2026-04-19
 - Rechnungen: Duplizierte Cent-Parsing-Logik durch zentrale `parseCentsFromInput()` ersetzt (Abschläge, Nachträge, Auftragssumme)
 - Sicherheit: ZIP-Import mit `resolve()`-basiertem Path-Traversal-Schutz gehärtet

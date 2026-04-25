@@ -68,6 +68,7 @@ export function berechneFinanzuebersicht(
 	const restauftragPerGewerk: Record<string, number> = {};
 
 	for (const r of rechnungen) {
+		if (r.status === 'angebot') continue;
 		let rHatOffen = false;
 		for (const a of r.abschlaege) {
 			const s = abschlagEffektivStatus(a);
@@ -117,6 +118,7 @@ export function berechneNaechsteZahlungen(
 	const zahlungen: NaechsteZahlung[] = [];
 
 	for (const r of rechnungen) {
+		if (r.status === 'angebot') continue;
 		const gewerk = gewerke.find((g) => g.id === r.gewerk);
 		for (const a of r.abschlaege) {
 			if (a.status === 'bezahlt' || a.status === 'ausstehend') continue;
