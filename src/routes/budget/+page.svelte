@@ -20,16 +20,20 @@
 	function ampelPrio(s: typeof data.summaries[0]): number {
 		if (s.gewerk.pauschal) return 4;
 		if (s.budget === 0) return 5;
-		const rest = s.budget - s.ist - (data.verplantPerGewerk[s.gewerk.id]?.offen ?? 0) - (data.verplantPerGewerk[s.gewerk.id]?.restauftrag ?? 0);
-		if (rest < 0) return 0; // rot
+		const v = data.verplantPerGewerk[s.gewerk.id];
+		const rest = s.budget - s.ist - (v?.offen ?? 0) - (v?.restauftrag ?? 0);
+		if (rest < 0) return 0; // rot — auch bei abgeschlossenen Gewerken über Budget
+		if (v?.alleAbgeschlossen) return 2; // abgeschlossen + im Budget → grün
 		if (rest <= s.budget * 0.2) return 1; // gelb
 		return 2; // grün
 	}
 
 	function borderCls(s: typeof data.summaries[0]): string {
 		if (s.gewerk.pauschal || s.budget === 0) return 'border-l-4 border-gray-200';
-		const rest = s.budget - s.ist - (data.verplantPerGewerk[s.gewerk.id]?.offen ?? 0) - (data.verplantPerGewerk[s.gewerk.id]?.restauftrag ?? 0);
+		const v = data.verplantPerGewerk[s.gewerk.id];
+		const rest = s.budget - s.ist - (v?.offen ?? 0) - (v?.restauftrag ?? 0);
 		if (rest < 0) return 'border-l-4 border-red-500';
+		if (v?.alleAbgeschlossen) return 'border-l-4 border-green-500';
 		if (rest <= s.budget * 0.2) return 'border-l-4 border-yellow-400';
 		return 'border-l-4 border-green-500';
 	}
@@ -109,7 +113,7 @@
 	<!-- Budget-Karten -->
 	<div class="space-y-3 stagger">
 		{#each sortiert as s (s.gewerk.id)}
-			{@const v = data.verplantPerGewerk[s.gewerk.id] ?? { offen: 0, restauftrag: 0, anzahl: 0 }}
+			{@const v = data.verplantPerGewerk[s.gewerk.id] ?? { offen: 0, restauftrag: 0, anzahl: 0, alleAbgeschlossen: false }}
 			{@const frei = s.budget - s.ist - v.offen - v.restauftrag}
 			{@const p = pct(s.ist, s.budget)}
 			{@const rechnungen = data.rechnungenPerGewerk[s.gewerk.id] ?? []}
@@ -154,6 +158,8 @@
 								{:else if s.budget > 0}
 									{#if frei < 0}
 										<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Über Budget</span>
+									{:else if v.alleAbgeschlossen}
+										<span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Abgeschlossen</span>
 									{:else if frei <= s.budget * 0.2}
 										<span class="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">Knapp</span>
 									{/if}

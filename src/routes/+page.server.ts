@@ -37,6 +37,7 @@ export const load: PageServerLoad = () => {
 		ausstehendRechnungen: finanz.ausstehendRechnungen,
 		hatUeberfaellige: finanz.hatUeberfaellige,
 		hatBaldFaellige: finanz.hatBaldFaellige,
+		abgeschlossenPerGewerk: finanz.abgeschlossenPerGewerk,
 		naechsteZahlungen: naechsteZahlungen.slice(0, 5),
 		lieferanten,
 		lieferungen,

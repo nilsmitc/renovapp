@@ -8,7 +8,12 @@
 
 	const prozent = $derived(data.gesamtBudget > 0 ? Math.round((data.gesamtIst / data.gesamtBudget) * 100) : 0);
 	const topRaum = $derived([...data.raumSummaries].sort((a, b) => b.ist - a.ist)[0] ?? null);
-	const warnungen = $derived(data.gewerkSummaries.filter((s) => !s.gewerk.pauschal && s.budget > 0 && s.ist / s.budget >= 0.8));
+	const warnungen = $derived(data.gewerkSummaries.filter((s) => {
+		if (s.gewerk.pauschal || s.budget <= 0) return false;
+		if (s.ist / s.budget < 0.8) return false;
+		if (data.abgeschlossenPerGewerk?.[s.gewerk.id] && s.ist <= s.budget) return false;
+		return true;
+	}));
 	const naechsteFaelligkeit = $derived(data.naechsteZahlungen[0] ?? null);
 	const gesamtBindung = $derived(data.gesamtIst + data.gesamtOffen + data.gesamtRestauftrag);
 	const bindungProzent = $derived(data.gesamtBudget > 0 ? Math.round((gesamtBindung / data.gesamtBudget) * 100) : 0);

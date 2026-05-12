@@ -39,14 +39,18 @@ export const load: PageServerLoad = () => {
 		auftragssumme?: number;
 	};
 
-	const verplantPerGewerk: Record<string, { offen: number; restauftrag: number; anzahl: number }> = {};
+	const verplantPerGewerk: Record<string, { offen: number; restauftrag: number; anzahl: number; alleAbgeschlossen: boolean }> = {};
 	const rechnungenPerGewerk: Record<string, RechnungKurz[]> = {};
 
 	for (const rechnung of rechnungen) {
 		if (rechnung.status === 'angebot') continue;
 		const g = rechnung.gewerk;
-		verplantPerGewerk[g] ??= { offen: 0, restauftrag: 0, anzahl: 0 };
+		verplantPerGewerk[g] ??= { offen: 0, restauftrag: 0, anzahl: 0, alleAbgeschlossen: true };
 		verplantPerGewerk[g].anzahl++;
+		const rechnungAbgeschlossen = rechnung.abschlaege.some(
+			(a) => a.typ === 'schlussrechnung' && a.status === 'bezahlt'
+		);
+		verplantPerGewerk[g].alleAbgeschlossen &&= rechnungAbgeschlossen;
 		rechnungenPerGewerk[g] ??= [];
 
 		// Offene Abschläge

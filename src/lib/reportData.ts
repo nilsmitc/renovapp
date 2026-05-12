@@ -27,6 +27,7 @@ export interface Finanzuebersicht {
 	freiVerfuegbar: number;
 	offenPerGewerk: Record<string, number>;
 	restauftragPerGewerk: Record<string, number>;
+	abgeschlossenPerGewerk: Record<string, boolean>;
 	ausstehendRechnungen: number;
 	hatUeberfaellige: boolean;
 	hatBaldFaellige: boolean;
@@ -66,9 +67,18 @@ export function berechneFinanzuebersicht(
 	let hatBaldFaellige = false;
 	const offenPerGewerk: Record<string, number> = {};
 	const restauftragPerGewerk: Record<string, number> = {};
+	const rechnungenPerGewerkCount: Record<string, number> = {};
+	const abgeschlossenRechnungenCount: Record<string, number> = {};
 
 	for (const r of rechnungen) {
 		if (r.status === 'angebot') continue;
+		rechnungenPerGewerkCount[r.gewerk] = (rechnungenPerGewerkCount[r.gewerk] ?? 0) + 1;
+		const rechnungAbgeschlossen = r.abschlaege.some(
+			(a) => a.typ === 'schlussrechnung' && a.status === 'bezahlt'
+		);
+		if (rechnungAbgeschlossen) {
+			abgeschlossenRechnungenCount[r.gewerk] = (abgeschlossenRechnungenCount[r.gewerk] ?? 0) + 1;
+		}
 		let rHatOffen = false;
 		for (const a of r.abschlaege) {
 			const s = abschlagEffektivStatus(a);
@@ -96,12 +106,20 @@ export function berechneFinanzuebersicht(
 
 	const freiVerfuegbar = gesamtBudget - gesamtIst - gesamtOffen - gesamtRestauftrag;
 
+	const abgeschlossenPerGewerk: Record<string, boolean> = {};
+	for (const gewerkId of Object.keys(rechnungenPerGewerkCount)) {
+		const gesamt = rechnungenPerGewerkCount[gewerkId];
+		const abgeschlossen = abgeschlossenRechnungenCount[gewerkId] ?? 0;
+		abgeschlossenPerGewerk[gewerkId] = gesamt > 0 && abgeschlossen === gesamt;
+	}
+
 	return {
 		gesamtOffen,
 		gesamtRestauftrag,
 		freiVerfuegbar,
 		offenPerGewerk,
 		restauftragPerGewerk,
+		abgeschlossenPerGewerk,
 		ausstehendRechnungen,
 		hatUeberfaellige,
 		hatBaldFaellige
