@@ -14,8 +14,14 @@ export const load: PageServerLoad = () => {
 	let gesamtRestauftrag = 0;
 	const offenNachGewerk: Record<string, number> = {};
 	const restauftragNachGewerk: Record<string, number> = {};
+	const rechnungenNachGewerk: Record<string, number> = {};
+	const abgeschlossenNachGewerk: Record<string, number> = {};
 	for (const r of rechnungen) {
 		if (r.status === 'angebot') continue;
+		rechnungenNachGewerk[r.gewerk] = (rechnungenNachGewerk[r.gewerk] ?? 0) + 1;
+		if (r.abschlaege.some((a) => a.typ === 'schlussrechnung' && a.status === 'bezahlt')) {
+			abgeschlossenNachGewerk[r.gewerk] = (abgeschlossenNachGewerk[r.gewerk] ?? 0) + 1;
+		}
 		for (const a of r.abschlaege) {
 			const s = abschlagEffektivStatus(a);
 			if (s === 'offen' || s === 'ueberfaellig' || s === 'bald_faellig') {
@@ -90,10 +96,13 @@ export const load: PageServerLoad = () => {
 			const restauftrag = restauftragNachGewerk[gewerk.id] ?? 0;
 			const frei = budget - ist - offen - restauftrag;
 
+			const alleAbgeschlossen =
+				(rechnungenNachGewerk[gewerk.id] ?? 0) > 0 &&
+				(abgeschlossenNachGewerk[gewerk.id] ?? 0) === rechnungenNachGewerk[gewerk.id];
 			let status: 'ok' | 'warnung' | 'kritisch' = 'ok';
 			if (budget > 0) {
 				if (frei < 0) status = 'kritisch';
-				else if (frei < budget * 0.2) status = 'warnung';
+				else if (!alleAbgeschlossen && frei < budget * 0.2) status = 'warnung';
 			} else if (ist + offen + restauftrag > 0) {
 				status = 'warnung';
 			}

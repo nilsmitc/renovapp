@@ -9,9 +9,10 @@
 
 	interface Props {
 		summaries: GewerkSummary[];
+		abgeschlossenPerGewerk?: Record<string, boolean>;
 	}
 
-	let { summaries }: Props = $props();
+	let { summaries, abgeschlossenPerGewerk = {} }: Props = $props();
 
 	let doughnutCanvas: HTMLCanvasElement;
 	let barCanvas: HTMLCanvasElement;
@@ -75,7 +76,7 @@
 						data: activeSummaries.map((s) => s.ist / 100),
 						backgroundColor: activeSummaries.map((s) =>
 							s.ist > s.budget && s.budget > 0 ? '#EF4444' :
-							s.ist >= s.budget * 0.8 && s.budget > 0 ? '#F59E0B' : '#3B82F6'
+							s.ist >= s.budget * 0.8 && s.budget > 0 && !abgeschlossenPerGewerk[s.gewerk.id] ? '#F59E0B' : '#3B82F6'
 						)
 					}
 				]

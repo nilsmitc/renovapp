@@ -239,7 +239,7 @@
 
 	<!-- Charts -->
 	{#if data.gesamtIst > 0}
-		<Charts summaries={data.gewerkSummaries} />
+		<Charts summaries={data.gewerkSummaries} abgeschlossenPerGewerk={data.abgeschlossenPerGewerk} />
 	{/if}
 
 	<!-- Letzte Buchungen -->

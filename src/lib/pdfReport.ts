@@ -164,7 +164,8 @@ export async function erstelleBauleiterbericht(
 		const offen = finanz.offenPerGewerk[s.gewerk.id] ?? 0;
 		const restauftrag = finanz.restauftragPerGewerk[s.gewerk.id] ?? 0;
 		const frei = s.budget - s.ist - offen - restauftrag;
-		return { ...s, offen, restauftrag, frei };
+		const abgeschlossen = finanz.abgeschlossenPerGewerk[s.gewerk.id] ?? false;
+		return { ...s, offen, restauftrag, frei, abgeschlossen };
 	});
 
 	// Charts rendern
@@ -384,10 +385,12 @@ export async function erstelleBauleiterbericht(
 	for (const s of gewerkFinanz.filter((g) => g.ist > 0 || g.budget > 0)) {
 		const statusText = s.gewerk.pauschal ? 'Sammelgewerk'
 			: s.frei < 0 ? 'Kritisch'
+			: s.abgeschlossen ? 'Abgeschlossen'
 			: s.budget > 0 && s.frei < s.budget * 0.2 ? 'Achtung'
 			: 'Im Rahmen';
 		const statusFarbe = s.gewerk.pauschal ? '#6B7280'
 			: s.frei < 0 ? '#EF4444'
+			: s.abgeschlossen ? '#10B981'
 			: s.budget > 0 && s.frei < s.budget * 0.2 ? '#F59E0B'
 			: '#10B981';
 		budgetBody.push([
@@ -781,10 +784,12 @@ export async function erstelleBauleiterbericht(
 			for (const g of gewerkeMitBudget) {
 				const gebunden = g.offen + g.restauftrag;
 				const risikoText = g.frei < 0 ? 'Kritisch'
+					: g.abgeschlossen ? 'Abgeschlossen'
 					: g.frei < g.budget * 0.2 ? 'Achtung'
 					: g.gewerk.pauschal ? 'Sammelgewerk'
 					: 'Im Rahmen';
 				const risikoFarbe = g.frei < 0 ? '#EF4444'
+					: g.abgeschlossen ? '#10B981'
 					: g.frei < g.budget * 0.2 ? '#F59E0B'
 					: g.gewerk.pauschal ? '#6B7280'
 					: '#10B981';
