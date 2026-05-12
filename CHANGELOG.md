@@ -1,7 +1,7 @@
 # Changelog
 
 ## 2026-05-12
-- Budget: Gewerke mit vollständig bezahlter Schlussrechnung zeigen jetzt "Abgeschlossen" (grün) statt "Knapp" (gelb) — kein falscher Budget-Alarm mehr wenn ein Auftrag regulär abgerechnet ist
+- Budget, Prognose, PDF-Bericht, Dashboard-Chart: Gewerke mit vollständig bezahlter Schlussrechnung zeigen jetzt "Abgeschlossen" (grün) statt "Knapp/Achtung" (gelb) — kein falscher Budget-Alarm mehr wenn ein Auftrag regulär abgerechnet ist
 
 ## 2026-04-25
 - Dashboard / Prognose / Budget / PDF-Bericht: Angebote (noch nicht beauftragt) fließen nicht mehr in "Fest eingeplant", offene Beträge, Restauftrag, nächste Zahlungen oder Cashflow-Prognose ein — nur noch tatsächliche Aufträge zählen als gebundene Mittel
