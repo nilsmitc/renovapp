@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-05-13
+- Lieferanten: Serverfehler beim Anlegen einer Lieferung werden jetzt als Fehlermeldung angezeigt statt still ignoriert (Formular schloss sich ohne Speichern)
+- Buchungen (Neu): "Als bezahlt markieren" (bezahltam) wird jetzt korrekt gespeichert
+- Rechnungen: TypeScript-Fehler in use:enhance-Pattern behoben
+
 ## 2026-05-12
 - Budget, Prognose, PDF-Bericht, Dashboard-Chart: Gewerke mit vollständig bezahlter Schlussrechnung zeigen jetzt "Abgeschlossen" (grün) statt "Knapp/Achtung" (gelb) — kein falscher Budget-Alarm mehr wenn ein Auftrag regulär abgerechnet ist
 

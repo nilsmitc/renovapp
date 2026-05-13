@@ -28,6 +28,7 @@ export const actions: Actions = {
 		const betrag = isRueckbuchung ? -Math.abs(betragRaw) : Math.abs(betragRaw);
 		const taetigkeit = (form.get('taetigkeit') as string)?.trim() || undefined;
 		const lieferungId = (form.get('lieferungId') as string)?.trim() || undefined;
+		const bezahltam = (form.get('bezahltam') as string)?.trim() || undefined;
 		const data = {
 			datum: form.get('datum') as string,
 			betrag,
@@ -37,7 +38,8 @@ export const actions: Actions = {
 			beschreibung: (form.get('beschreibung') as string)?.trim(),
 			rechnungsreferenz: (form.get('rechnungsreferenz') as string)?.trim() || '',
 			taetigkeit,
-			lieferungId
+			lieferungId,
+			bezahltam
 		};
 
 		const projekt = leseProjekt();

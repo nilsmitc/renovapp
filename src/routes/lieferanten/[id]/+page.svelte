@@ -266,6 +266,8 @@
 						return async ({ result, update }) => {
 							if (result.type === 'failure') {
 								lieferungError = (result.data?.lieferungError as string) ?? 'Fehler';
+							} else if (result.type === 'error') {
+								lieferungError = result.error?.message ?? 'Serverfehler beim Speichern der Lieferung.';
 							} else {
 								formElement.reset();
 								resetLieferungForm();

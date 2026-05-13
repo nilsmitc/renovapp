@@ -699,7 +699,7 @@
 												</svg>
 												<span class="max-w-[120px] truncate" title={nachtrag.beleg}>{nachtrag.beleg}</span>
 											</a>
-											<form method="POST" action="?/nachtragBelegHochladen" use:enhance={() => ({ async update() { await update(); } })}>
+											<form method="POST" action="?/nachtragBelegHochladen" use:enhance={() => async ({ update }) => update()}>
 												<input type="hidden" name="nachtragId" value={nachtrag.id} />
 												<input type="hidden" name="belegLoeschen" value="on" />
 												<button type="submit" class="rounded p-1 text-gray-400 hover:text-red-600 hover:bg-red-50" title="Dokument entfernen">
