@@ -29,7 +29,7 @@
 	}
 
 	function borderCls(s: typeof data.summaries[0]): string {
-		if (s.gewerk.pauschal || s.budget === 0) return 'border-l-4 border-gray-200';
+		if (s.gewerk.pauschal || s.budget === 0) return 'border-l-4 border-stone-200 dark:border-stone-700';
 		const v = data.verplantPerGewerk[s.gewerk.id];
 		const rest = s.budget - s.ist - (v?.offen ?? 0) - (v?.restauftrag ?? 0);
 		if (rest < 0) return 'border-l-4 border-red-500';
@@ -43,9 +43,9 @@
 	}
 
 	function pctCls(p: number): string {
-		if (p > 100) return 'text-red-600';
-		if (p >= 80) return 'text-yellow-600';
-		return 'text-green-600';
+		if (p > 100) return 'text-red-600 dark:text-red-400';
+		if (p >= 80) return 'text-yellow-600 dark:text-yellow-400';
+		return 'text-green-600 dark:text-green-400';
 	}
 
 	function barCls(p: number): string {
@@ -60,15 +60,15 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<div class="flex items-center gap-3">
-		<svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-		<h1 class="text-2xl font-bold text-gray-900">Budget</h1>
-	</div>
+	<h1 class="page-title">
+		<svg class="page-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+		Budget
+	</h1>
 
 	<!-- KPI-Karten -->
 	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger">
 		<div class="kpi-card animate-in">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wide">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>
 				Gesamtbudget
 			</div>
@@ -76,35 +76,35 @@
 		</div>
 
 		<div class="kpi-card animate-in">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-green-500 uppercase tracking-wide">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-green-500 dark:text-green-400 uppercase tracking-wide">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 				Bezahlt
 			</div>
-			<div class="text-xl font-bold font-mono mt-1 text-green-600">{formatCents(data.gesamtIst)}</div>
-			<div class="text-xs text-gray-400 mt-1">{gesamtPct}% des Budgets</div>
+			<div class="text-xl font-bold font-mono mt-1 text-green-600 dark:text-green-400">{formatCents(data.gesamtIst)}</div>
+			<div class="text-xs text-stone-400 dark:text-stone-500 mt-1">{gesamtPct}% des Budgets</div>
 		</div>
 
 		<div class="kpi-card animate-in">
-			<div class="flex items-center gap-1.5 text-xs font-medium text-orange-500 uppercase tracking-wide">
+			<div class="flex items-center gap-1.5 text-xs font-medium text-orange-500 dark:text-orange-400 uppercase tracking-wide">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 				Offen + Restauftrag
 			</div>
-			<div class="text-xl font-bold font-mono mt-1 text-orange-500">{formatCents(data.gesamtOffen + data.gesamtRestauftrag)}</div>
-			<div class="text-xs text-gray-400 mt-1">Gebunden in Aufträgen</div>
+			<div class="text-xl font-bold font-mono mt-1 text-orange-500 dark:text-orange-400">{formatCents(data.gesamtOffen + data.gesamtRestauftrag)}</div>
+			<div class="text-xs text-stone-400 dark:text-stone-500 mt-1">Gebunden in Aufträgen</div>
 		</div>
 
 		<div class="kpi-card animate-in">
-			<div class="flex items-center gap-1.5 text-xs font-medium {gesamtFrei < 0 ? 'text-red-500' : 'text-gray-400'} uppercase tracking-wide">
+			<div class="flex items-center gap-1.5 text-xs font-medium {gesamtFrei < 0 ? 'text-red-500 dark:text-red-400' : 'text-stone-400 dark:text-stone-500'} uppercase tracking-wide">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 				Frei verfügbar
 			</div>
-			<div class="text-xl font-bold font-mono mt-1 {gesamtFrei < 0 ? 'text-red-600' : 'text-green-600'}">{formatCents(gesamtFrei)}</div>
+			<div class="text-xl font-bold font-mono mt-1 {gesamtFrei < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}">{formatCents(gesamtFrei)}</div>
 		</div>
 	</div>
 
 	<!-- Fehler -->
 	{#if form?.error}
-		<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200 animate-fade">
+		<div class="alert-danger flex items-center gap-2 animate-fade">
 			<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
 			{form.error}
 		</div>
@@ -132,16 +132,16 @@
 						}} class="grid grid-cols-1 gap-3 md:grid-cols-3">
 							<input type="hidden" name="gewerk" value={s.gewerk.id} />
 							<div>
-								<label class="mb-1 block text-sm font-medium text-gray-700">Budget (€) *</label>
+								<label class="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Budget (€) *</label>
 								<input type="text" name="geplant" value={s.budget > 0 ? centsToInputValue(s.budget) : ''} placeholder="z.B. 15.000,00" class="input-base" />
 							</div>
 							<div class="md:col-span-2">
-								<label class="mb-1 block text-sm font-medium text-gray-700">Notiz</label>
+								<label class="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Notiz</label>
 								<input type="text" name="notiz" value={notiz} placeholder="Optional" class="input-base" />
 							</div>
 							<div class="flex gap-3 md:col-span-3">
 								<button type="submit" class="btn-primary">Speichern</button>
-								<button type="button" onclick={() => (editGewerk = null)} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Abbrechen</button>
+								<button type="button" onclick={() => (editGewerk = null)} class="btn-secondary">Abbrechen</button>
 							</div>
 						</form>
 					</div>
@@ -151,17 +151,17 @@
 						<!-- Kopfzeile -->
 						<div class="flex items-center justify-between gap-3">
 							<div class="flex items-center gap-2 flex-wrap">
-								<div class="w-4 h-4 rounded-sm shrink-0" style="background-color: {s.gewerk.farbe}"></div>
-								<span class="font-semibold text-gray-900">{s.gewerk.name}</span>
+								<div class="w-4 h-4 rounded-sm shrink-0 color-dot" style="background-color: {s.gewerk.farbe}"></div>
+								<span class="font-semibold text-stone-900 dark:text-stone-100">{s.gewerk.name}</span>
 								{#if s.gewerk.pauschal}
-									<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">Sammelgewerk</span>
+									<span class="badge-neutral">Sammelgewerk</span>
 								{:else if s.budget > 0}
 									{#if frei < 0}
-										<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Über Budget</span>
+										<span class="badge-danger">Über Budget</span>
 									{:else if v.alleAbgeschlossen}
-										<span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Abgeschlossen</span>
+										<span class="badge-success">Abgeschlossen</span>
 									{:else if frei <= s.budget * 0.2}
-										<span class="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">Knapp</span>
+										<span class="badge-warning">Knapp</span>
 									{/if}
 								{/if}
 							</div>
@@ -174,10 +174,10 @@
 						<!-- Budget / Ist / % -->
 						{#if s.budget > 0 && !s.gewerk.pauschal}
 							<div class="mt-2 flex items-baseline gap-3 text-sm flex-wrap">
-								<span class="text-gray-500">Budget: <span class="font-mono tabular-nums font-medium text-gray-700">{formatCents(s.budget)}</span></span>
-								<span class="text-gray-300">·</span>
-								<span class="text-gray-500">Ist: <span class="font-mono tabular-nums font-medium {pctCls(p)}">{formatCents(s.ist)}</span></span>
-								<span class="text-gray-300">·</span>
+								<span class="text-stone-500 dark:text-stone-400">Budget: <span class="font-mono tabular-nums font-medium text-stone-700 dark:text-stone-300">{formatCents(s.budget)}</span></span>
+								<span class="text-stone-300 dark:text-stone-600">·</span>
+								<span class="text-stone-500 dark:text-stone-400">Ist: <span class="font-mono tabular-nums font-medium {pctCls(p)}">{formatCents(s.ist)}</span></span>
+								<span class="text-stone-300 dark:text-stone-600">·</span>
 								<span class="font-mono tabular-nums font-medium {pctCls(p)}">{p}%</span>
 							</div>
 
@@ -185,36 +185,36 @@
 							{@const pBezahlt = Math.min(100, (s.ist / s.budget) * 100)}
 							{@const pOffen = Math.min(100 - pBezahlt, (v.offen / s.budget) * 100)}
 							{@const pRest = Math.min(100 - pBezahlt - pOffen, (v.restauftrag / s.budget) * 100)}
-							<div class="mt-2 h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+							<div class="mt-2 h-2 w-full rounded-full bg-stone-100 dark:bg-stone-800 overflow-hidden">
 								<div class="flex h-full">
-									{#if pBezahlt > 0}<div class="bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-500" style="width: {pBezahlt}%"></div>{/if}
-									{#if pOffen > 0}<div class="bg-gradient-to-r from-orange-400 to-orange-300 transition-all duration-500" style="width: {pOffen}%"></div>{/if}
-									{#if pRest > 0}<div class="bg-gradient-to-r from-violet-500 to-violet-400 transition-all duration-500" style="width: {pRest}%"></div>{/if}
+									{#if pBezahlt > 0}<div class="bg-gradient-to-r from-(--app-paid) to-(--app-paid-light) transition-all duration-500" style="width: {pBezahlt}%"></div>{/if}
+									{#if pOffen > 0}<div class="bg-gradient-to-r from-(--app-open) to-(--app-open-light) transition-all duration-500" style="width: {pOffen}%"></div>{/if}
+									{#if pRest > 0}<div class="bg-gradient-to-r from-(--app-rest) to-(--app-rest-light) transition-all duration-500" style="width: {pRest}%"></div>{/if}
 								</div>
 							</div>
 
 							<!-- Detail-Zeile -->
-							<div class="mt-1.5 flex flex-wrap gap-3 text-xs text-gray-500">
-								<span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-blue-500"></span>Bezahlt {formatCents(s.ist)}</span>
-								{#if v.offen > 0}<span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-orange-400"></span>Offen {formatCents(v.offen)}</span>{/if}
-								{#if v.restauftrag > 0}<span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-violet-500"></span>Restauftrag {formatCents(v.restauftrag)}</span>{/if}
+							<div class="mt-1.5 flex flex-wrap gap-3 text-xs text-stone-500 dark:text-stone-400">
+								<span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-(--app-paid)"></span>Bezahlt {formatCents(s.ist)}</span>
+								{#if v.offen > 0}<span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-(--app-open)"></span>Offen {formatCents(v.offen)}</span>{/if}
+								{#if v.restauftrag > 0}<span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-(--app-rest)"></span>Restauftrag {formatCents(v.restauftrag)}</span>{/if}
 							</div>
 
 							<!-- Frei -->
 							<div class="mt-2 text-sm">
-								<span class="text-gray-500">Frei: </span>
-								<span class="font-mono tabular-nums font-semibold {frei < 0 ? 'text-red-600' : 'text-green-600'}">{formatCents(frei)}</span>
+								<span class="text-stone-500 dark:text-stone-400">Frei: </span>
+								<span class="font-mono tabular-nums font-semibold {frei < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}">{formatCents(frei)}</span>
 							</div>
 						{:else if !s.gewerk.pauschal}
 							{#if s.ist > 0}
-								<div class="mt-2 text-sm text-gray-500">Ist: <span class="font-mono tabular-nums font-medium text-gray-700">{formatCents(s.ist)}</span> · <span class="text-gray-400">Kein Budget gesetzt</span></div>
+								<div class="mt-2 text-sm text-stone-500 dark:text-stone-400">Ist: <span class="font-mono tabular-nums font-medium text-stone-700 dark:text-stone-300">{formatCents(s.ist)}</span> · <span class="text-stone-400 dark:text-stone-500">Kein Budget gesetzt</span></div>
 							{:else}
-								<div class="mt-2 text-xs text-gray-400">Kein Budget gesetzt</div>
+								<div class="mt-2 text-xs text-stone-400 dark:text-stone-500">Kein Budget gesetzt</div>
 							{/if}
 						{:else}
 							<!-- Sammelgewerk -->
 							{#if s.ist > 0}
-								<div class="mt-2 text-sm text-gray-500">Ist: <span class="font-mono tabular-nums font-medium text-gray-700">{formatCents(s.ist)}</span></div>
+								<div class="mt-2 text-sm text-stone-500 dark:text-stone-400">Ist: <span class="font-mono tabular-nums font-medium text-stone-700 dark:text-stone-300">{formatCents(s.ist)}</span></div>
 							{/if}
 						{/if}
 
@@ -222,11 +222,11 @@
 						{#if rechnungen.length > 0}
 							<div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
 								{#each rechnungen as r}
-									<a href="/rechnungen/{r.id}" class="inline-flex items-center gap-1 text-blue-500 hover:underline">
+									<a href="/rechnungen/{r.id}" class="inline-flex items-center gap-1 text-primary-600 dark:text-primary-400 hover:underline">
 										{r.auftragnehmer}
-										{#if r.bezahlt > 0}<span class="text-green-600">({formatCents(r.bezahlt)})</span>{/if}
-										{#if r.offen > 0}<span class="{r.hatUeberfaellige ? 'text-red-500' : 'text-orange-500'}">+{formatCents(r.offen)} offen</span>{/if}
-										{#if r.hatUeberfaellige}<span class="text-red-500">!</span>{/if}
+										{#if r.bezahlt > 0}<span class="text-green-600 dark:text-green-400">({formatCents(r.bezahlt)})</span>{/if}
+										{#if r.offen > 0}<span class="{r.hatUeberfaellige ? 'text-red-500 dark:text-red-400' : 'text-orange-500 dark:text-orange-400'}">+{formatCents(r.offen)} offen</span>{/if}
+										{#if r.hatUeberfaellige}<span class="text-red-500 dark:text-red-400">!</span>{/if}
 									</a>
 								{/each}
 							</div>
@@ -235,13 +235,13 @@
 						<!-- Tätigkeit-Aufschlüsselung (Sammelgewerke) -->
 						{#if taetigkeiten && taetigkeiten.length > 0}
 							<div class="mt-2">
-								<button onclick={() => zeigeTaetigkeit = zeigeTaetigkeit === s.gewerk.id ? null : s.gewerk.id} class="text-xs text-blue-500 hover:underline">
+								<button onclick={() => zeigeTaetigkeit = zeigeTaetigkeit === s.gewerk.id ? null : s.gewerk.id} class="text-xs text-primary-600 dark:text-primary-400 hover:underline">
 									{zeigeTaetigkeit === s.gewerk.id ? 'Aufschlüsselung verbergen' : 'Aufschlüsselung anzeigen'}
 								</button>
 								{#if zeigeTaetigkeit === s.gewerk.id}
 									<div class="mt-1.5 space-y-0.5">
 										{#each taetigkeiten as t}
-											<div class="flex justify-between text-xs text-gray-500">
+											<div class="flex justify-between text-xs text-stone-500 dark:text-stone-400">
 												<span>{t.taetigkeit}</span>
 												<span class="font-mono tabular-nums">{formatCents(t.betrag)}</span>
 											</div>
@@ -253,7 +253,7 @@
 
 						<!-- Notiz -->
 						{#if notiz}
-							<div class="mt-2 text-xs text-gray-400 italic">{notiz}</div>
+							<div class="mt-2 text-xs text-stone-400 dark:text-stone-500 italic">{notiz}</div>
 						{/if}
 					</div>
 				{/if}
@@ -264,14 +264,14 @@
 	<!-- Summen-Karte -->
 	{#if data.summaries.length > 0}
 		{@const gesamtRestauftrag = Object.values(data.verplantPerGewerk).reduce((s, v) => s + v.restauftrag, 0)}
-		<div class="card p-4 bg-gray-50/50 animate-in">
+		<div class="card p-4 bg-stone-50/50 dark:bg-stone-800/50 animate-in">
 			<div class="flex items-center justify-between flex-wrap gap-3">
-				<span class="text-sm font-semibold text-gray-600">Gesamt</span>
+				<span class="text-sm font-semibold text-stone-600 dark:text-stone-300">Gesamt</span>
 				<div class="flex flex-wrap gap-4 text-sm font-mono tabular-nums">
-					<span class="text-gray-500">Budget: <span class="font-semibold text-gray-700">{formatCents(data.gesamtBudget)}</span></span>
-					<span class="text-gray-500">Ist: <span class="font-semibold text-green-600">{formatCents(data.gesamtIst)}</span></span>
-					{#if data.gesamtOffen > 0}<span class="text-gray-500">Offen: <span class="font-semibold text-orange-500">{formatCents(data.gesamtOffen)}</span></span>{/if}
-					<span class="text-gray-500">Frei: <span class="font-semibold {gesamtFrei < 0 ? 'text-red-600' : 'text-green-600'}">{formatCents(gesamtFrei)}</span></span>
+					<span class="text-stone-500 dark:text-stone-400">Budget: <span class="font-semibold text-stone-700 dark:text-stone-300">{formatCents(data.gesamtBudget)}</span></span>
+					<span class="text-stone-500 dark:text-stone-400">Ist: <span class="font-semibold text-green-600 dark:text-green-400">{formatCents(data.gesamtIst)}</span></span>
+					{#if data.gesamtOffen > 0}<span class="text-stone-500 dark:text-stone-400">Offen: <span class="font-semibold text-orange-500 dark:text-orange-400">{formatCents(data.gesamtOffen)}</span></span>{/if}
+					<span class="text-stone-500 dark:text-stone-400">Frei: <span class="font-semibold {gesamtFrei < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}">{formatCents(gesamtFrei)}</span></span>
 				</div>
 			</div>
 		</div>

@@ -3,14 +3,12 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import Onboarding from '$lib/components/Onboarding.svelte';
+	import { theme } from '$lib/theme.svelte';
 
 	let { children } = $props();
 
 	let menuOpen = $state(false);
 	let showOnboarding = $state(false);
-	let navScrollEl: HTMLElement | null = $state(null);
-	let canScrollLeft = $state(false);
-	let canScrollRight = $state(false);
 
 	// Update-Banner (modul-level: bleibt über Navigationen hinweg erhalten)
 	let updateChecked = false;
@@ -18,6 +16,8 @@
 	let bannerDismissed = $state(false);
 
 	onMount(() => {
+		theme.init();
+
 		if (!localStorage.getItem('onboarding_done')) {
 			showOnboarding = true;
 		}
@@ -50,29 +50,6 @@
 		showOnboarding = false;
 		localStorage.setItem('onboarding_done', '1');
 	}
-
-	function updateScrollIndicators() {
-		if (!navScrollEl) return;
-		canScrollLeft = navScrollEl.scrollLeft > 0;
-		canScrollRight = navScrollEl.scrollLeft < navScrollEl.scrollWidth - navScrollEl.clientWidth - 1;
-	}
-
-	function handleNavWheel(e: WheelEvent) {
-		if (!navScrollEl) return;
-		if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-			e.preventDefault();
-			navScrollEl.scrollLeft += e.deltaY;
-			updateScrollIndicators();
-		}
-	}
-
-	$effect(() => {
-		if (!navScrollEl) return;
-		updateScrollIndicators();
-		const ro = new ResizeObserver(updateScrollIndicators);
-		ro.observe(navScrollEl);
-		return () => ro.disconnect();
-	});
 
 	const nav = [
 		{
@@ -152,95 +129,95 @@
 	<title>RenovApp</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100/50">
-	<nav class="bg-white/80 backdrop-blur-lg border-b border-gray-200/60 shadow-sm sticky top-0 z-30">
-		<div class="max-w-screen-2xl mx-auto px-4 sm:px-6">
-			<div class="flex items-center justify-between h-14">
-				<a href="/" class="flex items-center gap-2.5 font-bold text-lg text-gray-900 hover:text-blue-600 transition-colors shrink-0">
-					<div class="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
-						<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-						</svg>
-					</div>
-					RenovApp
-				</a>
-
-				<!-- Desktop nav -->
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div class="hidden lg:block relative flex-1 min-w-0 ml-4"
-					onwheel={handleNavWheel}>
-					{#if canScrollLeft}
-						<div class="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
-					{/if}
-
-					<div
-						bind:this={navScrollEl}
-						onscroll={updateScrollIndicators}
-						class="flex gap-0.5 overflow-x-auto nav-scrollbar-hide scroll-smooth"
-					>
-						{#each nav as item}
-							<a href={item.href}
-								title={item.label}
-								class="flex items-center gap-1.5 px-2 xl:px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200
-									{isActive(item.href)
-										? 'bg-blue-600 text-white shadow-md'
-										: 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}">
-								<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">{@html item.icon}</svg>
-								<span class="hidden xl:inline">{item.label}</span>
-							</a>
-						{/each}
-					</div>
-
-					{#if canScrollRight}
-						<div class="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
-					{/if}
-				</div>
-
-				<!-- Mobile hamburger -->
-				<button class="lg:hidden p-2 text-gray-500 transition-colors hover:bg-gray-100 rounded-lg" onclick={() => menuOpen = !menuOpen}>
-					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						{#if menuOpen}
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-						{:else}
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-						{/if}
-					</svg>
-				</button>
+<div class="min-h-screen bg-stone-100 dark:bg-stone-950">
+	<!-- Mobile Top-Bar -->
+	<header class="lg:hidden sticky top-0 z-30 flex items-center justify-between h-14 px-4 bg-white/90 backdrop-blur-lg border-b border-stone-200 dark:bg-stone-900/90 dark:border-stone-800">
+		<a href="/" class="flex items-center gap-2.5 font-bold text-lg text-stone-900 dark:text-stone-100">
+			<div class="w-7 h-7 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center shadow-sm">
+				<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+				</svg>
 			</div>
+			RenovApp
+		</a>
+		<button class="p-2 text-stone-500 dark:text-stone-400 transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg" onclick={() => menuOpen = !menuOpen} aria-label="Menü öffnen">
+			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				{#if menuOpen}
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+				{:else}
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+				{/if}
+			</svg>
+		</button>
+	</header>
 
-			<!-- Mobile menu -->
-			{#if menuOpen}
-				<div class="lg:hidden pb-3 pt-2 border-t border-gray-100 space-y-0.5">
-					{#each nav as item}
-						<a href={item.href} onclick={() => menuOpen = false}
-							class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-								{isActive(item.href)
-									? 'bg-blue-600 text-white shadow-sm'
-									: 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}">
-							<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">{@html item.icon}</svg>
-							{item.label}
-						</a>
-					{/each}
-				</div>
-			{/if}
-		</div>
-	</nav>
-
-	<!-- Update-Banner -->
-	{#if updateVerfuegbar && !bannerDismissed && !$page.url.pathname.startsWith('/einstellungen')}
-		<div class="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-3 text-sm text-amber-800">
-			<svg class="w-4 h-4 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" /></svg>
-			<span class="flex-1">Update verfügbar – eine neue Version ist bereit.</span>
-			<a href="/einstellungen" class="font-medium underline hover:text-amber-900 transition-colors">Jetzt installieren</a>
-			<button onclick={dismissUpdateBanner} class="ml-1 text-amber-500 hover:text-amber-800 transition-colors" aria-label="Banner schließen">
-				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-			</button>
-		</div>
+	<!-- Backdrop (mobiler Drawer) -->
+	{#if menuOpen}
+		<button class="lg:hidden fixed inset-0 z-30 bg-black/40" onclick={() => menuOpen = false} aria-label="Menü schließen"></button>
 	{/if}
 
-	<main class="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
-		{@render children()}
-	</main>
+	<!-- Sidebar: dunkel in beiden Themes -->
+	<aside class="fixed inset-y-0 left-0 z-40 w-60 flex flex-col bg-stone-900 text-stone-300 border-r border-stone-800
+		transition-transform duration-200 lg:translate-x-0
+		{menuOpen ? 'translate-x-0' : '-translate-x-full'}">
+		<a href="/" onclick={() => menuOpen = false} class="flex items-center gap-2.5 h-14 px-4 font-bold text-lg text-white border-b border-stone-800 shrink-0 hover:bg-stone-800/50 transition-colors">
+			<div class="w-7 h-7 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center shadow-sm">
+				<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+				</svg>
+			</div>
+			RenovApp
+		</a>
+
+		<nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+			{#each nav as item}
+				<a href={item.href} onclick={() => menuOpen = false}
+					class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
+						{isActive(item.href)
+							? 'bg-primary-600 text-white shadow-md'
+							: 'text-stone-400 hover:text-white hover:bg-stone-800'}">
+					<svg class="w-4.5 h-4.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">{@html item.icon}</svg>
+					{item.label}
+				</a>
+			{/each}
+		</nav>
+
+		<!-- Theme-Toggle -->
+		<div class="p-3 border-t border-stone-800 shrink-0">
+			<button onclick={() => theme.toggle()}
+				class="flex w-full items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-stone-400 hover:text-white hover:bg-stone-800 transition-all duration-200">
+				{#if theme.current === 'dark'}
+					<svg class="w-4.5 h-4.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+					</svg>
+					Heller Modus
+				{:else}
+					<svg class="w-4.5 h-4.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+					</svg>
+					Dunkler Modus
+				{/if}
+			</button>
+		</div>
+	</aside>
+
+	<div class="lg:pl-60">
+		<!-- Update-Banner -->
+		{#if updateVerfuegbar && !bannerDismissed && !$page.url.pathname.startsWith('/einstellungen')}
+			<div class="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-3 text-sm text-amber-800 dark:bg-amber-950/50 dark:border-amber-900 dark:text-amber-200">
+				<svg class="w-4 h-4 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" /></svg>
+				<span class="flex-1">Update verfügbar – eine neue Version ist bereit.</span>
+				<a href="/einstellungen" class="font-medium underline hover:text-amber-900 dark:hover:text-amber-100 transition-colors">Jetzt installieren</a>
+				<button onclick={dismissUpdateBanner} class="ml-1 text-amber-500 hover:text-amber-800 dark:hover:text-amber-200 transition-colors" aria-label="Banner schließen">
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+				</button>
+			</div>
+		{/if}
+
+		<main class="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
+			{@render children()}
+		</main>
+	</div>
 
 	{#if showOnboarding}
 		<Onboarding onClose={closeOnboarding} />

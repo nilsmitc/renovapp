@@ -59,8 +59,8 @@
 </script>
 
 <div class="space-y-6">
-	<h1 class="flex items-center gap-2 text-2xl font-bold text-gray-900">
-		<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+	<h1 class="page-title">
+		<svg class="page-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
 		</svg>
 		Bauleiter-Bericht
@@ -68,7 +68,7 @@
 
 	<!-- Info -->
 	<div class="card p-6 space-y-4">
-		<p class="text-sm text-gray-600">
+		<p class="text-sm text-stone-600 dark:text-stone-300">
 			Erstellt einen professionellen PDF-Bericht mit allen Finanzdaten des Renovierungsprojekts.
 			Der Bericht enthält Budget-Übersicht, Gewerk- und Raum-Aufschlüsselung, Auftragsstatus,
 			Monatsverlauf, Prognose und Lieferanten-Übersicht.
@@ -76,46 +76,46 @@
 
 		<!-- Projektinfo -->
 		<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-			<div class="bg-gray-50 rounded-lg p-3">
-				<div class="text-xs font-medium text-gray-500">Budget</div>
+			<div class="bg-stone-50 dark:bg-stone-800/50 rounded-lg p-3">
+				<div class="text-xs font-medium text-stone-500 dark:text-stone-400">Budget</div>
 				<div class="text-sm font-bold font-mono mt-1">{formatCents(data.gesamtBudget)}</div>
 			</div>
-			<div class="bg-gray-50 rounded-lg p-3">
-				<div class="text-xs font-medium text-gray-500">Ausgaben</div>
+			<div class="bg-stone-50 dark:bg-stone-800/50 rounded-lg p-3">
+				<div class="text-xs font-medium text-stone-500 dark:text-stone-400">Ausgaben</div>
 				<div class="text-sm font-bold font-mono mt-1">{formatCents(data.gesamtIst)}</div>
 			</div>
-			<div class="bg-gray-50 rounded-lg p-3">
-				<div class="text-xs font-medium text-gray-500">Buchungen</div>
+			<div class="bg-stone-50 dark:bg-stone-800/50 rounded-lg p-3">
+				<div class="text-xs font-medium text-stone-500 dark:text-stone-400">Buchungen</div>
 				<div class="text-sm font-bold mt-1">{data.anzahlBuchungen}</div>
 			</div>
-			<div class="bg-gray-50 rounded-lg p-3">
-				<div class="text-xs font-medium text-gray-500">Gewerke</div>
+			<div class="bg-stone-50 dark:bg-stone-800/50 rounded-lg p-3">
+				<div class="text-xs font-medium text-stone-500 dark:text-stone-400">Gewerke</div>
 				<div class="text-sm font-bold mt-1">{data.anzahlGewerke}</div>
 			</div>
 		</div>
 
 		<!-- KI-Option -->
-		<div class="border rounded-lg p-4 {mitAi ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200'}">
+		<div class="border rounded-lg p-4 {mitAi ? 'border-primary-200 bg-primary-50/50 dark:border-primary-900 dark:bg-primary-950/40' : 'border-stone-200 dark:border-stone-700'}">
 			<label class="flex items-start gap-3 cursor-pointer">
 				<input
 					type="checkbox"
 					bind:checked={mitAi}
 					disabled={!data.analyseVorhanden}
-					class="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+					class="mt-0.5 rounded border-stone-300 dark:border-stone-600 text-primary-600 focus:ring-primary-500"
 				/>
 				<div>
-					<div class="text-sm font-medium text-gray-900">
+					<div class="text-sm font-medium text-stone-900 dark:text-stone-100">
 						Mit KI-Analyse
 					</div>
 					{#if data.analyseVorhanden && data.analyseErstellt}
-						<div class="text-xs text-green-600 mt-1">
+						<div class="text-xs text-green-600 dark:text-green-400 mt-1">
 							Analyse vorhanden (erstellt am {formatZeit(data.analyseErstellt)}).
 							Enthält Zusammenfassung, Risikobewertung, Cashflow-Einschätzung und Empfehlungen.
 						</div>
 					{:else}
-						<div class="text-xs text-gray-400 mt-1">
+						<div class="text-xs text-stone-400 dark:text-stone-500 mt-1">
 							Keine KI-Analyse vorhanden. Erstelle eine in Claude Code:
-							<code class="bg-gray-100 px-1 rounded text-gray-600">erstelle Bauleiter-Analyse</code>
+							<code class="bg-stone-100 dark:bg-stone-800 px-1 rounded text-stone-600 dark:text-stone-300">erstelle Bauleiter-Analyse</code>
 						</div>
 					{/if}
 				</div>
@@ -124,28 +124,28 @@
 
 		<!-- Dokumente extrahieren -->
 		{#if data.anzahlPdfs > 0}
-			<div class="border rounded-lg p-4 {data.dokumenteVorhanden || extrahiert ? 'border-green-200 bg-green-50/50' : 'border-gray-200'}">
+			<div class="border rounded-lg p-4 {data.dokumenteVorhanden || extrahiert ? 'border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/40' : 'border-stone-200 dark:border-stone-700'}">
 				<div class="flex items-start gap-3">
-					<svg class="w-5 h-5 mt-0.5 shrink-0 {data.dokumenteVorhanden || extrahiert ? 'text-green-500' : 'text-gray-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<svg class="w-5 h-5 mt-0.5 shrink-0 {data.dokumenteVorhanden || extrahiert ? 'text-green-500 dark:text-green-400' : 'text-stone-400 dark:text-stone-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
 					</svg>
 					<div class="flex-1">
-						<div class="text-sm font-medium text-gray-900">
+						<div class="text-sm font-medium text-stone-900 dark:text-stone-100">
 							Dokumente für KI-Analyse vorbereiten
 						</div>
-						<p class="text-xs text-gray-500 mt-1">
+						<p class="text-xs text-stone-500 dark:text-stone-400 mt-1">
 							Extrahiert Text aus {data.anzahlPdfs} hinterlegten PDF-Dokumenten (Angebote und Rechnungsbelege).
 							Die extrahierten Texte werden von Claude Code bei der KI-Analyse automatisch einbezogen.
 						</p>
 						{#if data.dokumenteVorhanden && data.dokumenteExtrahiert && !extrahiert}
-							<p class="text-xs text-green-600 mt-1">
+							<p class="text-xs text-green-600 dark:text-green-400 mt-1">
 								Zuletzt extrahiert: {formatZeit(data.dokumenteExtrahiert)} ({data.dokumenteAnzahl} Dokumente)
 							</p>
 						{/if}
 						<button
 							onclick={dokumenteExtrahieren}
 							disabled={extrahiertLaeuft}
-							class="mt-2 text-sm px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 inline-flex items-center gap-1.5"
+							class="btn-sm-secondary mt-2 disabled:opacity-50 inline-flex items-center gap-1.5"
 						>
 							{#if extrahiertLaeuft}
 								<svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,7 +183,7 @@
 		</button>
 
 		{#if data.anzahlBuchungen === 0}
-			<p class="text-sm text-yellow-600">
+			<p class="text-sm text-yellow-600 dark:text-yellow-400">
 				Noch keine Buchungen vorhanden. Der Bericht kann erst nach der ersten Buchung erstellt werden.
 			</p>
 		{/if}
@@ -191,50 +191,50 @@
 
 	<!-- Inhalt des Berichts -->
 	<div class="card p-6 space-y-3">
-		<h2 class="text-sm font-semibold text-gray-800">Der Bericht enthält:</h2>
-		<ul class="text-sm text-gray-600 space-y-1.5 list-none">
+		<h2 class="text-sm font-semibold text-stone-800 dark:text-stone-200">Der Bericht enthält:</h2>
+		<ul class="text-sm text-stone-600 dark:text-stone-300 space-y-1.5 list-none">
 			<li class="flex items-center gap-2">
-				<svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+				<svg class="w-4 h-4 text-primary-500 dark:text-primary-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 				Deckblatt mit 8 KPIs, Fortschrittsbalken (Bezahlt/Offen/Restauftrag)
 			</li>
 			{#if mitAi}
 				<li class="flex items-center gap-2">
 					<svg class="w-4 h-4 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
-					<span class="text-purple-700 font-medium">KI-Einschätzung: Zusammenfassung, Risiken, Cashflow, Empfehlungen</span>
+					<span class="text-purple-700 dark:text-purple-400 font-medium">KI-Einschätzung: Zusammenfassung, Risiken, Cashflow, Empfehlungen</span>
 				</li>
 			{/if}
 			<li class="flex items-center gap-2">
-				<svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+				<svg class="w-4 h-4 text-primary-500 dark:text-primary-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 				Budget-Übersicht mit Bezahlt/Offen/Restauftrag/Frei pro Gewerk
 			</li>
 			<li class="flex items-center gap-2">
-				<svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+				<svg class="w-4 h-4 text-primary-500 dark:text-primary-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 				Kategorien-Analyse (Material / Arbeitslohn / Sonstiges)
 			</li>
 			<li class="flex items-center gap-2">
-				<svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+				<svg class="w-4 h-4 text-primary-500 dark:text-primary-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 				Kosten nach Raum (gruppiert nach Geschoss)
 			</li>
 			<li class="flex items-center gap-2">
-				<svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+				<svg class="w-4 h-4 text-primary-500 dark:text-primary-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 				Auftragsstatus mit Nachträgen und nächsten Zahlungen
 			</li>
 			{#if data.hatSteuerDaten}
 				<li class="flex items-center gap-2">
 					<svg class="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-					<span class="text-green-700 font-medium">Steuerliche Auswertung (§35a EStG)</span>
+					<span class="text-green-700 dark:text-green-400 font-medium">Steuerliche Auswertung (§35a EStG)</span>
 				</li>
 			{/if}
 			<li class="flex items-center gap-2">
-				<svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+				<svg class="w-4 h-4 text-primary-500 dark:text-primary-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 				Monatsverlauf mit Ausgaben- und Kumuliert-Charts
 			</li>
 			<li class="flex items-center gap-2">
-				<svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+				<svg class="w-4 h-4 text-primary-500 dark:text-primary-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 				Prognose mit 3-Monats-Burn-Rate, Gewerk-Prognose und bekannten Zahlungen
 			</li>
 			<li class="flex items-center gap-2">
-				<svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+				<svg class="w-4 h-4 text-primary-500 dark:text-primary-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 				Lieferanten-Übersicht mit Zahlungsart
 			</li>
 		</ul>

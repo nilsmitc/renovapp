@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-07-03
+- Neues Design: warme, handwerkliche Farbwelt — Terracotta als Primärfarbe, Stone-Neutraltöne statt Grau
+- Dark Mode mit Umschalter in der Seitenleiste (wird gespeichert, folgt sonst der Systemeinstellung)
+- Neue Navigation: feste Seitenleiste links mit allen Menüpunkten samt Beschriftung, auf Mobilgeräten als ausklappbares Menü
+- Diagramme passen ihre Farben live an das gewählte Theme an (auch Achsen, Raster und Tooltips)
+- Einheitliche Optik: gemeinsame Badges, Hinweisboxen und Buttons auf allen Seiten (vorher teils handgebaut und uneinheitlich)
+- Gewerk-Farbpunkte bekommen einen dezenten Ring, damit dunkle Farben auch im Dark Mode sichtbar bleiben
+
 ## 2026-05-13
 - Lieferanten: Serverfehler beim Anlegen einer Lieferung werden jetzt als Fehlermeldung angezeigt statt still ignoriert (Formular schloss sich ohne Speichern)
 - Buchungen (Neu): "Als bezahlt markieren" (bezahltam) wird jetzt korrekt gespeichert

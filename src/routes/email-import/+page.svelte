@@ -62,13 +62,13 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between flex-wrap gap-3">
 		<div>
-			<h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-				<svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<h1 class="page-title">
+				<svg class="page-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
 				</svg>
 				E-Mail-Import
 			</h1>
-			<p class="text-sm text-gray-500 mt-1">
+			<p class="text-sm text-stone-500 dark:text-stone-400 mt-1">
 				Rechnungen aus Thunderbird importieren — nur Mails von bekannten Lieferanten, letzte 14 Tage.
 			</p>
 		</div>
@@ -84,7 +84,7 @@
 			<button
 				type="submit"
 				disabled={scanLaeuft || scanDeaktiviert}
-				class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-sm">
+				class="btn-primary flex items-center gap-2 px-5 py-2.5 disabled:opacity-60 disabled:cursor-not-allowed">
 				{#if scanLaeuft}
 					<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
 						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -103,7 +103,7 @@
 
 	<!-- Thunderbird nicht gefunden -->
 	{#if tbNichtGefunden}
-		<div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-amber-800 text-sm flex items-center gap-2">
+		<div class="alert-warning flex items-center gap-2">
 			<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
 			</svg>
@@ -113,21 +113,21 @@
 	<!-- Postfach-Konfiguration -->
 	{:else if !configVorhanden || configOffen}
 		<div class="card p-5 space-y-4">
-			<h2 class="text-base font-semibold text-gray-800 flex items-center gap-2">
-				<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<h2 class="text-base font-semibold text-stone-800 dark:text-stone-200 flex items-center gap-2">
+				<svg class="w-5 h-5 text-stone-500 dark:text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
 				</svg>
 				Postfach auswählen
 			</h2>
 
 			{#if form?.configFehler}
-				<div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">
+				<div class="alert-danger">
 					{form.configFehler}
 				</div>
 			{/if}
 
 			{#if form?.configGespeichert}
-				<div class="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-green-700 text-sm flex items-center gap-2">
+				<div class="alert-success flex items-center gap-2">
 					<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
 					</svg>
@@ -139,7 +139,7 @@
 				<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 					<!-- Profil -->
 					<div>
-						<label for="profil" class="block text-xs font-medium text-gray-600 mb-1">Profil</label>
+						<label for="profil" class="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">Profil</label>
 						<select
 							id="profil"
 							name="profil"
@@ -153,7 +153,7 @@
 
 					<!-- Konto -->
 					<div>
-						<label for="konto" class="block text-xs font-medium text-gray-600 mb-1">Konto</label>
+						<label for="konto" class="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">Konto</label>
 						<select
 							id="konto"
 							name="konto"
@@ -170,7 +170,7 @@
 
 					<!-- Ordner -->
 					<div>
-						<label for="ordner" class="block text-xs font-medium text-gray-600 mb-1">Ordner</label>
+						<label for="ordner" class="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">Ordner</label>
 						<select
 							id="ordner"
 							name="ordner"
@@ -204,18 +204,18 @@
 
 	<!-- Konfiguriertes Postfach anzeigen -->
 	{:else if configVorhanden}
-		<div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 rounded-lg px-4 py-2.5 border border-gray-200">
-			<svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+		<div class="flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-stone-800/50 rounded-lg px-4 py-2.5 border border-stone-200 dark:border-stone-700">
+			<svg class="w-4 h-4 shrink-0 text-stone-400 dark:text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
 			</svg>
 			<span>
-				Postfach: <span class="font-medium text-gray-700">{data.emailConfig?.konto}</span>
-				/ <span class="font-medium text-gray-700">{data.emailConfig?.ordner}</span>
+				Postfach: <span class="font-medium text-stone-700 dark:text-stone-300">{data.emailConfig?.konto}</span>
+				/ <span class="font-medium text-stone-700 dark:text-stone-300">{data.emailConfig?.ordner}</span>
 			</span>
 			<button
 				type="button"
 				onclick={() => configOffen = true}
-				class="ml-auto text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors">
+				class="ml-auto text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 text-xs font-medium transition-colors">
 				Ändern
 			</button>
 		</div>
@@ -223,14 +223,14 @@
 
 	<!-- Fehlermeldung Scan -->
 	{#if form?.scanFehler}
-		<div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">
+		<div class="alert-danger">
 			<strong>Fehler:</strong> {form.scanFehler}
 		</div>
 	{/if}
 
 	<!-- Scan-Ergebnis Banner -->
 	{#if form?.gescannt}
-		<div class="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-green-800 text-sm flex items-center gap-2">
+		<div class="alert-success flex items-center gap-2">
 			<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
 			</svg>
@@ -241,7 +241,7 @@
 
 	<!-- Status letzter Scan -->
 	{#if data.cache}
-		<div class="text-xs text-gray-400 -mt-2">
+		<div class="text-xs text-stone-400 dark:text-stone-500 -mt-2">
 			Letzter Scan: {formatGescannt(data.cache.gescannt)}
 			· {data.cache.kandidaten.length} Kandidaten gesamt
 			· {offeneKandidaten.length} offen
@@ -250,16 +250,16 @@
 
 	<!-- Keine Lieferanten -->
 	{#if data.lieferanten.length === 0}
-		<div class="card text-center py-10 text-gray-500">
+		<div class="card text-center py-10 text-stone-500 dark:text-stone-400">
 			<p class="font-medium">Noch keine Lieferanten angelegt.</p>
-			<p class="text-sm mt-1">Bitte zuerst unter <a href="/lieferanten" class="text-blue-600 hover:underline">Lieferanten</a> die Händler anlegen.</p>
+			<p class="text-sm mt-1">Bitte zuerst unter <a href="/lieferanten" class="text-primary-600 dark:text-primary-400 hover:underline">Lieferanten</a> die Händler anlegen.</p>
 		</div>
 	{/if}
 
 	<!-- Offene Kandidaten -->
 	{#if offeneKandidaten.length > 0}
 		<div class="space-y-4">
-			<h2 class="text-base font-semibold text-gray-800">Zu prüfen ({offeneKandidaten.length})</h2>
+			<h2 class="text-base font-semibold text-stone-800 dark:text-stone-200">Zu prüfen ({offeneKandidaten.length})</h2>
 
 			{#each offeneKandidaten as k (k.id)}
 				<div class="card">
@@ -267,20 +267,20 @@
 					<div class="flex items-start justify-between gap-4 mb-4">
 						<div class="min-w-0">
 							<div class="flex items-center gap-2 flex-wrap">
-								<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+								<span class="badge-info">
 									{k.lieferantName}
 								</span>
-								<span class="text-xs text-gray-400">{k.datum}</span>
+								<span class="text-xs text-stone-400 dark:text-stone-500">{k.datum}</span>
 							</div>
-							<p class="font-medium text-gray-900 mt-1 truncate">{k.betreff}</p>
-							<p class="text-xs text-gray-400 truncate">{k.absender}</p>
+							<p class="font-medium text-stone-900 dark:text-stone-100 mt-1 truncate">{k.betreff}</p>
+							<p class="text-xs text-stone-400 dark:text-stone-500 truncate">{k.absender}</p>
 						</div>
 						<div class="shrink-0 text-right">
 							{#if k.extraktion.betrag}
-								<p class="text-lg font-bold text-gray-900 tabular-nums">{formatCents(k.extraktion.betrag)}</p>
-								<p class="text-xs text-gray-400">aus PDF</p>
+								<p class="text-lg font-bold text-stone-900 dark:text-stone-100 tabular-nums">{formatCents(k.extraktion.betrag)}</p>
+								<p class="text-xs text-stone-400 dark:text-stone-500">aus PDF</p>
 							{:else}
-								<p class="text-sm text-amber-600 font-medium">Betrag nicht erkannt</p>
+								<p class="text-sm text-amber-600 dark:text-amber-400 font-medium">Betrag nicht erkannt</p>
 							{/if}
 						</div>
 					</div>
@@ -299,48 +299,48 @@
 									await update();
 								};
 							}}
-							class="border-t border-blue-100 pt-4 space-y-3 bg-blue-50 -mx-4 -mb-4 px-4 pb-4 rounded-b-lg">
+							class="border-t border-primary-200 dark:border-primary-900 pt-4 space-y-3 bg-primary-50/50 dark:bg-primary-950/30 -mx-4 -mb-4 px-4 pb-4 rounded-b-lg">
 
 							<input type="hidden" name="id" value={k.id} />
 
 							<div class="grid grid-cols-2 gap-3">
 								<!-- Datum -->
 								<div>
-									<label class="block text-xs font-medium text-gray-700 mb-1">Datum</label>
+									<label class="block text-xs font-medium text-stone-700 dark:text-stone-300 mb-1">Datum</label>
 									<input
 										type="date"
 										name="datum"
 										value={k.extraktion.datum ?? k.datum}
 										required
-										class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+										class="input-sm w-full" />
 								</div>
 								<!-- Betrag -->
 								<div>
-									<label class="block text-xs font-medium text-gray-700 mb-1">Betrag (€)</label>
+									<label class="block text-xs font-medium text-stone-700 dark:text-stone-300 mb-1">Betrag (€)</label>
 									<input
 										type="text"
 										name="betrag"
 										value={k.extraktion.betrag ? (k.extraktion.betrag / 100).toFixed(2).replace('.', ',') : ''}
 										placeholder="0,00"
-										class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+										class="input-sm w-full" />
 								</div>
 								<!-- Rechnungsnummer -->
 								<div>
-									<label class="block text-xs font-medium text-gray-700 mb-1">Rechnungsnummer</label>
+									<label class="block text-xs font-medium text-stone-700 dark:text-stone-300 mb-1">Rechnungsnummer</label>
 									<input
 										type="text"
 										name="rechnungsnummer"
 										value={k.extraktion.rechnungsnummer ?? ''}
 										placeholder="optional"
-										class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+										class="input-sm w-full" />
 								</div>
 								<!-- Gewerk -->
 								<div>
-									<label class="block text-xs font-medium text-gray-700 mb-1">Gewerk <span class="text-red-500">*</span></label>
+									<label class="block text-xs font-medium text-stone-700 dark:text-stone-300 mb-1">Gewerk <span class="text-red-500 dark:text-red-400">*</span></label>
 									<select
 										name="gewerk"
 										required
-										class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+										class="input-sm w-full">
 										<option value="">– auswählen –</option>
 										{#each data.gewerke as g}
 											<option value={g.id}>{g.name}</option>
@@ -349,10 +349,10 @@
 								</div>
 								<!-- Lieferant (ggf. ändern) -->
 								<div>
-									<label class="block text-xs font-medium text-gray-700 mb-1">Lieferant</label>
+									<label class="block text-xs font-medium text-stone-700 dark:text-stone-300 mb-1">Lieferant</label>
 									<select
 										name="lieferantId"
-										class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+										class="input-sm w-full">
 										{#each data.lieferanten as l}
 											<option value={l.id} selected={l.id === k.lieferantId}>{l.name}</option>
 										{/each}
@@ -360,24 +360,24 @@
 								</div>
 								<!-- Beschreibung -->
 								<div>
-									<label class="block text-xs font-medium text-gray-700 mb-1">Beschreibung</label>
+									<label class="block text-xs font-medium text-stone-700 dark:text-stone-300 mb-1">Beschreibung</label>
 									<input
 										type="text"
 										name="beschreibung"
 										value={k.betreff}
 										maxlength="120"
-										class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+										class="input-sm w-full" />
 								</div>
 							</div>
 
 							{#if form?.uebernehmenFehler}
-								<p class="text-xs text-red-600">{form.uebernehmenFehler}</p>
+								<p class="text-xs text-red-600 dark:text-red-400">{form.uebernehmenFehler}</p>
 							{/if}
 
 							<div class="flex gap-2 pt-1">
 								<button
 									type="submit"
-									class="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+									class="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 dark:hover:bg-green-500 transition-colors">
 									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
 									</svg>
@@ -386,32 +386,32 @@
 								<button
 									type="button"
 									onclick={() => aktivesFormular = null}
-									class="px-4 py-2 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+									class="px-4 py-2 text-stone-600 dark:text-stone-300 rounded-lg text-sm font-medium hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors">
 									Abbrechen
 								</button>
 							</div>
 						</form>
 					{:else}
 						<!-- Aktions-Buttons -->
-						<div class="flex items-center gap-2 border-t border-gray-100 pt-3">
+						<div class="flex items-center gap-2 border-t border-stone-100 dark:border-stone-800 pt-3">
 							{#if k.extraktion.rechnungsnummer}
-								<span class="text-xs text-gray-400">Rg. {k.extraktion.rechnungsnummer}</span>
-								<span class="text-gray-200">·</span>
+								<span class="text-xs text-stone-400 dark:text-stone-500">Rg. {k.extraktion.rechnungsnummer}</span>
+								<span class="text-stone-200 dark:text-stone-700">·</span>
 							{/if}
-							<span class="text-xs text-gray-400 truncate flex-1">{k.pdfDateiname}</span>
+							<span class="text-xs text-stone-400 dark:text-stone-500 truncate flex-1">{k.pdfDateiname}</span>
 
 							<form method="POST" action="?/ueberspringen" use:enhance>
 								<input type="hidden" name="id" value={k.id} />
 								<button
 									type="submit"
-									class="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
+									class="px-3 py-1.5 text-sm text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors">
 									Überspringen
 								</button>
 							</form>
 							<button
 								type="button"
 								onclick={() => aktivesFormular = k.id}
-								class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+								class="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-500 transition-colors">
 								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
 								</svg>
@@ -424,15 +424,15 @@
 		</div>
 	{:else if data.cache && offeneKandidaten.length === 0}
 		<div class="card text-center py-10">
-			<svg class="w-10 h-10 text-green-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<svg class="w-10 h-10 text-green-400 dark:text-green-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
 			</svg>
-			<p class="font-medium text-gray-700">Alles erledigt</p>
-			<p class="text-sm text-gray-400 mt-1">Alle Kandidaten wurden übernommen oder übersprungen.</p>
+			<p class="font-medium text-stone-700 dark:text-stone-300">Alles erledigt</p>
+			<p class="text-sm text-stone-400 dark:text-stone-500 mt-1">Alle Kandidaten wurden übernommen oder übersprungen.</p>
 		</div>
 	{:else if !data.cache && configVorhanden}
-		<div class="card text-center py-12 text-gray-400">
-			<svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+		<div class="card text-center py-12 text-stone-400 dark:text-stone-500">
+			<svg class="w-12 h-12 mx-auto mb-4 text-stone-300 dark:text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
 			</svg>
 			<p class="font-medium">Noch kein Scan durchgeführt</p>
@@ -443,24 +443,24 @@
 	<!-- Erledigte (zusammengeklappt) -->
 	{#if erledigteKandidaten.length > 0}
 		<details class="card">
-			<summary class="cursor-pointer text-sm font-medium text-gray-500 select-none">
+			<summary class="cursor-pointer text-sm font-medium text-stone-500 dark:text-stone-400 select-none">
 				Erledigt ({erledigteKandidaten.length})
 			</summary>
 			<div class="mt-3 space-y-2">
 				{#each erledigteKandidaten as k (k.id)}
-					<div class="flex items-center gap-3 py-2 border-t border-gray-100">
+					<div class="flex items-center gap-3 py-2 border-t border-stone-100 dark:border-stone-800">
 						{#if k.uebernommen}
-							<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">
+							<span class="badge-success">
 								<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
 								Übernommen
 							</span>
 						{:else}
-							<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500">
+							<span class="badge-neutral">
 								Übersprungen
 							</span>
 						{/if}
-						<span class="text-sm text-gray-600 truncate">{k.betreff}</span>
-						<span class="text-xs text-gray-400 shrink-0">{k.datum}</span>
+						<span class="text-sm text-stone-600 dark:text-stone-400 truncate">{k.betreff}</span>
+						<span class="text-xs text-stone-400 dark:text-stone-500 shrink-0">{k.datum}</span>
 					</div>
 				{/each}
 			</div>

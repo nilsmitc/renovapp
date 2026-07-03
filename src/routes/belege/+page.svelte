@@ -61,10 +61,10 @@
 		buchung: 'Buchung', abschlag: 'Abschlag', lieferung: 'Lieferung', angebot: 'Angebot'
 	};
 	const typBadgeCls: Record<string, string> = {
-		buchung: 'bg-green-100 text-green-700',
-		abschlag: 'bg-blue-100 text-blue-700',
-		lieferung: 'bg-violet-100 text-violet-700',
-		angebot: 'bg-orange-100 text-orange-700'
+		buchung: 'badge-success',
+		abschlag: 'badge-info',
+		lieferung: 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+		angebot: 'badge-warning'
 	};
 
 	const typFilterOptions: { key: typeof typFilter; label: string }[] = [
@@ -219,14 +219,16 @@
 <div class="space-y-6" style="padding-bottom: {auswahlModus ? '6rem' : '0'}">
 	<!-- Header -->
 	<div class="flex items-center gap-3">
-		<svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
-		<h1 class="text-2xl font-bold text-gray-900">Belege</h1>
+		<h1 class="page-title">
+			<svg class="page-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
+			Belege
+		</h1>
 		<div class="ml-auto">
 			<button
 				onclick={toggleAuswahlModus}
 				title="Belege für den Export auswählen (z. B. für BAFA oder Energieberater)"
 				class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
-					{auswahlModus ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}"
+					{auswahlModus ? 'bg-primary-600 text-white' : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50 dark:bg-stone-800 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:border-stone-600'}"
 			>
 				{#if auswahlModus}
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -243,16 +245,16 @@
 	{#if data.eintraege.length > 0 || data.fehlend.gesamt > 0}
 		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger">
 			<div class="kpi-card animate-in">
-				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
+				<div class="flex items-center gap-1.5 text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wide">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
 					Belege gesamt
 				</div>
 				<div class="text-xl font-bold font-mono mt-1">{data.stats.gesamt}</div>
-				<div class="text-xs text-gray-400 mt-1">{data.eintraege.length} {data.eintraege.length === 1 ? 'Eintrag' : 'Einträge'}</div>
+				<div class="text-xs text-stone-400 dark:text-stone-500 mt-1">{data.eintraege.length} {data.eintraege.length === 1 ? 'Eintrag' : 'Einträge'}</div>
 			</div>
 
 			<div class="kpi-card animate-in">
-				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
+				<div class="flex items-center gap-1.5 text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wide">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>
 					Belegter Betrag
 				</div>
@@ -260,20 +262,20 @@
 			</div>
 
 			<div class="kpi-card animate-in">
-				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
+				<div class="flex items-center gap-1.5 text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wide">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" /></svg>
 					Nach Typ
 				</div>
 				<div class="text-sm font-mono mt-2 space-y-0.5">
-					<div class="flex justify-between"><span class="text-gray-500">Buchungen</span><span class="font-semibold">{data.stats.buchungen}</span></div>
-					<div class="flex justify-between"><span class="text-gray-500">Abschläge</span><span class="font-semibold">{data.stats.abschlaege}</span></div>
-					<div class="flex justify-between"><span class="text-gray-500">Lieferungen</span><span class="font-semibold">{data.stats.lieferungen}</span></div>
-					<div class="flex justify-between"><span class="text-gray-500">Angebote</span><span class="font-semibold">{data.stats.angebote}</span></div>
+					<div class="flex justify-between"><span class="text-stone-500 dark:text-stone-400">Buchungen</span><span class="font-semibold">{data.stats.buchungen}</span></div>
+					<div class="flex justify-between"><span class="text-stone-500 dark:text-stone-400">Abschläge</span><span class="font-semibold">{data.stats.abschlaege}</span></div>
+					<div class="flex justify-between"><span class="text-stone-500 dark:text-stone-400">Lieferungen</span><span class="font-semibold">{data.stats.lieferungen}</span></div>
+					<div class="flex justify-between"><span class="text-stone-500 dark:text-stone-400">Angebote</span><span class="font-semibold">{data.stats.angebote}</span></div>
 				</div>
 			</div>
 
 			<div class="kpi-card animate-in">
-				<div class="flex items-center gap-1.5 text-xs font-medium {data.fehlend.gesamt > 0 ? 'text-amber-500' : 'text-green-500'} uppercase tracking-wide">
+				<div class="flex items-center gap-1.5 text-xs font-medium {data.fehlend.gesamt > 0 ? 'text-amber-500 dark:text-amber-400' : 'text-green-500 dark:text-green-400'} uppercase tracking-wide">
 					{#if data.fehlend.gesamt > 0}
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
 					{:else}
@@ -281,22 +283,22 @@
 					{/if}
 					Fehlende Belege
 				</div>
-				<div class="text-xl font-bold font-mono mt-1 {data.fehlend.gesamt > 0 ? 'text-amber-600' : 'text-green-600'}">{data.fehlend.gesamt}</div>
+				<div class="text-xl font-bold font-mono mt-1 {data.fehlend.gesamt > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400'}">{data.fehlend.gesamt}</div>
 				{#if data.fehlend.gesamt > 0}
-					<div class="text-xs text-gray-400 mt-1">
+					<div class="text-xs text-stone-400 dark:text-stone-500 mt-1">
 						{#if data.fehlend.buchungen > 0}{data.fehlend.buchungen} Buchungen{/if}
 						{#if data.fehlend.abschlaege > 0}{data.fehlend.buchungen > 0 ? ' · ' : ''}{data.fehlend.abschlaege} Abschläge{/if}
 						{#if data.fehlend.lieferungen > 0}{(data.fehlend.buchungen > 0 || data.fehlend.abschlaege > 0) ? ' · ' : ''}{data.fehlend.lieferungen} Lieferungen{/if}
 					</div>
 				{:else}
-					<div class="text-xs text-green-500 mt-1">Alle Einträge belegt</div>
+					<div class="text-xs text-green-500 dark:text-green-400 mt-1">Alle Einträge belegt</div>
 				{/if}
 			</div>
 		</div>
 	{/if}
 
 	<!-- Filter -->
-	<div class="flex flex-wrap gap-3 bg-white p-3 rounded-lg shadow-sm border border-gray-200 items-end animate-in">
+	<div class="flex flex-wrap gap-3 bg-white p-3 rounded-lg shadow-sm border border-stone-200 items-end animate-in dark:bg-stone-900 dark:border-stone-700">
 		<select onchange={(e) => applyFilter('gewerk', e.currentTarget.value)} class="input-sm">
 			<option value="">Alle Gewerke</option>
 			{#each data.gewerke as g}
@@ -304,12 +306,12 @@
 			{/each}
 		</select>
 
-		<div class="flex overflow-x-auto rounded-lg border border-gray-200">
+		<div class="flex overflow-x-auto rounded-lg border border-stone-200 dark:border-stone-700">
 			{#each typFilterOptions as opt}
 				<button
 					onclick={() => (typFilter = opt.key)}
 					class="whitespace-nowrap shrink-0 px-3 py-1.5 text-sm font-medium transition-colors
-						{typFilter === opt.key ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}"
+						{typFilter === opt.key ? 'bg-primary-600 text-white' : 'bg-white text-stone-600 hover:bg-stone-50 dark:bg-stone-800 dark:text-stone-400 dark:hover:bg-stone-700'}"
 				>
 					{opt.label}
 				</button>
@@ -323,19 +325,19 @@
 		</select>
 
 		<div class="relative flex-1 min-w-40">
-			<svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+			<svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
 			<input type="text" bind:value={suche} placeholder="Suche..." class="input-sm pl-8 w-full" />
 		</div>
 	</div>
 
 	<!-- Inhalt -->
 	{#if data.eintraege.length === 0}
-		<div class="card px-4 py-12 text-center text-gray-400 text-sm">
-			<svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
+		<div class="card px-4 py-12 text-center text-stone-400 dark:text-stone-500 text-sm">
+			<svg class="w-12 h-12 mx-auto mb-2 text-stone-300 dark:text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
 			Keine Belege vorhanden
 		</div>
 	{:else if gefilterteEintraege.length === 0}
-		<div class="card px-4 py-10 text-center text-gray-400 text-sm">
+		<div class="card px-4 py-10 text-center text-stone-400 dark:text-stone-500 text-sm">
 			Keine Belege für diesen Filter
 		</div>
 	{:else}
@@ -345,11 +347,11 @@
 					<!-- Gruppen-Header -->
 					<div class="flex items-center gap-3 px-1 mb-3">
 						{#if gruppenFarbe(key)}
-							<div class="w-3 h-3 rounded-full shrink-0" style="background-color: {gruppenFarbe(key)}"></div>
+							<div class="w-3 h-3 rounded-full shrink-0 color-dot" style="background-color: {gruppenFarbe(key)}"></div>
 						{/if}
-						<span class="text-sm font-semibold text-gray-700">{gruppenLabel(key)}</span>
-						<span class="text-xs text-gray-400">{eintraege.length} {eintraege.length === 1 ? 'Eintrag' : 'Einträge'}</span>
-						<div class="flex-1 border-t border-gray-200"></div>
+						<span class="text-sm font-semibold text-stone-700 dark:text-stone-300">{gruppenLabel(key)}</span>
+						<span class="text-xs text-stone-400 dark:text-stone-500">{eintraege.length} {eintraege.length === 1 ? 'Eintrag' : 'Einträge'}</span>
+						<div class="flex-1 border-t border-stone-200 dark:border-stone-700"></div>
 					</div>
 
 					<!-- Einträge -->
@@ -361,8 +363,8 @@
 							<!-- svelte-ignore a11y_click_events_have_key_events -->
 							<div
 								class="card p-4 transition-all
-									{auswahlModus ? 'cursor-pointer select-none' : 'hover:shadow-md hover:border-gray-300'}
-									{gewaehlt ? 'border-blue-400 bg-blue-50 shadow-sm' : ''}"
+									{auswahlModus ? 'cursor-pointer select-none' : 'hover:shadow-md hover:border-stone-300 dark:hover:border-stone-700'}
+									{gewaehlt ? 'border-primary-400 bg-primary-50 shadow-sm dark:border-primary-600 dark:bg-primary-900/20' : ''}"
 								onclick={auswahlModus ? () => toggleEintrag(eintrag.key) : undefined}
 							>
 								<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
@@ -370,7 +372,7 @@
 									<div class="flex items-start gap-3 flex-1 min-w-0">
 										{#if auswahlModus}
 											<div class="shrink-0 mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors
-												{gewaehlt ? 'bg-blue-600 border-blue-600' : 'border-gray-400 bg-white'}">
+												{gewaehlt ? 'bg-primary-600 border-primary-600' : 'border-stone-400 bg-white dark:bg-stone-800 dark:border-stone-600'}">
 												{#if gewaehlt}
 													<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
 												{/if}
@@ -379,26 +381,26 @@
 										<div class="flex-1 min-w-0">
 											<div class="flex items-center gap-2 flex-wrap">
 												{#if gFarbe}
-													<div class="w-3 h-3 rounded-sm shrink-0" style="background-color: {gFarbe}"></div>
+													<div class="w-3 h-3 rounded-sm shrink-0 color-dot" style="background-color: {gFarbe}"></div>
 												{/if}
-												<span class="font-medium text-gray-900">{eintrag.beschreibung}</span>
-												<span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium {typBadgeCls[eintrag.typ]}">
+												<span class="font-medium text-stone-900 dark:text-stone-100">{eintrag.beschreibung}</span>
+												<span class="{typBadgeCls[eintrag.typ]}">
 													{typLabel[eintrag.typ]}
 												</span>
 												{#if eintrag.exportiert}
-													<span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700">
+													<span class="badge-success">
 														<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
 														Exportiert
 													</span>
 												{/if}
 											</div>
-											<div class="text-sm text-gray-500 mt-0.5">
+											<div class="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
 												{eintrag.datum ? formatDatum(eintrag.datum) : '—'} · {eintrag.gewerkName} · <span class="font-mono tabular-nums">{formatCents(eintrag.betrag)}</span>
 											</div>
 										</div>
 									</div>
 									{#if !auswahlModus}
-										<a href={eintrag.editHref} class="text-sm text-blue-500 hover:underline shrink-0">
+										<a href={eintrag.editHref} class="text-sm text-primary-600 dark:text-primary-400 hover:underline shrink-0">
 											{eintrag.typ === 'buchung' ? 'Bearbeiten' : 'Öffnen'}
 										</a>
 									{/if}
@@ -408,17 +410,17 @@
 								<div class="flex flex-wrap gap-2 mt-3 {auswahlModus ? 'pointer-events-none' : ''}">
 									{#each eintrag.belege as beleg}
 										<a href={beleg.href} target="_blank" rel="noopener noreferrer"
-											class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm hover:bg-gray-100 hover:border-gray-300 transition-all">
+											class="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm hover:bg-stone-100 hover:border-stone-300 transition-all dark:bg-stone-800/50 dark:border-stone-700 dark:hover:bg-stone-700 dark:hover:border-stone-600">
 											{#if isImage(beleg.dateiname)}
 												<img src={beleg.href} alt={beleg.dateiname} loading="lazy" class="w-10 h-10 object-cover rounded" onerror={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
 											{:else if isPdf(beleg.dateiname)}
-												<svg class="w-5 h-5 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+												<svg class="w-5 h-5 text-red-500 dark:text-red-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
 													<path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
 												</svg>
 											{:else}
-												<svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+												<svg class="w-5 h-5 text-stone-400 dark:text-stone-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
 											{/if}
-											<span class="text-blue-600 truncate max-w-48">{beleg.dateiname}</span>
+											<span class="text-primary-600 dark:text-primary-400 truncate max-w-48">{beleg.dateiname}</span>
 										</a>
 									{/each}
 								</div>
@@ -432,7 +434,7 @@
 
 	<!-- Statistik -->
 	{#if data.eintraege.length > 0}
-		<div class="text-sm text-gray-400 text-right">
+		<div class="text-sm text-stone-400 dark:text-stone-500 text-right">
 			{gefilterteEintraege.length} von {data.eintraege.length} Einträgen · {totalBelege} {totalBelege === 1 ? 'Beleg' : 'Belege'}
 		</div>
 	{/if}
@@ -443,14 +445,14 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
-		class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg px-4 py-3"
+		class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-stone-200 shadow-lg px-4 py-3 dark:bg-stone-900 dark:border-stone-700"
 		onclick={(e) => e.stopPropagation()}
 	>
 		<div class="max-w-5xl mx-auto space-y-2">
 			<!-- Meldung -->
 			{#if exportMeldung}
 				<div class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm
-					{exportMeldung.typ === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}">
+					{exportMeldung.typ === 'success' ? 'bg-green-50 text-green-800 border border-green-200 dark:bg-green-950/40 dark:border-green-900 dark:text-green-200' : 'bg-red-50 text-red-800 border border-red-200 dark:bg-red-950/40 dark:border-red-900 dark:text-red-200'}">
 					{#if exportMeldung.typ === 'success'}
 						<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 					{:else}
@@ -462,12 +464,12 @@
 
 			<div class="flex flex-wrap items-center gap-2">
 				<!-- Zähler -->
-				<div class="text-sm text-gray-700 font-medium mr-1">
+				<div class="text-sm text-stone-700 dark:text-stone-300 font-medium mr-1">
 					{#if ausgewaehlt.size === 0}
 						Nichts gewählt
 					{:else}
-						<span class="text-blue-700">{ausgewaehlt.size} {ausgewaehlt.size === 1 ? 'Eintrag' : 'Einträge'}</span>
-						<span class="text-gray-400"> · {ausgewaehlteDateien} {ausgewaehlteDateien === 1 ? 'Datei' : 'Dateien'}</span>
+						<span class="text-primary-700 dark:text-primary-300">{ausgewaehlt.size} {ausgewaehlt.size === 1 ? 'Eintrag' : 'Einträge'}</span>
+						<span class="text-stone-400 dark:text-stone-500"> · {ausgewaehlteDateien} {ausgewaehlteDateien === 1 ? 'Datei' : 'Dateien'}</span>
 					{/if}
 				</div>
 
@@ -475,25 +477,25 @@
 				<div class="relative">
 					<button
 						onclick={() => (smartDropdownOffen = !smartDropdownOffen)}
-						class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+						class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200 transition-colors dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
 					>
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
 						Smart
 						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
 					</button>
 					{#if smartDropdownOffen}
-						<div class="absolute bottom-full mb-1 left-0 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-56 z-10">
-							<button onclick={() => smartAlleEintraege('sichtbar')} class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+						<div class="absolute bottom-full mb-1 left-0 bg-white rounded-lg shadow-lg border border-stone-200 py-1 w-56 z-10 dark:bg-stone-900 dark:border-stone-700">
+							<button onclick={() => smartAlleEintraege('sichtbar')} class="w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-stone-800">
 								Alle sichtbaren ({gefilterteEintraege.length})
 							</button>
-							<button onclick={() => smartAlleEintraege('energie')} class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+							<button onclick={() => smartAlleEintraege('energie')} class="w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-stone-800">
 								Energie-Gewerke (BAFA)
-								<span class="text-xs text-gray-400 block">Kälte · Heizung · PV</span>
+								<span class="text-xs text-stone-400 dark:text-stone-500 block">Kälte · Heizung · PV</span>
 							</button>
-							<button onclick={() => smartAlleEintraege('abschlaege')} class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+							<button onclick={() => smartAlleEintraege('abschlaege')} class="w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-stone-800">
 								Alle Abschläge & Rechnungen
 							</button>
-							<button onclick={() => smartAlleEintraege('nichtExportiert')} class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+							<button onclick={() => smartAlleEintraege('nichtExportiert')} class="w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-stone-800">
 								Noch nicht exportiert
 							</button>
 						</div>
@@ -502,7 +504,7 @@
 
 				<!-- Keine abwählen -->
 				{#if ausgewaehlt.size > 0}
-					<button onclick={alleAbwaehlen} class="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+					<button onclick={alleAbwaehlen} class="px-3 py-1.5 text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200 transition-colors">
 						Keine
 					</button>
 				{/if}
@@ -514,7 +516,7 @@
 					onclick={exportiereZip}
 					disabled={ausgewaehlt.size === 0 || exportLaeuft}
 					class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
-						{ausgewaehlt.size === 0 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60'}"
+						{ausgewaehlt.size === 0 ? 'bg-stone-100 text-stone-400 cursor-not-allowed dark:bg-stone-800 dark:text-stone-600' : 'bg-primary-600 text-white hover:bg-primary-500 disabled:opacity-60'}"
 				>
 					{#if exportLaeuft}
 						<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -528,7 +530,7 @@
 					onclick={exportiereEmail}
 					disabled={ausgewaehlt.size === 0 || exportLaeuft}
 					class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
-						{ausgewaehlt.size === 0 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60'}"
+						{ausgewaehlt.size === 0 ? 'bg-stone-100 text-stone-400 cursor-not-allowed dark:bg-stone-800 dark:text-stone-600' : 'bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60'}"
 				>
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
 					Thunderbird öffnen

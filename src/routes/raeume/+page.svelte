@@ -73,10 +73,10 @@
 <div class="space-y-6">
 	<!-- Header -->
 	<div class="flex items-center justify-between">
-		<div class="flex items-center gap-3">
-			<svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
-			<h1 class="text-2xl font-bold text-gray-900">Räume</h1>
-		</div>
+		<h1 class="page-title">
+			<svg class="page-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+			Räume
+		</h1>
 		<button onclick={() => (zeigeFormular = !zeigeFormular)} class="btn-primary flex items-center gap-2">
 			<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
 			Neuer Raum
@@ -87,16 +87,16 @@
 	{#if raeumeLokal.length > 0}
 		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 stagger">
 			<div class="kpi-card animate-in">
-				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
+				<div class="flex items-center gap-1.5 text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wide">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
 					Räume
 				</div>
 				<div class="text-xl font-bold font-mono mt-1">{raeumeLokal.length}</div>
-				<div class="text-xs text-gray-400 mt-1">{new Set(raeumeLokal.map(r => r.geschoss)).size} Geschosse</div>
+				<div class="text-xs text-stone-400 dark:text-stone-500 mt-1">{new Set(raeumeLokal.map(r => r.geschoss)).size} Geschosse</div>
 			</div>
 
 			<div class="kpi-card animate-in">
-				<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
+				<div class="flex items-center gap-1.5 text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wide">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>
 					Raumgebundene Kosten
 				</div>
@@ -104,13 +104,13 @@
 			</div>
 
 			{#if topRaum}
-				<a href="/buchungen?raum={topRaum.id}" class="kpi-card animate-in hover:ring-2 hover:ring-blue-200 transition-all">
-					<div class="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-wide">
+				<a href="/buchungen?raum={topRaum.id}" class="kpi-card animate-in hover:ring-2 hover:ring-primary-200 dark:hover:ring-primary-900 transition-all">
+					<div class="flex items-center gap-1.5 text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wide">
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75z" /></svg>
 						Teuerster Raum
 					</div>
 					<div class="text-xl font-bold font-mono mt-1">{formatCents(data.topRaumIst)}</div>
-					<div class="text-xs text-blue-500 mt-1">{topRaum.name} ({topRaum.geschoss})</div>
+					<div class="text-xs text-primary-600 dark:text-primary-400 mt-1">{topRaum.name} ({topRaum.geschoss})</div>
 				</a>
 			{/if}
 		</div>
@@ -118,7 +118,7 @@
 
 	<!-- Fehler -->
 	{#if form?.error}
-		<div class="flex items-center gap-2 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200 animate-fade">
+		<div class="alert-danger flex items-center gap-2 animate-fade">
 			<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
 			{form.error}
 		</div>
@@ -127,7 +127,7 @@
 	<!-- Neuer Raum Formular -->
 	{#if zeigeFormular}
 		<div class="card animate-fade">
-			<h2 class="mb-4 text-lg font-semibold text-gray-800">Neuen Raum anlegen</h2>
+			<h2 class="mb-4 text-lg font-semibold text-stone-800 dark:text-stone-200">Neuen Raum anlegen</h2>
 			<form method="POST" action="?/add" use:enhance={({ formElement }) => {
 				return async ({ result, update }) => {
 					if (result.type !== 'failure') { formElement.reset(); zeigeFormular = false; }
@@ -135,11 +135,11 @@
 				};
 			}} class="grid grid-cols-1 gap-4 md:grid-cols-3">
 				<div>
-					<label for="name" class="mb-1 block text-sm font-medium text-gray-700">Name *</label>
+					<label for="name" class="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Name *</label>
 					<input type="text" name="name" id="name" required placeholder="z.B. Küche" class="input-base" />
 				</div>
 				<div>
-					<label for="geschoss" class="mb-1 block text-sm font-medium text-gray-700">Geschoss *</label>
+					<label for="geschoss" class="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Geschoss *</label>
 					<select name="geschoss" id="geschoss" required class="input-base">
 						{#each geschosse as g}
 							<option value={g}>{geschossLabels[g]} ({g})</option>
@@ -147,12 +147,12 @@
 					</select>
 				</div>
 				<div>
-					<label for="flaeche" class="mb-1 block text-sm font-medium text-gray-700">Fläche (m²)</label>
+					<label for="flaeche" class="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Fläche (m²)</label>
 					<input type="text" name="flaeche" id="flaeche" placeholder="z.B. 12,5" class="input-base" />
 				</div>
 				<div class="flex gap-3 md:col-span-3">
 					<button type="submit" class="btn-primary">Raum anlegen</button>
-					<button type="button" onclick={() => (zeigeFormular = false)} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Abbrechen</button>
+					<button type="button" onclick={() => (zeigeFormular = false)} class="btn-secondary">Abbrechen</button>
 				</div>
 			</form>
 		</div>
@@ -161,8 +161,8 @@
 	<!-- Räume nach Geschoss -->
 	{#if raeumeLokal.length === 0}
 		<div class="card py-12 text-center">
-			<svg class="w-12 h-12 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
-			<p class="mt-3 text-gray-500">Noch keine Räume angelegt</p>
+			<svg class="w-12 h-12 mx-auto text-stone-300 dark:text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+			<p class="mt-3 text-stone-500 dark:text-stone-400">Noch keine Räume angelegt</p>
 			<button onclick={() => (zeigeFormular = true)} class="btn-primary mt-4">Ersten Raum anlegen</button>
 		</div>
 	{:else}
@@ -175,11 +175,11 @@
 						<!-- Geschoss-Header -->
 						<div class="flex items-center justify-between mb-3">
 							<div class="flex items-center gap-2">
-								<h2 class="text-sm font-semibold text-gray-700">{geschossLabels[geschoss]} ({geschoss})</h2>
-								<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{gRaeume.length} {gRaeume.length === 1 ? 'Raum' : 'Räume'}</span>
+								<h2 class="text-sm font-semibold text-stone-700 dark:text-stone-300">{geschossLabels[geschoss]} ({geschoss})</h2>
+								<span class="badge-neutral">{gRaeume.length} {gRaeume.length === 1 ? 'Raum' : 'Räume'}</span>
 							</div>
 							{#if gInfo && gInfo.ist > 0}
-								<span class="text-xs font-mono tabular-nums text-gray-500">{formatCents(gInfo.ist)}</span>
+								<span class="text-xs font-mono tabular-nums text-stone-500 dark:text-stone-400">{formatCents(gInfo.ist)}</span>
 							{/if}
 						</div>
 
@@ -190,7 +190,7 @@
 								{@const isDragging = draggedId === raum.id}
 								{@const isDragOver = dragOverId === raum.id}
 								<div
-									class="card overflow-hidden transition-all duration-200 {isDragging ? 'opacity-50 scale-[0.98]' : ''} {isDragOver ? 'ring-2 ring-blue-400 ring-offset-2' : ''}"
+									class="card overflow-hidden transition-all duration-200 {isDragging ? 'opacity-50 scale-[0.98]' : ''} {isDragOver ? 'ring-2 ring-primary-400 ring-offset-2' : ''}"
 									draggable={editId !== raum.id ? 'true' : 'false'}
 									ondragstart={(e) => onDragStart(e, raum.id)}
 									ondragover={(e) => onDragOver(e, raum.id)}
@@ -210,11 +210,11 @@
 											}} class="grid grid-cols-1 gap-3 md:grid-cols-4">
 												<input type="hidden" name="id" value={raum.id} />
 												<div>
-													<label class="mb-1 block text-sm font-medium text-gray-700">Name *</label>
+													<label class="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Name *</label>
 													<input type="text" name="name" value={raum.name} required class="input-base" />
 												</div>
 												<div>
-													<label class="mb-1 block text-sm font-medium text-gray-700">Geschoss *</label>
+													<label class="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Geschoss *</label>
 													<select name="geschoss" required class="input-base">
 														{#each geschosse as g}
 															<option value={g} selected={g === raum.geschoss}>{g}</option>
@@ -222,12 +222,12 @@
 													</select>
 												</div>
 												<div>
-													<label class="mb-1 block text-sm font-medium text-gray-700">Fläche (m²)</label>
+													<label class="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Fläche (m²)</label>
 													<input type="text" name="flaeche" value={raum.flaeche ?? ''} placeholder="z.B. 12,5" class="input-base" />
 												</div>
 												<div class="flex items-end gap-2">
 													<button type="submit" class="btn-primary">Speichern</button>
-													<button type="button" onclick={() => (editId = null)} class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Abbrechen</button>
+													<button type="button" onclick={() => (editId = null)} class="btn-secondary">Abbrechen</button>
 												</div>
 											</form>
 										</div>
@@ -236,28 +236,28 @@
 										<div class="p-4">
 											<div class="flex items-center gap-3">
 												<!-- Drag Handle -->
-												<div class="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 shrink-0" title="Ziehen zum Sortieren">
+												<div class="cursor-grab active:cursor-grabbing text-stone-300 dark:text-stone-600 hover:text-stone-500 dark:hover:text-stone-400 shrink-0" title="Ziehen zum Sortieren">
 													<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
 												</div>
 
 												<!-- Name + Fläche -->
 												<div class="flex-1 min-w-0">
 													<div class="flex items-center gap-2 flex-wrap">
-														<span class="font-semibold text-gray-900">{raum.name}</span>
+														<span class="font-semibold text-stone-900 dark:text-stone-100">{raum.name}</span>
 														{#if raum.flaeche}
-															<span class="text-xs text-gray-400">{raum.flaeche} m²</span>
+															<span class="text-xs text-stone-400 dark:text-stone-500">{raum.flaeche} m²</span>
 														{/if}
 													</div>
 												</div>
 
 												<!-- Actions -->
 												<div class="flex items-center gap-1 shrink-0">
-													<button onclick={() => (editId = raum.id)} class="rounded p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600" title="Bearbeiten">
+													<button onclick={() => (editId = raum.id)} class="rounded p-1.5 text-stone-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 dark:hover:text-primary-400" title="Bearbeiten">
 														<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
 													</button>
 													<form method="POST" action="?/delete" use:enhance class="inline">
 														<input type="hidden" name="id" value={raum.id} />
-														<button type="submit" class="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title="Löschen"
+														<button type="submit" class="rounded p-1.5 text-stone-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400" title="Löschen"
 															onclick={(e) => {
 																const n = info?.anzahlBuchungen ?? 0;
 																const hinweis = n > 0 ? `\n\nAchtung: Raum hat ${n} Buchung${n > 1 ? 'en' : ''}!` : '';
@@ -272,17 +272,17 @@
 											<!-- Kosten-Info -->
 											{#if info && info.ist > 0}
 												<div class="mt-2 flex items-baseline gap-3 text-sm">
-													<span class="font-mono tabular-nums font-medium text-gray-700">{formatCents(info.ist)}</span>
+													<span class="font-mono tabular-nums font-medium text-stone-700 dark:text-stone-300">{formatCents(info.ist)}</span>
 													{#if raum.flaeche && raum.flaeche > 0}
-														<span class="text-gray-300">·</span>
-														<span class="text-xs font-mono tabular-nums text-gray-500">{(info.ist / 100 / raum.flaeche).toFixed(2).replace('.', ',')} €/m²</span>
+														<span class="text-stone-300 dark:text-stone-600">·</span>
+														<span class="text-xs font-mono tabular-nums text-stone-500 dark:text-stone-400">{(info.ist / 100 / raum.flaeche).toFixed(2).replace('.', ',')} €/m²</span>
 													{/if}
 												</div>
 
 												<!-- Gewerk-Balken -->
 												{@const gewerkEntries = Object.entries(info.nachGewerk).filter(([, v]) => v > 0).sort(([, a], [, b]) => b - a)}
 												{#if gewerkEntries.length > 0}
-													<div class="mt-2 h-1.5 flex rounded-full bg-gray-100 overflow-hidden">
+													<div class="mt-2 h-1.5 flex rounded-full bg-stone-100 dark:bg-stone-800 overflow-hidden">
 														{#each gewerkEntries as [gId, betrag]}
 															{@const gewerk = data.gewerke.find(g => g.id === gId)}
 															<div
@@ -295,10 +295,10 @@
 												{/if}
 
 												<div class="mt-1.5">
-													<a href="/buchungen?raum={raum.id}" class="text-xs text-blue-500 hover:underline">{info.anzahlBuchungen} {info.anzahlBuchungen === 1 ? 'Buchung' : 'Buchungen'}</a>
+													<a href="/buchungen?raum={raum.id}" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">{info.anzahlBuchungen} {info.anzahlBuchungen === 1 ? 'Buchung' : 'Buchungen'}</a>
 												</div>
 											{:else}
-												<div class="mt-2 text-xs text-gray-400">Keine Buchungen</div>
+												<div class="mt-2 text-xs text-stone-400 dark:text-stone-500">Keine Buchungen</div>
 											{/if}
 										</div>
 									{/if}
