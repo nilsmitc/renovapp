@@ -145,7 +145,7 @@
 									</a>
 								{/if}
 							</div>
-								{#if buchung.bezahltam && buchung.bezahltam !== buchung.datum}
+								{#if buchung.bezahltam}
 									<span class="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
 										<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.5 12.75l6 6 9-13.5" /></svg>
 										Bezahlt {formatDatum(buchung.bezahltam)}

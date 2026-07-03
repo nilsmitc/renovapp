@@ -128,14 +128,14 @@ export interface Abschlag {
 	geaendert: string;
 }
 
-export type RechnungStatus = 'angebot' | 'auftrag';
+export type RechnungStatus = 'angebot' | 'auftrag' | 'abgelehnt';
 
 export interface Rechnung {
 	id: string;
 	gewerk: string;          // Gewerk-ID
 	auftragnehmer: string;
 	kategorie: Kategorie;    // wird für auto-erstellte Buchungen verwendet
-	status: RechnungStatus;  // 'angebot' = noch nicht angenommen, 'auftrag' = beauftragt
+	status: RechnungStatus;  // 'angebot' = noch nicht angenommen, 'auftrag' = beauftragt, 'abgelehnt' = Angebot abgelehnt
 	auftragssumme?: number;  // Cents, optional
 	auftragsdatum?: string;  // YYYY-MM-DD
 	notiz?: string;

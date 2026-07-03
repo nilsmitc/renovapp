@@ -71,7 +71,7 @@ export function berechneFinanzuebersicht(
 	const abgeschlossenRechnungenCount: Record<string, number> = {};
 
 	for (const r of rechnungen) {
-		if (r.status === 'angebot') continue;
+		if (r.status !== 'auftrag') continue;
 		rechnungenPerGewerkCount[r.gewerk] = (rechnungenPerGewerkCount[r.gewerk] ?? 0) + 1;
 		const rechnungAbgeschlossen = r.abschlaege.some(
 			(a) => a.typ === 'schlussrechnung' && a.status === 'bezahlt'
@@ -136,7 +136,7 @@ export function berechneNaechsteZahlungen(
 	const zahlungen: NaechsteZahlung[] = [];
 
 	for (const r of rechnungen) {
-		if (r.status === 'angebot') continue;
+		if (r.status !== 'auftrag') continue;
 		const gewerk = gewerke.find((g) => g.id === r.gewerk);
 		for (const a of r.abschlaege) {
 			if (a.status === 'bezahlt' || a.status === 'ausstehend') continue;

@@ -43,7 +43,7 @@ export const load: PageServerLoad = () => {
 	const rechnungenPerGewerk: Record<string, RechnungKurz[]> = {};
 
 	for (const rechnung of rechnungen) {
-		if (rechnung.status === 'angebot') continue;
+		if (rechnung.status !== 'auftrag') continue;
 		const g = rechnung.gewerk;
 		verplantPerGewerk[g] ??= { offen: 0, restauftrag: 0, anzahl: 0, alleAbgeschlossen: true };
 		verplantPerGewerk[g].anzahl++;

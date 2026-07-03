@@ -1,6 +1,9 @@
 # Changelog
 
 ## 2026-07-03
+- Aufträge: Angebote können jetzt abgelehnt werden — abgelehnte Angebote wandern in einen eigenen Bereich und lassen sich wiederherstellen oder endgültig löschen; sie zählen nicht in Budget, Prognose oder Bericht
+- Ausgaben: "Bezahlt"-Badge erscheint jetzt auch, wenn Buchungs- und Bezahldatum identisch sind (z.B. beim manuellen Anlegen mit "Als bezahlt markieren")
+- Aufträge: Suchfeld verliert beim Tippen nicht mehr nach jedem Buchstaben den Fokus
 - Neues Design: warme, handwerkliche Farbwelt — Terracotta als Primärfarbe, Stone-Neutraltöne statt Grau
 - Dark Mode mit Umschalter in der Seitenleiste (wird gespeichert, folgt sonst der Systemeinstellung)
 - Neue Navigation: feste Seitenleiste links mit allen Menüpunkten samt Beschriftung, auf Mobilgeräten als ausklappbares Menü

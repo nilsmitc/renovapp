@@ -29,7 +29,7 @@
 		if (statusFilter && statusFilter !== 'alle') params.set('status', statusFilter);
 		if (gewerkFilterLocal) params.set('gewerk', gewerkFilterLocal);
 		if (sortierung && sortierung !== 'gewerk') params.set('sortierung', sortierung);
-		goto(`/rechnungen?${params.toString()}`, { replaceState: true });
+		goto(`/rechnungen?${params.toString()}`, { replaceState: true, keepFocus: true, noScroll: true });
 	}
 
 	// Rechnungen nach Gewerk gruppieren (für Gewerk-Sortierung)
@@ -451,7 +451,12 @@
 
 	<!-- Angebote-Liste -->
 	{#if ansicht === 'angebote'}
-		{#if data.angebote.length === 0}
+		{#if data.angebote.length === 0 && data.abgelehnte.length > 0}
+			<div class="card py-8 text-center">
+				<p class="text-stone-500 dark:text-stone-400">Keine offenen Angebote</p>
+				<button onclick={() => { formStatus = 'angebot'; zeigeFormular = true; }} class="btn-primary mt-4">Neues Angebot anlegen</button>
+			</div>
+		{:else if data.angebote.length === 0}
 			<div class="card py-12 text-center">
 				<svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-stone-300 dark:text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
@@ -503,22 +508,110 @@
 										{/if}
 									</div>
 								</a>
-								<form
-									method="POST"
-									action="?/zuAuftragMachen"
-									use:enhance={() => {
-										return async ({ update }) => { await update(); };
-									}}
-								>
-									<input type="hidden" name="id" value={angebot.id} />
-									<button
-										type="submit"
-										onclick={(e) => { if (!confirm(`Angebot von "${angebot.auftragnehmer}" als Auftrag annehmen?`)) e.preventDefault(); }}
-										class="whitespace-nowrap rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/50 transition"
+								<div class="flex flex-col sm:flex-row gap-2 shrink-0">
+									<form
+										method="POST"
+										action="?/zuAuftragMachen"
+										use:enhance={() => {
+											return async ({ update }) => { await update(); };
+										}}
 									>
-										Als Auftrag annehmen →
-									</button>
-								</form>
+										<input type="hidden" name="id" value={angebot.id} />
+										<button
+											type="submit"
+											onclick={(e) => { if (!confirm(`Angebot von "${angebot.auftragnehmer}" als Auftrag annehmen?`)) e.preventDefault(); }}
+											class="whitespace-nowrap rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/50 transition"
+										>
+											Als Auftrag annehmen →
+										</button>
+									</form>
+									<form
+										method="POST"
+										action="?/ablehnen"
+										use:enhance={() => {
+											return async ({ update }) => { await update(); };
+										}}
+									>
+										<input type="hidden" name="id" value={angebot.id} />
+										<button
+											type="submit"
+											onclick={(e) => { if (!confirm(`Angebot von "${angebot.auftragnehmer}" ablehnen? Es kann später wiederhergestellt werden.`)) e.preventDefault(); }}
+											class="w-full whitespace-nowrap rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 px-3 py-1.5 text-xs font-medium text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 transition"
+										>
+											Ablehnen
+										</button>
+									</form>
+								</div>
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
+		<!-- Abgelehnte Angebote -->
+		{#if data.abgelehnte.length > 0}
+			<div class="card animate-in">
+				<div class="px-4 py-3 border-b border-stone-100 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-800/40 rounded-t-xl flex items-center gap-2">
+					<svg class="w-4 h-4 text-stone-400 dark:text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+					<h2 class="text-sm font-semibold text-stone-500 dark:text-stone-400">Abgelehnte Angebote</h2>
+					<span class="badge-neutral">{data.abgelehnte.length}</span>
+				</div>
+				<div class="divide-y divide-stone-100 dark:divide-stone-800">
+					{#each data.abgelehnte as angebot}
+						{@const gewerk = data.gewerke.find(g => g.id === angebot.gewerk)}
+						<div class="p-4 opacity-70">
+							<div class="flex items-start justify-between gap-4 flex-wrap">
+								<a href="/rechnungen/{angebot.id}" class="min-w-0 flex-1 hover:text-primary-700 dark:hover:text-primary-400">
+									<div class="flex items-center gap-2 flex-wrap">
+										{#if gewerk}
+											<span class="inline-flex items-center gap-1.5">
+												<span class="color-dot w-2.5 h-2.5 rounded-full" style="background-color: {gewerk.farbe}"></span>
+												<span class="text-xs text-stone-500 dark:text-stone-400">{gewerk.name}</span>
+											</span>
+										{/if}
+										<span class="font-medium text-stone-600 dark:text-stone-300 line-through decoration-stone-400">{angebot.auftragnehmer}</span>
+										<span class="badge-danger">Abgelehnt</span>
+									</div>
+									<div class="mt-1 flex flex-wrap gap-3 text-sm text-stone-500 dark:text-stone-400">
+										{#if angebot.auftragssumme}
+											<span class="font-mono">{formatCents(angebot.auftragssumme)}</span>
+										{/if}
+										{#if angebot.notiz}
+											<span>{angebot.notiz}</span>
+										{/if}
+									</div>
+								</a>
+								<div class="flex flex-col sm:flex-row gap-2 shrink-0">
+									<form
+										method="POST"
+										action="?/wiederherstellen"
+										use:enhance={() => {
+											return async ({ update }) => { await update(); };
+										}}
+									>
+										<input type="hidden" name="id" value={angebot.id} />
+										<button type="submit" class="w-full whitespace-nowrap rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700 transition">
+											Wiederherstellen
+										</button>
+									</form>
+									<form
+										method="POST"
+										action="?/loeschen"
+										use:enhance={() => {
+											return async ({ update }) => { await update(); };
+										}}
+									>
+										<input type="hidden" name="id" value={angebot.id} />
+										<button
+											type="submit"
+											onclick={(e) => { if (!confirm(`Abgelehntes Angebot von "${angebot.auftragnehmer}" endgültig löschen?`)) e.preventDefault(); }}
+											class="w-full whitespace-nowrap rounded-lg border border-red-200 dark:border-red-800 bg-white dark:bg-stone-800 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition"
+										>
+											Endgültig löschen
+										</button>
+									</form>
+								</div>
 							</div>
 						</div>
 					{/each}

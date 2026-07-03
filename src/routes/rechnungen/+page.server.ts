@@ -50,6 +50,7 @@ export const load: PageServerLoad = ({ url }) => {
 	// Angebote-Aggregate
 	const angebote = alleRechnungen.filter(r => r.status === 'angebot');
 	const angeboteVolumen = angebote.reduce((s, r) => s + (r.auftragssumme ?? 0), 0);
+	const abgelehnte = alleRechnungen.filter(r => r.status === 'abgelehnt');
 
 	// Aggregate über alle Aufträge (vor Filter, damit KPIs immer den Gesamtstand zeigen)
 	const auftraege = alleRechnungen.filter(r => r.status === 'auftrag');
@@ -102,6 +103,7 @@ export const load: PageServerLoad = ({ url }) => {
 		rechnungen: gefiltert,
 		angebote,
 		angeboteVolumen,
+		abgelehnte,
 		gewerke: projekt.gewerke,
 		gewerkeInAuftraegen: projekt.gewerke.filter(g => rechnungen.some(r => r.gewerk === g.id)),
 		gewerkFilter,
@@ -194,5 +196,37 @@ export const actions: Actions = {
 		rechnung.geaendert = new Date().toISOString();
 		schreibeRechnungen(rechnungen);
 		throw redirect(303, `/rechnungen/${id}`);
+	},
+
+	ablehnen: async ({ request }) => {
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		if (!id) return fail(400, { error: 'ID fehlt' });
+
+		const rechnungen = leseRechnungen();
+		const rechnung = rechnungen.find((r) => r.id === id);
+		if (!rechnung) return fail(404, { error: 'Angebot nicht gefunden' });
+		if (rechnung.status !== 'angebot') return fail(400, { error: 'Nur Angebote können abgelehnt werden' });
+
+		rechnung.status = 'abgelehnt';
+		rechnung.geaendert = new Date().toISOString();
+		schreibeRechnungen(rechnungen);
+		return { success: true };
+	},
+
+	wiederherstellen: async ({ request }) => {
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		if (!id) return fail(400, { error: 'ID fehlt' });
+
+		const rechnungen = leseRechnungen();
+		const rechnung = rechnungen.find((r) => r.id === id);
+		if (!rechnung) return fail(404, { error: 'Angebot nicht gefunden' });
+		if (rechnung.status !== 'abgelehnt') return fail(400, { error: 'Nur abgelehnte Angebote können wiederhergestellt werden' });
+
+		rechnung.status = 'angebot';
+		rechnung.geaendert = new Date().toISOString();
+		schreibeRechnungen(rechnungen);
+		return { success: true };
 	}
 };

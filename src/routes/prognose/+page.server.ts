@@ -17,7 +17,7 @@ export const load: PageServerLoad = () => {
 	const rechnungenNachGewerk: Record<string, number> = {};
 	const abgeschlossenNachGewerk: Record<string, number> = {};
 	for (const r of rechnungen) {
-		if (r.status === 'angebot') continue;
+		if (r.status !== 'auftrag') continue;
 		rechnungenNachGewerk[r.gewerk] = (rechnungenNachGewerk[r.gewerk] ?? 0) + 1;
 		if (r.abschlaege.some((a) => a.typ === 'schlussrechnung' && a.status === 'bezahlt')) {
 			abgeschlossenNachGewerk[r.gewerk] = (abgeschlossenNachGewerk[r.gewerk] ?? 0) + 1;
@@ -45,7 +45,7 @@ export const load: PageServerLoad = () => {
 	const heute = new Date().toISOString().slice(0, 10);
 	const naechsteZahlungen: NaechsteZahlung[] = [];
 	for (const r of rechnungen) {
-		if (r.status === 'angebot') continue;
+		if (r.status !== 'auftrag') continue;
 		const gewerk = projekt.gewerke.find((g) => g.id === r.gewerk);
 		for (const a of r.abschlaege) {
 			if (a.status === 'bezahlt' || a.status === 'ausstehend') continue;

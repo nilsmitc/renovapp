@@ -469,5 +469,29 @@ export const actions: Actions = {
 		rechnung.geaendert = new Date().toISOString();
 		schreibeRechnungen(rechnungen);
 		return { success: true };
+	},
+
+	ablehnen: async ({ params }) => {
+		const rechnungen = leseRechnungen();
+		const rechnung = rechnungen.find((r) => r.id === params.id);
+		if (!rechnung) return fail(404, { error: 'Angebot nicht gefunden' });
+		if (rechnung.status !== 'angebot') return fail(400, { error: 'Nur Angebote können abgelehnt werden' });
+
+		rechnung.status = 'abgelehnt';
+		rechnung.geaendert = new Date().toISOString();
+		schreibeRechnungen(rechnungen);
+		return { success: true };
+	},
+
+	wiederherstellen: async ({ params }) => {
+		const rechnungen = leseRechnungen();
+		const rechnung = rechnungen.find((r) => r.id === params.id);
+		if (!rechnung) return fail(404, { error: 'Angebot nicht gefunden' });
+		if (rechnung.status !== 'abgelehnt') return fail(400, { error: 'Nur abgelehnte Angebote können wiederhergestellt werden' });
+
+		rechnung.status = 'angebot';
+		rechnung.geaendert = new Date().toISOString();
+		schreibeRechnungen(rechnungen);
+		return { success: true };
 	}
 };

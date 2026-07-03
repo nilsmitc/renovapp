@@ -222,7 +222,7 @@
 <div class="space-y-6">
 	<!-- Breadcrumb -->
 	<div class="flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
-		{#if rechnung.status === 'angebot'}
+		{#if rechnung.status !== 'auftrag'}
 			<a href="/rechnungen?ansicht=angebote" class="hover:text-primary-600 dark:hover:text-primary-400">Angebote</a>
 		{:else}
 			<a href="/rechnungen" class="hover:text-primary-600 dark:hover:text-primary-400">Aufträge</a>
@@ -342,10 +342,12 @@
 						<span class="text-sm text-stone-500 dark:text-stone-400">{rechnung.kategorie}</span>
 						{#if rechnung.auftragsdatum}
 							<span class="text-stone-300 dark:text-stone-600">·</span>
-							<span class="text-sm text-stone-500 dark:text-stone-400">{rechnung.status === 'angebot' ? 'Angebot vom' : 'Auftrag vom'} {formatDatum(rechnung.auftragsdatum)}</span>
+							<span class="text-sm text-stone-500 dark:text-stone-400">{rechnung.status !== 'auftrag' ? 'Angebot vom' : 'Auftrag vom'} {formatDatum(rechnung.auftragsdatum)}</span>
 						{/if}
 						{#if rechnung.status === 'angebot'}
 							<span class="rounded-full bg-amber-100 border border-amber-200 px-2.5 py-0.5 text-xs font-semibold text-amber-700 uppercase tracking-wide dark:bg-amber-900/40 dark:border-amber-800 dark:text-amber-300">Angebot</span>
+						{:else if rechnung.status === 'abgelehnt'}
+							<span class="rounded-full bg-red-100 border border-red-200 px-2.5 py-0.5 text-xs font-semibold text-red-700 uppercase tracking-wide dark:bg-red-900/40 dark:border-red-800 dark:text-red-300">Abgelehnt</span>
 						{/if}
 					</div>
 					<h1 class="mt-1 text-2xl font-bold text-stone-900 dark:text-stone-100">{rechnung.auftragnehmer}</h1>
@@ -416,24 +418,67 @@
 						<p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Abschläge und Zahlungen können erst nach Auftragsannahme erfasst werden.</p>
 					</div>
 				</div>
+				<div class="flex gap-2 flex-wrap">
+					<form
+						method="POST"
+						action="?/zuAuftragMachen"
+						use:enhance={() => {
+							zuAuftragFehler = '';
+							return async ({ result, update }) => {
+								if (result.type === 'failure') {
+									zuAuftragFehler = (result.data?.error as string) ?? 'Fehler';
+								}
+								await update();
+							};
+						}}
+					>
+						<button
+							type="submit"
+							class="whitespace-nowrap rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition"
+						>
+							Als Auftrag annehmen →
+						</button>
+					</form>
+					<form
+						method="POST"
+						action="?/ablehnen"
+						use:enhance={() => {
+							return async ({ update }) => { await update(); };
+						}}
+					>
+						<button
+							type="submit"
+							onclick={(e) => { if (!confirm(`Angebot von "${rechnung.auftragnehmer}" ablehnen? Es kann später wiederhergestellt werden.`)) e.preventDefault(); }}
+							class="whitespace-nowrap rounded-lg border border-red-300 dark:border-red-800 bg-white dark:bg-stone-800 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition"
+						>
+							Ablehnen
+						</button>
+					</form>
+				</div>
+			</div>
+		{:else if rechnung.status === 'abgelehnt'}
+			<div class="alert-danger mt-4 flex items-center justify-between gap-4 flex-wrap">
+				<div class="flex items-center gap-3">
+					<svg class="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+					</svg>
+					<div>
+						<p class="text-sm font-medium text-red-800 dark:text-red-200">Dieses Angebot wurde abgelehnt.</p>
+						<p class="text-xs text-red-600 dark:text-red-400 mt-0.5">Es fließt nicht in Budget, Prognose oder Bericht ein.</p>
+					</div>
+				</div>
 				<form
 					method="POST"
-					action="?/zuAuftragMachen"
+					action="?/wiederherstellen"
 					use:enhance={() => {
-						zuAuftragFehler = '';
-						return async ({ result, update }) => {
-							if (result.type === 'failure') {
-								zuAuftragFehler = (result.data?.error as string) ?? 'Fehler';
-							}
-							await update();
-						};
+						return async ({ update }) => { await update(); };
 					}}
 				>
 					<button
 						type="submit"
-						class="whitespace-nowrap rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition"
+						class="whitespace-nowrap rounded-lg border border-red-300 dark:border-red-800 bg-white dark:bg-stone-800 px-4 py-2 text-sm font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 transition"
 					>
-						Als Auftrag annehmen →
+						Wiederherstellen
 					</button>
 				</form>
 			</div>
@@ -795,10 +840,10 @@
 	</div>
 
 	<!-- Abschläge -->
-	<div class="card {rechnung.status === 'angebot' ? 'opacity-50 pointer-events-none' : ''}">
+	<div class="card {rechnung.status !== 'auftrag' ? 'opacity-50 pointer-events-none' : ''}">
 		<div class="mb-4 flex items-center justify-between">
 			<h2 class="text-base font-semibold text-stone-800 dark:text-stone-200">Abschläge</h2>
-			{#if rechnung.status === 'angebot'}
+			{#if rechnung.status !== 'auftrag'}
 				<span class="text-xs text-stone-400 dark:text-stone-500 italic">Erst nach Auftragsannahme verfügbar</span>
 			{:else}
 			<button
