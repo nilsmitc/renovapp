@@ -48,7 +48,7 @@
 		const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
 		if (value) params.set(key, value);
 		else params.delete(key);
-		goto(`/belege?${params.toString()}`);
+		goto(`/belege?${params.toString()}`, { keepFocus: true, noScroll: true, replaceState: true });
 	}
 
 	function formatMonat(m: string): string {

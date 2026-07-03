@@ -28,11 +28,14 @@
 		return data.lieferanten.find((l) => l.id === lu.lieferantId)?.name ?? null;
 	}
 
+	// svelte-ignore state_referenced_locally -- bewusst nur Initialwert: lokaler State darf beim Tippen nicht von Server-Daten überschrieben werden
+	let sucheInput = $state(data.filter.suche ?? '');
+
 	function applyFilter(key: string, value: string) {
 		const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
 		if (value) params.set(key, value);
 		else params.delete(key);
-		goto(`/buchungen?${params.toString()}`);
+		goto(`/buchungen?${params.toString()}`, { keepFocus: true, noScroll: true, replaceState: true });
 	}
 </script>
 
@@ -55,8 +58,8 @@
 			<input
 				type="search"
 				placeholder="Suche in Beschreibung & Rechnung..."
-				value={data.filter.suche ?? ''}
-				oninput={(e) => applyFilter('suche', e.currentTarget.value)}
+				bind:value={sucheInput}
+				oninput={() => applyFilter('suche', sucheInput)}
 				class="input-sm w-full pl-8"
 			/>
 		</div>
